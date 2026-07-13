@@ -2,9 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using D64Editor.Core;
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
+
 
 namespace D64Editor.App;
 
