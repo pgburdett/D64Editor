@@ -1,0 +1,41 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.BamEditorWindow"
+        Title="BAM Editor"
+        Width="640" Height="640"
+        MinWidth="480" MinHeight="480">
+
+    <DockPanel Margin="8">
+
+        <!-- Mirrors frmBAM's menu: mnuAllocateAllSectors / mnuUNAllocateallSectors / mnuCleanDisk / mnuSave / mnuExitBAMEditor -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_BAM">
+                <MenuItem Header="Allocate All Sectors" Click="OnAllocateAllClicked" />
+                <MenuItem Header="Unallocate All Sectors" Click="OnUnallocateAllClicked" />
+                <Separator />
+                <MenuItem Header="Clean Disk (zero unallocated blocks)" Click="OnCleanDiskClicked" />
+                <Separator />
+                <MenuItem Header="Save" Click="OnSaveClicked" />
+                <MenuItem Header="Exit" Click="OnExitClicked" />
+            </MenuItem>
+            <MenuItem Header="Click a block to:">
+                <MenuItem Header="Toggle allocation" Name="ToggleAllocationModeItem" Click="OnSetToggleModeClicked" />
+                <MenuItem Header="View/edit bytes (Block Viewer)" Name="BlockViewModeItem" Click="OnSetViewModeClicked" />
+            </MenuItem>
+        </Menu>
+
+        <!-- Mirrors lblTrackSectorLoc / lblBlockOwner, updated on lblBAM_MouseMove -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="20" Margin="0,8,0,0">
+            <TextBlock Name="TrackSectorLabel" Text="TRACK: -- SECTOR: --" FontFamily="monospace" />
+            <TextBlock Name="BlockOwnerLabel" Text="BLOCKOWNER: " FontFamily="monospace" />
+        </StackPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <!-- Populated in code-behind: one row per track, one cell per sector.
+                 The original placed 683 individual designer-drawn PictureBox/Label
+                 controls by hand; here they're generated from D64Image geometry. -->
+            <StackPanel Name="GridPanel" Spacing="2" />
+        </ScrollViewer>
+
+    </DockPanel>
+</Window>

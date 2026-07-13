@@ -375,4 +375,222 @@ public class D64Image
             currentSector = nextSector == 0xFF ? currentSector : nextSector;
         }
     }
+
+    // ---------------------------------------------------------------
+    // Block ownership / cross-link detection
+    // (ported from getBlockOwners in Module1.bas)
+    // ---------------------------------------------------------------
+
+    /// <summary>Which file (if any) owns each block, e.g. for the BAM editor's hover display. Call after ReadDirectory().</summary>
+    public string[] BlockOwners { get; private set; } = new string[TotalBlocks];
+
+    /// <summary>Human-readable cross-link warnings, e.g. "&quot;A&quot; IS CROSSLINKED WITH &quot;B&quot; AT BLOCK #5, 3".</summary>
+    public List<string> CrossLinkWarnings { get; private set; } = new();
+
+    public void ComputeBlockOwners()
+    {
+        var owners = new string[TotalBlocks];
+        var crossLinks = new List<string>();
+
+        foreach (var entry in Entries)
+        {
+            int track = entry.StartTrack;
+            int sector = entry.StartSector;
+
+            // Original caps this at 256 steps per file as a corruption safety net.
+            for (int step = 0; step < 256 && track != 0; step++)
+            {
+                int block = TrackSectorToBlock(track, sector);
+                if (block is >= 0 and < TotalBlocks)
+                {
+                    if (string.IsNullOrEmpty(owners[block]))
+                    {
+                        owners[block] = entry.FileName;
+                    }
+                    else
+                    {
+                        var (t, s) = BlockToTrackSector(block);
+                        // Track 18 legitimately gets shared by BAM/dir bookkeeping; only
+                        // flag cross-links for data tracks, matching the original.
+                        if (t != 18)
+                            crossLinks.Add($"\"{owners[block]}\" IS CROSSLINKED WITH \"{entry.FileName}\" AT BLOCK #{t}, {s}");
+                    }
+                }
+
+                int offset = block * SectorSize;
+                track = _data[offset];
+                sector = _data[offset + 1];
+            }
+        }
+
+        // BAM/directory blocks override any file ownership on track 18.
+        owners[TrackSectorToBlock(18, 0)] = "<BAM BLOCK>";
+        foreach (int block in _directoryBlocks)
+            owners[block] = "<DIR BLOCK>";
+
+        BlockOwners = owners;
+        CrossLinkWarnings = crossLinks;
+    }
+
+    /// <summary>Zeroes a block's 256 bytes in place, e.g. for the BAM editor's "Clean Disk" command. Doesn't touch AllocatedBlocks.</summary>
+    public void ClearBlock(int block)
+    {
+        if (block is < 0 or >= TotalBlocks)
+            throw new ArgumentOutOfRangeException(nameof(block));
+        Array.Clear(_data, block * SectorSize, SectorSize);
+    }
+
+    // ---------------------------------------------------------------
+    // Raw block access, for the Block Viewer
+    // (ported from the Get/Put loops shared by frmBAM's lblBAM_Click,
+    // frmBlockViewer's cmdNextBlock_Click/cmdPreviousBlock_Click, and
+    // mnuSaveChangesToBlock_Click)
+    // ---------------------------------------------------------------
+
+    public byte[] ReadBlock(int block)
+    {
+        if (block is < 0 or >= TotalBlocks)
+            throw new ArgumentOutOfRangeException(nameof(block));
+        byte[] buffer = new byte[SectorSize];
+        Array.Copy(_data, block * SectorSize, buffer, 0, SectorSize);
+        return buffer;
+    }
+
+    public void WriteBlock(int block, byte[] bytes)
+    {
+        if (block is < 0 or >= TotalBlocks)
+            throw new ArgumentOutOfRangeException(nameof(block));
+        if (bytes.Length != SectorSize)
+            throw new ArgumentException($"Block data must be exactly {SectorSize} bytes.", nameof(bytes));
+        Array.Copy(bytes, 0, _data, block * SectorSize, SectorSize);
+    }
+
+    // ---------------------------------------------------------------
+    // File import / export
+    // (ported from FileImport / FileExport in frmMain.frm — the P00 and T64
+    // container-format detection isn't ported; this handles plain
+    // PRG/SEQ/USR/REL/DEL payloads, which covers the overwhelming majority
+    // of real use.)
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Writes a raw file into the first available free space on the disk and adds a
+    /// directory entry for it. Ported from FileImport's block-chaining loop
+    /// (findFirstBlocktoUse / findNextBlocktoUse + the Do-Until-bites2go loop).
+    /// Call WriteDirectory()/WriteBam() (done automatically here) and then Save()
+    /// to persist to disk.
+    /// </summary>
+    public D64FileEntry ImportFile(byte[] fileBytes, string hostFileName, D64FileType? typeOverride = null)
+    {
+        int sectorsNeeded = (Entries.Count + 1 + 7) / 8;
+        if (sectorsNeeded > 18)
+            throw new InvalidOperationException("Sorry, you can't add a file to the disk. The directory is completely full.");
+
+        string baseName = System.IO.Path.GetFileNameWithoutExtension(hostFileName).ToUpperInvariant();
+        string ext = System.IO.Path.GetExtension(hostFileName).TrimStart('.').ToUpperInvariant();
+        D64FileType type = typeOverride ?? ext switch
+        {
+            "SEQ" => D64FileType.Seq,
+            "USR" => D64FileType.Usr,
+            "REL" => D64FileType.Rel,
+            "DEL" => D64FileType.Del,
+            _ => D64FileType.Prg // matches the original's default (&H82 = PRG) when the extension isn't recognized
+        };
+        if (baseName.Length > 16) baseName = baseName[..16];
+
+        int blocksNeeded = Math.Max(1, (int)Math.Ceiling(fileBytes.Length / 254.0));
+        if (blocksNeeded > BlocksFree)
+            throw new InvalidOperationException($"'{hostFileName}' is too big to fit on the disk.");
+
+        var allocator = new D64BlockAllocator(this);
+        if (!allocator.FindFirst())
+            throw new InvalidOperationException($"'{hostFileName}' is too big to fit on the disk.");
+
+        int startTrack = allocator.Track;
+        int startSector = allocator.Sector;
+        int currentBlock = allocator.Block;
+        int offset = 0;
+        int bytesRemaining = fileBytes.Length;
+        int totalBlocks = 0;
+
+        while (true)
+        {
+            AllocatedBlocks[currentBlock] = true;
+            totalBlocks++;
+            int blockOffset = currentBlock * SectorSize;
+
+            if (bytesRemaining <= 254)
+            {
+                _data[blockOffset] = 0; // chain terminator
+                _data[blockOffset + 1] = (byte)(bytesRemaining + 1); // bytes-used marker, matches original
+                Array.Copy(fileBytes, offset, _data, blockOffset + 2, bytesRemaining);
+                break;
+            }
+
+            if (!allocator.FindNext())
+                throw new InvalidOperationException($"'{hostFileName}' is too big to fit on the disk.");
+
+            int nextBlock = allocator.Block;
+            var (nextTrack, nextSector) = BlockToTrackSector(nextBlock);
+            _data[blockOffset] = (byte)nextTrack;
+            _data[blockOffset + 1] = (byte)nextSector;
+            Array.Copy(fileBytes, offset, _data, blockOffset + 2, 254);
+            offset += 254;
+            bytesRemaining -= 254;
+            currentBlock = nextBlock;
+        }
+
+        var entry = new D64FileEntry
+        {
+            FileName = baseName,
+            StartTrack = startTrack,
+            StartSector = startSector,
+            SizeLow = (byte)(totalBlocks % 256),
+            SizeHigh = (byte)(totalBlocks / 256),
+            RawFileType = (byte)(0x80 | (byte)type) // closed bit set, unlocked
+        };
+
+        Entries.Add(entry);
+        WriteDirectory();
+        WriteBam();
+        ComputeBlockOwners();
+        return entry;
+    }
+
+    /// <summary>
+    /// Follows a file's block chain and returns its raw bytes (link bytes stripped).
+    /// Ported from FileExport's read loop.
+    /// </summary>
+    public byte[] ExportFile(D64FileEntry entry)
+    {
+        var output = new List<byte>(entry.SizeInBlocks * 254);
+        int track = entry.StartTrack;
+        int sector = entry.StartSector;
+
+        // 700-step cap matches the original's "For p = 1 To 700" corruption safety net.
+        for (int step = 0; step < 700 && track != 0; step++)
+        {
+            int block = TrackSectorToBlock(track, sector);
+            int blockOffset = block * SectorSize;
+            int nextTrack = _data[blockOffset];
+            int nextSector = _data[blockOffset + 1];
+            int dataLength = nextTrack == 0 ? Math.Max(0, nextSector - 1) : 254;
+
+            output.AddRange(new ArraySegment<byte>(_data, blockOffset + 2, dataLength));
+            track = nextTrack;
+            sector = nextSector;
+        }
+
+        return output.ToArray();
+    }
+
+    /// <summary>Suggested host filename for an exported entry, e.g. "game.prg". Ported from FileExport's name-sanitizing loop.</summary>
+    public static string SuggestedExportFileName(D64FileEntry entry)
+    {
+        char[] invalid = { '*', '/', '\\', '?', '|', ':', '<', '>', '\0', '"' };
+        string clean = new string(entry.FileName.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        if (clean.Length == 0) clean = "_";
+        string ext = entry.FileType == D64FileType.Unknown ? "___" : entry.FileType.ToDisplayCode();
+        return $"{clean}.{ext}".ToLowerInvariant();
+    }
 }

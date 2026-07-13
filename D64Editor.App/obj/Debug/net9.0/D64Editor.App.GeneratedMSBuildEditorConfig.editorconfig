@@ -26,5 +26,11 @@ build_property.EnableCodeStyleSeverity =
 [/run/media/pat/store/projects/D64Editor/D64Editor.App/App.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
+[/run/media/pat/store/projects/D64Editor/D64Editor.App/BamEditorWindow.axaml]
+build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
+
+[/run/media/pat/store/projects/D64Editor/D64Editor.App/BlockViewerWindow.axaml]
+build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
+
 [/run/media/pat/store/projects/D64Editor/D64Editor.App/MainWindow.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml

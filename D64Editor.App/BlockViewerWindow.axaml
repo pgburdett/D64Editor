@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.BlockViewerWindow"
+        Title="Block Viewer"
+        Width="620" Height="560"
+        MinWidth="560" MinHeight="480">
+
+    <DockPanel Margin="8">
+
+        <!-- Mirrors mnuWipeBlock / mnuSaveChangesToBlock / mnuDiscardChanges -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Block">
+                <MenuItem Header="Wipe Block" Click="OnWipeClicked" />
+                <Separator />
+                <MenuItem Header="Save Changes to Block" Click="OnSaveClicked" />
+                <MenuItem Header="Discard Changes" Click="OnDiscardClicked" />
+            </MenuItem>
+        </Menu>
+
+        <!-- Mirrors lblBlockNum / lblBlockLocation / lblFileOwner, and the Prev/Next buttons -->
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,8,0,8">
+            <StackPanel Grid.Column="0" Orientation="Vertical">
+                <TextBlock Name="BlockInfoLabel" FontFamily="monospace" FontWeight="Bold" />
+                <TextBlock Name="OwnerLabel" FontFamily="monospace" Opacity="0.8" />
+            </StackPanel>
+            <Button Grid.Column="2" Content="&lt; Previous" Click="OnPreviousClicked" Margin="0,0,6,0" />
+            <Button Grid.Column="3" Content="Next &gt;" Click="OnNextClicked" />
+        </Grid>
+
+        <!-- Mirrors lblByte2Change / cmbByteChange: shows and edits the selected byte -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+            <TextBlock Text="Selected byte:" VerticalAlignment="Center" />
+            <TextBlock Name="SelectedByteOffsetLabel" FontFamily="monospace" VerticalAlignment="Center" Width="30" />
+            <TextBox Name="ByteEditBox" Width="60" MaxLength="2" FontFamily="monospace" KeyDown="OnByteEditKeyDown" />
+            <TextBlock Name="AutoBootLabel" Foreground="Orange" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Mirrors the lblBYTE(0..255) grid; txtHexEditor's ASCII column isn't broken out separately —
+             each cell just shows both hex and its PETSCII-ish printable char underneath. -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Name="GridPanel" Spacing="1" />
+        </ScrollViewer>
+
+    </DockPanel>
+</Window>

@@ -8,15 +8,18 @@
     <DockPanel Margin="10">
 
         <!-- Top bar: Open button + disk name/ID, mirrors frmMain's cmdOpen / txtDiskName / txtDiskID -->
-        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,12,140,10,60,*" Margin="0,0,0,10">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,10,Auto,10,Auto,10,Auto,12,140,10,60,*" Margin="0,0,0,10">
             <Button Grid.Column="0" Content="Open D64..." Click="OnOpenClicked" />
+            <Button Grid.Column="2" Content="Import File..." Click="OnImportClicked" />
+            <Button Grid.Column="4" Content="Export Selected..." Click="OnExportClicked" />
+            <Button Grid.Column="6" Content="BAM Editor..." Click="OnBamEditorClicked" />
 
-            <StackPanel Grid.Column="2" Orientation="Vertical">
+            <StackPanel Grid.Column="8" Orientation="Vertical">
                 <TextBlock Text="Disk Name" FontSize="11" Opacity="0.7" />
                 <TextBox Name="DiskNameBox" IsReadOnly="True" />
             </StackPanel>
 
-            <StackPanel Grid.Column="4" Orientation="Vertical">
+            <StackPanel Grid.Column="10" Orientation="Vertical">
                 <TextBlock Text="ID" FontSize="11" Opacity="0.7" />
                 <TextBox Name="DiskIdBox" IsReadOnly="True" />
             </StackPanel>

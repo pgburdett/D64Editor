@@ -60,6 +60,7 @@
 /run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net9.0/D64Editor.App.AssemblyInfoInputs.cache
 /run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net9.0/D64Editor.App.AssemblyInfo.cs
 /run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net9.0/D64Editor.App.csproj.CoreCompileInputs.cache
+/run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net9.0/D64Editor.App.sourcelink.json
 /run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net9.0/Avalonia/D64Editor.App.dll
 /run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net9.0/Avalonia/D64Editor.App.pdb
 /run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net9.0/refint/Avalonia/D64Editor.App.dll

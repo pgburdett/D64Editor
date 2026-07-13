@@ -29,26 +29,47 @@ dotnet run --project D64Editor.App
 - File type decoding ← `GETFILETYPE`
 - `D64BlockAllocator` — free-block search for writing new files ←
   `findFirstBlocktoUse` / `findNextBlocktoUse`
+- Block ownership + cross-link detection (`ComputeBlockOwners`) ← `getBlockOwners`
+- `ClearBlock` / `ReadBlock` / `WriteBlock` — raw block access for the Block Viewer
+- `ImportFile` / `ExportFile` ← `FileImport` / `FileExport` (plain PRG/SEQ/USR/REL/DEL
+  payloads; the P00 and T64 container-format detection isn't ported)
 
-## What's in the demo window (D64Editor.App)
+## What's in the demo windows (D64Editor.App)
 
-`MainWindow` ports the "browse a disk" slice of `frmMain`: Open button, disk
-name/ID display, directory listing, blocks-free/file-count summary. It's
-read-only — no save, no file import/export yet. This is meant to show the
-pattern (event handler → calls into `D64Image` → updates controls) so you can
-see how the rest of `frmMain`'s ~50 event handlers would follow the same shape.
+`MainWindow` ports `frmMain`'s disk-browsing and file-transfer slice: Open,
+Import File, Export Selected, disk name/ID display, directory listing,
+blocks-free/file-count summary. Saves after every import so changes aren't
+lost, same spirit as the original writing straight to the file on disk.
+
+`BamEditorWindow` ports `frmBAM`: a click-to-toggle grid of all 683 blocks
+(green = free, red = allocated), hover shows track/sector + owning file, menu
+has Allocate All / Unallocate All (protects 18/0 and 18/1, same as the
+original) / Clean Disk / Save, plus a mode switch (toggle allocation vs.
+view/edit bytes) matching the original's `optBlockEditMode`. The original
+hand-placed 683 Label controls in the VB6 designer (that's why `frmBAM.frm`
+was 16,000 lines) — here the grid is generated at runtime from `D64Image`'s
+own geometry instead.
+
+`BlockViewerWindow` ports `frmBlockViewer`: a 16x16 hex grid of the selected
+block's 256 bytes, click a byte (or arrow-key/Tab through them) and type its
+new hex value, Wipe Block, Save Changes to Block, Next/Previous block
+navigation, and C128 auto-boot sector detection. Opens from the BAM editor
+when it's in "view/edit bytes" mode.
+
+Together these show the pattern (event handler → calls into `D64Image` →
+updates controls) so the remaining forms can follow the same shape.
 
 ## Not yet ported
 
-- File import/export (`FileImport`, `FileExport` in frmMain — reads/writes
-  actual PRG/SEQ/REL data through the block chain)
-- The other 13 forms (BAM editor, block viewer, sector dump, memory viewer,
-  filename builder, cross-links, etc.)
-- Cross-link detection (`getBlockOwners`'s crosslink-flagging half — the
-  block-ownership walk itself is ported, the "flag it and pop up frmCrossLinks"
-  part isn't, since that's UI)
+- T64 and P00 container-format import (multi-file T64s were unsupported in
+  the original too — it explicitly rejects those)
+- 10 other forms (sector dump, memory viewer, filename builder, error
+  numbers, cross-links display, config, file properties, etc.)
+- The BAM editor's "safe clean" mode (skip the directory track when cleaning)
+  and its confirmation dialogs
 - GEOS-specific interpretation of bytes 0x15-0x1D (currently preserved
   byte-for-byte on round-trip, not decoded)
+- Drag-and-drop import (`DragDrop.bas`)
 
 ## A note on fidelity vs. cleanup
 

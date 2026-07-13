@@ -41,6 +41,7 @@ public partial class MainWindow : Window
         try
         {
             _image = D64Image.Load(path);
+            _image.ComputeBlockOwners();
             PopulateFrom(_image);
         }
         catch (InvalidDataException ex)
@@ -48,6 +49,87 @@ public partial class MainWindow : Window
             // Mirrors the original's "That is not a D64 file" MsgBox.
             FileCountLabel.Text = ex.Message;
         }
+    }
+
+    private void OnBamEditorClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+
+        new BamEditorWindow(_image).Show(this);
+    }
+
+    /// <summary>Ported from mnuFileImport_Click / FileImport (single-file path; no drag-drop, T64, or P00 handling).</summary>
+    private async void OnImportClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Import File into Disk Image",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("C64 Files") { Patterns = new[] { "*.prg", "*.seq", "*.usr", "*.rel", "*.del" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+            }
+        });
+
+        if (files.Count == 0) return;
+
+        string? path = files[0].TryGetLocalPath();
+        if (path is null) return;
+
+        try
+        {
+            byte[] bytes = await File.ReadAllBytesAsync(path);
+            _image.ImportFile(bytes, Path.GetFileName(path));
+            _image.Save();
+            PopulateFrom(_image);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Mirrors the original's "too big to fit" / "directory full" MsgBoxes.
+            FileCountLabel.Text = ex.Message;
+        }
+    }
+
+    /// <summary>Ported from the export menu item + FileExport, for the currently selected directory entry.</summary>
+    private async void OnExportClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+
+        int index = DirectoryList.SelectedIndex;
+        if (index < 0 || index >= _image.Entries.Count)
+        {
+            // Mirrors the original's "Highlight the files you want to export." MsgBox.
+            FileCountLabel.Text = "Select a file in the list to export.";
+            return;
+        }
+
+        var entry = _image.Entries[index];
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export File",
+            SuggestedFileName = D64Image.SuggestedExportFileName(entry)
+        });
+
+        string? path = file?.TryGetLocalPath();
+        if (path is null) return;
+
+        byte[] data = _image.ExportFile(entry);
+        await File.WriteAllBytesAsync(path, data);
     }
 
     private void PopulateFrom(D64Image image)
