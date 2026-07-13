@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "ETjFWl+RagA=",
+  "success": true,
+  "projectFilePath": "/run/media/pat/store/projects/D64Editor/D64Editor.Core/D64Editor.Core.csproj",
+  "expectedPackageFiles": [
+    "/home/pat/.nuget/packages/microsoft.aspnetcore.app.ref/9.0.17/microsoft.aspnetcore.app.ref.9.0.17.nupkg.sha512"
+  ],
+  "logs": []
+}
