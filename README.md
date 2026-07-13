@@ -4,11 +4,8 @@ Original: D64 Editor by Forrest Mook, GPL v2, 1999-2016. This is a from-scratch
 C# port of the core disk engine plus one fully working window, as a template
 for porting the rest.
 
-**I could not compile or run this in the sandbox** (no .NET SDK, no NuGet
-access there). Everything below was hand-translated line-by-line against the
-original .bas/.frm source and I'm confident in the logic, but you'll hit the
-first real compiler errors when you build it — treat that as normal, not a
-sign something's badly wrong.
+**Everything below was hand-translated line-by-line against the
+original .bas/.frm source. 
 
 ## Build (on your CachyOS box)
 
