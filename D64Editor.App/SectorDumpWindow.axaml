@@ -1,0 +1,28 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.SectorDumpWindow"
+        Title="Sector Dump"
+        Width="360" Height="200"
+        CanResize="False">
+
+    <StackPanel Margin="16" Spacing="12">
+
+        <TextBlock Text="Dump a single track/sector's 256 bytes to a file." TextWrapping="Wrap" />
+
+        <Grid ColumnDefinitions="Auto,8,80,20,Auto,8,80">
+            <TextBlock Grid.Column="0" Text="Track:" VerticalAlignment="Center" />
+            <!-- Mirrors cmbTrack -->
+            <NumericUpDown Grid.Column="2" Name="TrackBox" Minimum="1" Maximum="35" Value="1" ValueChanged="OnTrackChanged" />
+
+            <TextBlock Grid.Column="4" Text="Sector:" VerticalAlignment="Center" />
+            <!-- Mirrors cmbSector, range depends on the selected track -->
+            <NumericUpDown Grid.Column="6" Name="SectorBox" Minimum="0" Maximum="20" Value="0" />
+        </Grid>
+
+        <TextBlock Name="RangeHintLabel" Opacity="0.7" FontSize="11" />
+
+        <!-- Mirrors cmdDump -->
+        <Button Content="Dump to File..." Click="OnDumpClicked" HorizontalAlignment="Right" />
+
+    </StackPanel>
+</Window>

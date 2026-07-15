@@ -56,6 +56,22 @@ new hex value, Wipe Block, Save Changes to Block, Next/Previous block
 navigation, and C128 auto-boot sector detection. Opens from the BAM editor
 when it's in "view/edit bytes" mode.
 
+`SectorDumpWindow` ports `frmSectorDump`: pick a track/sector, dump that
+block's 256 raw bytes to a file. The original's Hex/Decimal display toggle
+for the track/sector pickers isn't ported — track and sector are always
+plain decimal (the underlying math was identical either way).
+
+`MemoryWindow` ports `frmMemory` — a staging area where files are collected
+and then batch-copied into the currently open disk, exported back out, or
+dropped. The original populated this list via a "copy to memory" action
+elsewhere in `frmMain` that wasn't part of the source reviewed for this port;
+here there's a direct "Add File..." picker instead. Selection uses Avalonia's
+native multi-select `ListBox` rather than the original's hand-rolled
+`Selected(i)` boolean array walked by `mnuInvertSelection`/`mnuSelectAllFiles`.
+Note: copying files in from here doesn't yet refresh the main window's
+directory listing — reopen the disk (or wire up a refresh callback) to see
+them.
+
 Together these show the pattern (event handler → calls into `D64Image` →
 updates controls) so the remaining forms can follow the same shape.
 
@@ -63,13 +79,15 @@ updates controls) so the remaining forms can follow the same shape.
 
 - T64 and P00 container-format import (multi-file T64s were unsupported in
   the original too — it explicitly rejects those)
-- 10 other forms (sector dump, memory viewer, filename builder, error
-  numbers, cross-links display, config, file properties, etc.)
+- 8 other forms (filename builder, error numbers, cross-links display,
+  config, file properties, etc.)
 - The BAM editor's "safe clean" mode (skip the directory track when cleaning)
   and its confirmation dialogs
 - GEOS-specific interpretation of bytes 0x15-0x1D (currently preserved
   byte-for-byte on round-trip, not decoded)
 - Drag-and-drop import (`DragDrop.bas`)
+- `frmMemory`'s original population path (whatever elsewhere in `frmMain`
+  fed files into the memory cache before this port's "Add File..." button)
 
 ## A note on fidelity vs. cleanup
 

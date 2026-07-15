@@ -3,7 +3,6 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using D64Editor.Core;
 
-
 namespace D64Editor.App;
 
 /// <summary>
@@ -99,6 +98,28 @@ public partial class MainWindow : Window
             // Mirrors the original's "too big to fit" / "directory full" MsgBoxes.
             FileCountLabel.Text = ex.Message;
         }
+    }
+
+    private void OnSectorDumpClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+
+        new SectorDumpWindow(_image).Show(this);
+    }
+
+    private void OnMemoryClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+
+        new MemoryWindow(_image).Show(this);
     }
 
     /// <summary>Ported from the export menu item + FileExport, for the currently selected directory entry.</summary>

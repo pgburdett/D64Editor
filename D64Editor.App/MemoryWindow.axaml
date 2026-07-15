@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.MemoryWindow"
+        Title="Memory (File Staging)"
+        Width="480" Height="440"
+        MinWidth="360" MinHeight="300">
+
+    <DockPanel Margin="10">
+
+        <!-- Mirrors mnuFile popup menu: select all / invert / deselect / remove / export / copy into D64 -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Memory">
+                <MenuItem Header="Add File..." Click="OnAddClicked" />
+                <Separator />
+                <MenuItem Header="Select All Files" Click="OnSelectAllClicked" />
+                <MenuItem Header="Invert Selection" Click="OnInvertSelectionClicked" />
+                <MenuItem Header="Unselect All Files" Click="OnUnselectAllClicked" />
+                <Separator />
+                <MenuItem Header="Export Selected to File..." Click="OnExportClicked" />
+                <MenuItem Header="Remove Selected from Memory" Click="OnRemoveClicked" />
+                <Separator />
+                <MenuItem Header="Copy Selected into Disk" Click="OnCopyIntoDiskClicked" FontWeight="Bold" />
+            </MenuItem>
+        </Menu>
+
+        <TextBlock DockPanel.Dock="Bottom" Name="StatusLabel" Margin="0,8,0,0" Opacity="0.8" />
+
+        <!-- Mirrors listMemory -->
+        <ListBox Name="MemoryList" SelectionMode="Multiple" />
+
+    </DockPanel>
+</Window>
