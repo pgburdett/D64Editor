@@ -7,7 +7,7 @@ for porting the rest.
 **Everything below was hand-translated line-by-line against the
 original .bas/.frm source. 
 
-## Build (on your CachyOS box)
+## Build (on your Garuda Dragonize (ARCH) or Windows 11 box)
 
 ```
 sudo pacman -S dotnet-sdk    # if you don't already have it
