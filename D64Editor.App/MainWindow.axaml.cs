@@ -100,6 +100,26 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Ported from mnuSaveFile_Click.</summary>
+    private void OnSaveClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+
+        _image.Save();
+        FileCountLabel.Text = "Disk saved.";
+    }
+
+    /// <summary>Ported from mnuQuit_Click.</summary>
+    private void OnQuitClicked(object? sender, RoutedEventArgs e) => Close();
+
+    /// <summary>Ported from mnuVersion_Click.</summary>
+    private void OnVersionClicked(object? sender, RoutedEventArgs e) =>
+        FileCountLabel.Text = "D64 Editor — C#/.NET 8/Avalonia port. Original by Forrest Mook, 1999-2016, GPL v2.";
+
     private void OnSectorDumpClicked(object? sender, RoutedEventArgs e)
     {
         if (_image is null)
@@ -162,16 +182,12 @@ public partial class MainWindow : Window
             ? "35 TRACK D64 FILE + ERROR INFO"
             : "35 TRACK D64 FILE (STANDARD)";
 
-        DirectoryList.ItemsSource = image.Entries.Select(FormatEntry).ToList();
+        DirectoryList.ItemsSource = null;
+        DirectoryList.ItemsSource = image.Entries;
 
         string filesWord = image.Entries.Count == 1 ? "file" : "files";
         FileCountLabel.Text = $"D64 contains {image.Entries.Count} {filesWord} ({BuildTypeBreakdown(image)})";
     }
-
-    /// <summary>Mirrors the "displayfilename + tab + track + tab + sector + tab + size + tab + type" row format from LoadFile.</summary>
-    private static string FormatEntry(D64FileEntry entry) =>
-        $"\"{entry.FileName}\"".PadRight(20) +
-        $"{entry.StartTrack,3} {entry.StartSector,3}   {entry.SizeInBlocks,4}   {entry.TypeDisplay}";
 
     /// <summary>Mirrors updateFileCount's "(N PRG,N SEQ,...)" breakdown string.</summary>
     private static string BuildTypeBreakdown(D64Image image)
