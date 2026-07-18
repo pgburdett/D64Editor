@@ -40,14 +40,57 @@ public partial class MainWindow : Window
         try
         {
             _image = D64Image.Load(path);
+            _image.Interleave = AppSettings.Interleave;
+            _image.PreferredStartTrack = AppSettings.StartingTrack;
+            _image.PreferredStartSector = AppSettings.StartingSector;
             _image.ComputeBlockOwners();
             PopulateFrom(_image);
+
+            // Ported from getBlockOwners' showcrosslinks flag: the original popped up
+            // frmCrossLinks automatically when it found any, unless disabled in Config.
+            if (!AppSettings.DisableCrosslinkCheck && _image.CrossLinkWarnings.Count > 0)
+                new CrossLinksWindow(_image).Show(this);
         }
         catch (InvalidDataException ex)
         {
             // Mirrors the original's "That is not a D64 file" MsgBox.
             FileCountLabel.Text = ex.Message;
         }
+    }
+
+    private void OnConfigClicked(object? sender, RoutedEventArgs e) => new ConfigWindow(_image).Show(this);
+
+    private void OnFilePropertiesClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+
+        int index = DirectoryList.SelectedIndex;
+        if (index < 0 || index >= _image.Entries.Count)
+        {
+            FileCountLabel.Text = "Select a file in the list to modify.";
+            return;
+        }
+
+        new FilePropertiesWindow(_image, _image.Entries[index]).Show(this);
+    }
+
+    /// <summary>Ported from the "View Error Blocks" path: opens the BAM editor pre-set to error-code mode.</summary>
+    private void OnErrorBlocksClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        if (!_image.HasErrorInfo)
+        {
+            FileCountLabel.Text = "This disk has no error-info section (needs to be a 175531-byte image).";
+            return;
+        }
+
+        new BamEditorWindow(_image, startInErrorMode: true).Show(this);
+    }
+
+    private void OnCrossLinksClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        new CrossLinksWindow(_image).Show(this);
     }
 
     private void OnBamEditorClicked(object? sender, RoutedEventArgs e)

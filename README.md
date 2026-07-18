@@ -34,6 +34,10 @@ dotnet run --project D64Editor.App
 - `ImportFile` / `ExportFile` ← `FileImport` / `FileExport` (plain PRG/SEQ/USR/REL/DEL
   payloads; the P00 and T64 container-format detection isn't ported)
 - `PetsciiConverter` ← the character-transform loop in `ViewSeqFile`
+- `ErrorInfo` (read/write the 683-byte error-info section on 175531-byte
+  images) + `D64ErrorCodes` ← `ErrorCodeBlocks` and frmErrorNumbers' error table
+- `PreferredStartTrack`/`PreferredStartSector` on `D64Image`, consulted by
+  `ImportFile` ← `UserSpecifiedFirstTrack`/`UserSpecifiedFirstSector` from Config
 
 ## What's in the demo windows (D64Editor.App)
 
@@ -85,8 +89,29 @@ Note: copying files in from here doesn't yet refresh the main window's
 directory listing — reopen the disk (or wire up a refresh callback) to see
 them.
 
+`ConfigWindow` ports `frmConfig`: import interleave, starting track/sector,
+disable cross-link checking, safe disk clean, and SEQ viewer's default
+character mode. Settings live in the static `AppSettings` class (one place
+instead of the half-dozen scattered globals the original wrote into) and get
+applied to a `D64Image` immediately when set. The separator-line and
+Filename Builder settings aren't here since that form isn't ported yet.
+
+`FilePropertiesWindow` ports `frmFileProperties`: edit a directory entry's
+filename, starting track/sector, size, type, locked/splat flags directly.
+Much less code than the original needed, since `D64FileEntry` already models
+these as real fields instead of a hand-assembled binary string. The
+"Filename Builder..." button is present but disabled until that form exists.
+
+`ErrorNumbersWindow` + `CrossLinksWindow` port `frmErrorNumbers` and
+`frmCrossLinks`. Error Numbers opens from the BAM editor's new third mode
+("SET ERROR CODE" — the original triggered this via a caption-check hack on
+the same BAM editor form; here it's just an honest third mode) and only
+applies to 175531-byte images with an error-info section. Cross-Links opens
+automatically after loading a disk if any cross-linked blocks are found,
+same as the original's automatic popup, unless disabled in Config.
+
 Together these show the pattern (event handler → calls into `D64Image` →
-updates controls) so the remaining forms can follow the same shape.
+updates controls) so the remaining form can follow the same shape.
 
 ## Using a real PETSCII/CBM64 font
 
@@ -106,20 +131,20 @@ their ASCII/Latin-1 approximations.
 
 - T64 and P00 container-format import (multi-file T64s were unsupported in
   the original too — it explicitly rejects those)
-- 7 other forms: Filename Builder (`frmFilenameBuilder` — a substantial one,
-  it's the PETSCII character-art editor used to build directory entries like
-  the "USE 38 TRACKS COPY" example disk), error numbers, cross-links display,
-  config, file properties
+- Filename Builder (`frmFilenameBuilder`) — the PETSCII character-art editor
+  used to build directory entries like the "USE 38 TRACKS COPY" example disk.
+  This is the one substantial form left; it's a big one (6,196 lines in the
+  original, mostly a hand-placed PETSCII character grid) and worth scoping
+  as its own pass.
 - 40-track disk images (the original only partially supported these; this
-  port is standard 35-track only — flag if you want this added, since it
-  came up with a real disk)
-- The BAM editor's "safe clean" mode (skip the directory track when cleaning)
-  and its confirmation dialogs
+  port is standard 35-track only)
 - GEOS-specific interpretation of bytes 0x15-0x1D (currently preserved
   byte-for-byte on round-trip, not decoded)
 - Drag-and-drop import (`DragDrop.bas`)
 - `frmMemory`'s original population path (whatever elsewhere in `frmMain`
   fed files into the memory cache before this port's "Add File..." button)
+- Config's separator-line setting and Filename Builder-related options
+  (belong with that form)
 
 ## A note on fidelity vs. cleanup
 

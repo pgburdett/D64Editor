@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.ConfigWindow"
+        Title="Configuration"
+        Width="380" Height="360"
+        CanResize="False">
+
+    <StackPanel Margin="16" Spacing="10">
+
+        <TextBlock Text="File Import" FontWeight="Bold" />
+        <Grid ColumnDefinitions="Auto,8,60,20,Auto,8,60">
+            <TextBlock Grid.Column="0" Text="Starting Track:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Name="StartTrackBox" Minimum="1" Maximum="35" />
+            <TextBlock Grid.Column="4" Text="Starting Sector:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="6" Name="StartSectorBox" Minimum="0" Maximum="20" />
+        </Grid>
+        <Grid ColumnDefinitions="Auto,8,60">
+            <TextBlock Grid.Column="0" Text="Interleave:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Name="InterleaveBox" Minimum="1" Maximum="15" />
+        </Grid>
+
+        <Separator Margin="0,6,0,6" />
+
+        <TextBlock Text="Options" FontWeight="Bold" />
+        <!-- Mirrors checkDisableCrosslinkCheck / checkEnableSafeDiskClean / checkConvertToASCII -->
+        <CheckBox Name="DisableCrosslinkCheckBox" Content="Disable cross-link checking" />
+        <CheckBox Name="SafeCleanBox" Content="Safe Disk Clean (skip directory track when cleaning)" />
+        <CheckBox Name="ConvertToAsciiBox" Content="Convert SEQ files to ASCII by default" />
+
+        <Button Content="Enable Changes" Click="OnEnableChangesClicked" HorizontalAlignment="Right" Margin="0,10,0,0" />
+
+    </StackPanel>
+</Window>

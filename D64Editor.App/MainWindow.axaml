@@ -19,7 +19,7 @@
                 <MenuItem Header="_Revert" IsEnabled="False" />
                 <Separator />
                 <MenuItem Header="_Create Blank D64" IsEnabled="False" />
-                <MenuItem Header="Configuration _Menu" IsEnabled="False" />
+                <MenuItem Header="Configuration _Menu" Click="OnConfigClicked" />
                 <Separator />
                 <MenuItem Header="_Quit" Click="OnQuitClicked" />
             </MenuItem>
@@ -29,7 +29,7 @@
                 <MenuItem Header="Copy Files to _Memory..." Click="OnMemoryClicked" />
                 <MenuItem Header="Export _DIR to TXT" IsEnabled="False" />
                 <Separator />
-                <MenuItem Header="Modify File _Properties" IsEnabled="False" />
+                <MenuItem Header="Modify File _Properties" Click="OnFilePropertiesClicked" />
                 <MenuItem Header="_Scratch File" IsEnabled="False" />
                 <MenuItem Header="_Unscratch File" IsEnabled="False" />
                 <MenuItem Header="_Wipe File" IsEnabled="False" />
@@ -41,7 +41,8 @@
             <MenuItem Header="_View">
                 <MenuItem Header="_View File Chain" IsEnabled="False" />
                 <MenuItem Header="_SEQ File Viewer" Click="OnSeqViewerClicked" />
-                <MenuItem Header="View _Error Blocks" IsEnabled="False" />
+                <MenuItem Header="View _Error Blocks" Click="OnErrorBlocksClicked" />
+                <MenuItem Header="View _Cross-Links" Click="OnCrossLinksClicked" />
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_Version" Click="OnVersionClicked" />

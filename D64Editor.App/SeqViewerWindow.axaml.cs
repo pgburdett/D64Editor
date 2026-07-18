@@ -28,6 +28,9 @@ public partial class SeqViewerWindow : Window
 
         FileNameLabel.Text = $"\"{entry.FileName}\"";
         _rawBytes = _image.ExportFile(entry);
+
+        AsciiRadio.IsChecked = AppSettings.ConvertToAsciiDefault;
+        PetasciiRadio.IsChecked = !AppSettings.ConvertToAsciiDefault;
         Refresh();
     }
 

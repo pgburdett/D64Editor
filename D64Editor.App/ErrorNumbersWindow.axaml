@@ -1,0 +1,15 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.ErrorNumbersWindow"
+        Title="Error Numbers"
+        Width="420" Height="360"
+        CanResize="False">
+
+    <DockPanel Margin="12">
+        <TextBlock DockPanel.Dock="Top" Name="BlockLabel" FontWeight="Bold" Margin="0,0,0,8" />
+        <TextBlock DockPanel.Dock="Top" Text="Code  Error  Type   1541 error description" FontFamily="monospace" FontWeight="Bold" Margin="0,0,0,4" />
+        <Button DockPanel.Dock="Bottom" Content="Save Changes" Click="OnSaveChangesClicked" Margin="0,10,0,0" HorizontalAlignment="Right" />
+        <!-- Mirrors the errorCode(1..15) option button array -->
+        <ListBox Name="ErrorList" FontFamily="monospace" />
+    </DockPanel>
+</Window>

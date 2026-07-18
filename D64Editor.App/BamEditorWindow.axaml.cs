@@ -24,7 +24,12 @@ public partial class BamEditorWindow : Window
     private readonly D64Image _image;
     private readonly TextBlock[] _cells = new TextBlock[D64Image.TotalBlocks];
     private bool _hexMode;
-    private bool _blockViewMode;
+
+    /// <summary>Ported from lblBAM_Click's mode switch (optBlockEditMode.Value / the "Error Blocks
+    /// Viewer" caption check). The original only had two real modes plus a caption-based hack for
+    /// the third; here it's just a third explicit mode.</summary>
+    private enum ClickMode { ToggleAllocation, ViewBlock, SetErrorCode }
+    private ClickMode _mode = ClickMode.ToggleAllocation;
 
     private static readonly IBrush NormalBrush = new SolidColorBrush(Color.Parse("#2244AA"));
     private static readonly IBrush DirTrackBrush = new SolidColorBrush(Color.Parse("#CC2222"));
@@ -32,11 +37,14 @@ public partial class BamEditorWindow : Window
 
     public BamEditorWindow() : this(new D64Image()) { }
 
-    public BamEditorWindow(D64Image image)
+    public BamEditorWindow(D64Image image, bool startInErrorMode = false)
     {
         _image = image;
         InitializeComponent();
         BuildGrid();
+
+        if (startInErrorMode)
+            ErrorCodeModeRadio.IsChecked = true; // triggers OnSetErrorModeClicked via the Checked event
     }
 
     private void BuildGrid()
@@ -169,23 +177,30 @@ public partial class BamEditorWindow : Window
 
     private string FormatNumber(int n) => _hexMode ? n.ToString("X2") : n.ToString("D2");
 
-    /// <summary>Ported from lblBAM_Click: toggles allocation, or opens the Block Viewer depending on mode.</summary>
+    /// <summary>Ported from lblBAM_Click: toggles allocation, opens the Block Viewer, or opens the
+    /// error-code picker, depending on mode.</summary>
     private void OnCellClicked(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Border { Tag: int block }) return;
 
-        if (_blockViewMode)
+        switch (_mode)
         {
-            new BlockViewerWindow(_image, block).Show(this);
-            return;
+            case ClickMode.ViewBlock:
+                new BlockViewerWindow(_image, block).Show(this);
+                return;
+            case ClickMode.SetErrorCode:
+                new ErrorNumbersWindow(_image, block).Show(this);
+                return;
+            default:
+                _image.AllocatedBlocks[block] = !_image.AllocatedBlocks[block];
+                _cells[block].Text = _image.AllocatedBlocks[block] ? "*" : "";
+                return;
         }
-
-        _image.AllocatedBlocks[block] = !_image.AllocatedBlocks[block];
-        _cells[block].Text = _image.AllocatedBlocks[block] ? "*" : "";
     }
 
-    private void OnSetToggleModeClicked(object? sender, RoutedEventArgs e) => _blockViewMode = false;
-    private void OnSetViewModeClicked(object? sender, RoutedEventArgs e) => _blockViewMode = true;
+    private void OnSetToggleModeClicked(object? sender, RoutedEventArgs e) => _mode = ClickMode.ToggleAllocation;
+    private void OnSetViewModeClicked(object? sender, RoutedEventArgs e) => _mode = ClickMode.ViewBlock;
+    private void OnSetErrorModeClicked(object? sender, RoutedEventArgs e) => _mode = ClickMode.SetErrorCode;
 
     /// <summary>Ported from lblBAM_MouseMove: shows track/sector and block owner for the hovered cell.</summary>
     private void OnCellHovered(object? sender, PointerEventArgs e)
@@ -220,12 +235,19 @@ public partial class BamEditorWindow : Window
         }
     }
 
-    /// <summary>Ported from mnuCleanDisk_Click: zeroes every unallocated block.</summary>
+    /// <summary>Ported from mnuCleanDisk_Click: zeroes every unallocated block, skipping the
+    /// directory track (18) when AppSettings.SafeClean is on, matching the original's safeClean flag.</summary>
     private void OnCleanDiskClicked(object? sender, RoutedEventArgs e)
     {
         int cleaned = 0;
         for (int i = 0; i < D64Image.TotalBlocks; i++)
         {
+            if (AppSettings.SafeClean)
+            {
+                var (track, _) = D64Image.BlockToTrackSector(i);
+                if (track == 18) continue;
+            }
+
             if (!_image.AllocatedBlocks[i])
             {
                 _image.ClearBlock(i);

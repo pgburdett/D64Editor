@@ -1,0 +1,12 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.CrossLinksWindow"
+        Title="Cross-Linked Blocks"
+        Width="480" Height="320">
+
+    <DockPanel Margin="10">
+        <TextBlock DockPanel.Dock="Top" Name="SummaryLabel" Margin="0,0,0,8" />
+        <!-- Mirrors frmCrossLinks' List1, populated by getBlockOwners' crosslink detection -->
+        <ListBox Name="WarningsList" FontFamily="monospace" />
+    </DockPanel>
+</Window>
