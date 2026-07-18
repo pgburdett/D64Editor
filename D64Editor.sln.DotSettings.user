@@ -8,4 +8,6 @@
   &lt;Assembly Path="/usr/share/dotnet/shared/Microsoft.NETCore.App/9.0.17/System.Runtime.dll" /&gt;
 &lt;/AssemblyExplorer&gt;</s:String>
 	<s:Boolean x:Key="/Default/Environment/Hierarchy/Build/BuildTool/RecentMonoExePaths/=_002Fusr_002Fbin_002Fmono_002Dsgen/@EntryIndexedValue">True</s:Boolean>
-	<s:String x:Key="/Default/Environment/Hierarchy/Build/BuildTool/MonoExePath/@EntryValue">/usr/bin/mono-sgen</s:String></wpf:ResourceDictionary>
+	<s:String x:Key="/Default/Environment/Hierarchy/Build/BuildTool/MonoExePath/@EntryValue">/usr/bin/mono-sgen</s:String>
+	
+	</wpf:ResourceDictionary>

@@ -27,6 +27,7 @@ public partial class BlockViewerWindow : Window
 {
     private readonly D64Image _image;
     private readonly TextBlock[] _cells = new TextBlock[256];
+    private readonly TextBlock[] _asciiCells = new TextBlock[256];
     private byte[] _buffer = new byte[256];
     private int _block;
     private int _selectedOffset;
@@ -41,6 +42,7 @@ public partial class BlockViewerWindow : Window
         _image = image;
         InitializeComponent();
         BuildGrid();
+        BuildAsciiPanel();
         LoadBlock(startBlock);
     }
 
@@ -73,6 +75,35 @@ public partial class BlockViewerWindow : Window
         }
     }
 
+    /// <summary>Mirrors the original's ASCII column next to the hex grid (chkViewASCII). No CBM64
+    /// font is available here, so bytes are shown as printable ASCII where possible and '.'
+    /// otherwise, rather than true PETSCII glyphs.</summary>
+    private void BuildAsciiPanel()
+    {
+        for (int row = 0; row < 16; row++)
+        {
+            var rowPanel = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 0 };
+            for (int col = 0; col < 16; col++)
+            {
+                int offset = row * 16 + col;
+                var cell = new TextBlock
+                {
+                    Text = ".",
+                    Width = 12,
+                    TextAlignment = Avalonia.Media.TextAlignment.Center,
+                    FontFamily = "monospace",
+                    Padding = new Thickness(1)
+                };
+                _asciiCells[offset] = cell;
+                rowPanel.Children.Add(cell);
+            }
+            AsciiPanel.Children.Add(rowPanel);
+        }
+    }
+
+    private void OnViewAsciiToggled(object? sender, RoutedEventArgs e) =>
+        AsciiPanel.IsVisible = ViewAsciiCheckBox.IsChecked == true;
+
     /// <summary>Ported from the shared Get-loop in lblBAM_Click / cmdNextBlock_Click / cmdPreviousBlock_Click.</summary>
     private void LoadBlock(int block)
     {
@@ -80,7 +111,10 @@ public partial class BlockViewerWindow : Window
         _buffer = _image.ReadBlock(_block);
 
         for (int i = 0; i < 256; i++)
+        {
             _cells[i].Text = _buffer[i].ToString("X2");
+            _asciiCells[i].Text = ToPrintableChar(_buffer[i]);
+        }
 
         var (track, sector) = D64Image.BlockToTrackSector(_block);
         BlockInfoLabel.Text = $"BLOCK #{_block}  (TRACK {track}, SECTOR {sector})";
@@ -146,12 +180,15 @@ public partial class BlockViewerWindow : Window
         }
     }
 
+    private static string ToPrintableChar(byte b) => b is >= 0x20 and <= 0x7E ? ((char)b).ToString() : ".";
+
     private void CommitByteEdit()
     {
         if (byte.TryParse(ByteEditBox.Text, System.Globalization.NumberStyles.HexNumber, null, out byte value))
         {
             _buffer[_selectedOffset] = value;
             _cells[_selectedOffset].Text = value.ToString("X2");
+            _asciiCells[_selectedOffset].Text = ToPrintableChar(value);
         }
     }
 
@@ -168,6 +205,7 @@ public partial class BlockViewerWindow : Window
         {
             _buffer[i] = 0;
             _cells[i].Text = "00";
+            _asciiCells[i].Text = ".";
         }
         ByteEditBox.Text = "00";
     }

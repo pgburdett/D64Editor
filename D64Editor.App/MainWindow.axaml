@@ -40,7 +40,7 @@
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_View File Chain" IsEnabled="False" />
-                <MenuItem Header="_SEQ File Viewer" IsEnabled="False" />
+                <MenuItem Header="_SEQ File Viewer" Click="OnSeqViewerClicked" />
                 <MenuItem Header="View _Error Blocks" IsEnabled="False" />
             </MenuItem>
             <MenuItem Header="_Help">

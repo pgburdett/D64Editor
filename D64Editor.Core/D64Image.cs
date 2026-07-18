@@ -17,7 +17,7 @@ public class D64Image
 {
     public const int SectorSize = 256;
     public const int TrackCount = 35;
-    public const int TotalBlocks = 683; // 17*21 + 7*19 + 6*18 + 5*17
+    public const int TotalBlocks = 683; // 17*21 + 7*19 + 6*18 + 5*17 (664 usable which is 683-track 18 sectors(
 
     // Valid on-disk sizes for a standard 35-track image (matches the
     // FileLen() checks in LoadFile — this port doesn't attempt 40-track
@@ -474,7 +474,7 @@ public class D64Image
     // ---------------------------------------------------------------
 
     /// <summary>
-    /// Writes a raw file into the first available free space on the disk and adds a
+    /// Writes a raw file into the first available free sectpr on the disk and adds a
     /// directory entry for it. Ported from FileImport's block-chaining loop
     /// (findFirstBlocktoUse / findNextBlocktoUse + the Do-Until-bites2go loop).
     /// Call WriteDirectory()/WriteBam() (done automatically here) and then Save()
@@ -482,12 +482,12 @@ public class D64Image
     /// </summary>
     public D64FileEntry ImportFile(byte[] fileBytes, string hostFileName, D64FileType? typeOverride = null)
     {
-        int sectorsNeeded = (Entries.Count + 1 + 7) / 8;
+        var sectorsNeeded = (Entries.Count + 1 + 7) / 8;
         if (sectorsNeeded > 18)
             throw new InvalidOperationException("Sorry, you can't add a file to the disk. The directory is completely full.");
 
-        string baseName = System.IO.Path.GetFileNameWithoutExtension(hostFileName).ToUpperInvariant();
-        string ext = System.IO.Path.GetExtension(hostFileName).TrimStart('.').ToUpperInvariant();
+        var baseName = System.IO.Path.GetFileNameWithoutExtension(hostFileName).ToUpperInvariant();
+        var ext = System.IO.Path.GetExtension(hostFileName).TrimStart('.').ToUpperInvariant();
         D64FileType type = typeOverride ?? ext switch
         {
             "SEQ" => D64FileType.Seq,
@@ -498,7 +498,7 @@ public class D64Image
         };
         if (baseName.Length > 16) baseName = baseName[..16];
 
-        int blocksNeeded = Math.Max(1, (int)Math.Ceiling(fileBytes.Length / 254.0));
+        var blocksNeeded = Math.Max(1, (int)Math.Ceiling(fileBytes.Length / 254.0));
         if (blocksNeeded > BlocksFree)
             throw new InvalidOperationException($"'{hostFileName}' is too big to fit on the disk.");
 
@@ -587,10 +587,10 @@ public class D64Image
     /// <summary>Suggested host filename for an exported entry, e.g. "game.prg". Ported from FileExport's name-sanitizing loop.</summary>
     public static string SuggestedExportFileName(D64FileEntry entry)
     {
-        char[] invalid = { '*', '/', '\\', '?', '|', ':', '<', '>', '\0', '"' };
-        string clean = new string(entry.FileName.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        char[] invalid = ['*', '/', '\\', '?', '|', ':', '<', '>', '\0', '"'];
+        var clean = new string(entry.FileName.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
         if (clean.Length == 0) clean = "_";
-        string ext = entry.FileType == D64FileType.Unknown ? "___" : entry.FileType.ToDisplayCode();
+        var ext = entry.FileType == D64FileType.Unknown ? "___" : entry.FileType.ToDisplayCode();
         return $"{clean}.{ext}".ToLowerInvariant();
     }
 }

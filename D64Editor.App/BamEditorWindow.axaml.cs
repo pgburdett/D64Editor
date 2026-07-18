@@ -11,26 +11,25 @@ namespace D64Editor.App;
 /// Ported from frmBAM.frm. The original hand-placed 683 individual Label
 /// controls (lblBAM(0) .. lblBAM(682)) in the VB6 designer, one per block,
 /// which is why that .frm file was 16,000 lines. Here the grid is generated
-/// from D64Image's geometry (SectorsPerTrack / TrackSectorToBlock) instead —
-/// same visual, no hand-placed controls, and it can't drift out of sync with
-/// the actual disk format the way a hard-coded designer layout could.
+/// from D64Image's geometry (SectorsPerTrack / TrackSectorToBlock) instead.
 ///
-/// Block-viewer integration (lblBAM_Click's optBlockEditMode branch, which
-/// opened frmBlockViewer) is wired up via the "Click a block to" menu —
-/// switch to "View/edit bytes" mode and clicking a cell opens the Block
-/// Viewer instead of toggling allocation, same behavior as the original.
+/// Layout matches the original: columns are tracks (1-35), rows are sectors
+/// (0-20, with higher tracks simply not having cells past their sector
+/// count) — earlier ports of this window had that transposed, which is
+/// worth calling out since it's an easy mistake to reintroduce if this file
+/// gets touched again.
 /// </summary>
 public partial class BamEditorWindow : Window
 {
     private readonly D64Image _image;
-    private readonly Border[] _cells = new Border[D64Image.TotalBlocks];
+    private readonly TextBlock[] _cells = new TextBlock[D64Image.TotalBlocks];
+    private bool _hexMode;
+    private bool _blockViewMode;
 
-    private static readonly IBrush AllocatedBrush = new SolidColorBrush(Color.Parse("#C0392B"));
-    private static readonly IBrush FreeBrush = new SolidColorBrush(Color.Parse("#2E7D32"));
-    private static readonly IBrush CellBorderBrush = new SolidColorBrush(Color.Parse("#00000000"));
+    private static readonly IBrush NormalBrush = new SolidColorBrush(Color.Parse("#2244AA"));
+    private static readonly IBrush DirTrackBrush = new SolidColorBrush(Color.Parse("#CC2222"));
+    private static readonly IBrush GridLineBrush = new SolidColorBrush(Color.Parse("#FFD700"));
 
-    // Designer-only constructor, required by Avalonia's XAML loader; the
-    // parameterless path is never actually shown (see OnBamEditorClicked).
     public BamEditorWindow() : this(new D64Image()) { }
 
     public BamEditorWindow(D64Image image)
@@ -42,45 +41,133 @@ public partial class BamEditorWindow : Window
 
     private void BuildGrid()
     {
+        const int maxSectors = 21; // tracks 1-17
+
+        GridPanel.RowDefinitions.Clear();
+        GridPanel.ColumnDefinitions.Clear();
+        GridPanel.Children.Clear();
+
+        // Row 0 / Column 0 are headers; tracks run across columns 1-35, sectors down rows 1-21.
+        GridPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        for (int t = 1; t <= D64Image.TrackCount; t++)
+            GridPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+
+        GridPanel.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        for (int s = 0; s < maxSectors; s++)
+            GridPanel.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        AddHeaderCell("TRACK ►\n▼ SECTOR", 0, 0);
+
+        for (int t = 1; t <= D64Image.TrackCount; t++)
+            AddTrackHeader(t);
+
+        for (int s = 0; s < maxSectors; s++)
+            AddSectorHeader(s);
+
         for (int track = 1; track <= D64Image.TrackCount; track++)
         {
-            var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 2 };
-
-            row.Children.Add(new TextBlock
-            {
-                Text = track.ToString().PadLeft(2, '0'),
-                Width = 24,
-                FontFamily = "monospace",
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            });
-
             int sectors = D64Image.SectorsPerTrack(track);
             for (int sector = 0; sector < sectors; sector++)
             {
                 int block = D64Image.TrackSectorToBlock(track, sector);
                 var cell = new Border
                 {
-                    Width = 16,
-                    Height = 16,
-                    CornerRadius = new CornerRadius(2),
+                    Width = 18,
+                    Height = 18,
+                    Margin = new Thickness(1),
+                    Background = track == 18 ? DirTrackBrush : NormalBrush,
+                    BorderBrush = GridLineBrush,
                     BorderThickness = new Thickness(0.5),
-                    BorderBrush = CellBorderBrush,
-                    Background = _image.AllocatedBlocks.Length > 0 && _image.AllocatedBlocks[block] ? AllocatedBrush : FreeBrush,
                     Tag = block
                 };
+                var text = new TextBlock
+                {
+                    Text = _image.AllocatedBlocks.Length > 0 && _image.AllocatedBlocks[block] ? "*" : "",
+                    Foreground = Brushes.White,
+                    FontFamily = "monospace",
+                    FontSize = 11,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                };
+                cell.Child = text;
                 cell.PointerPressed += OnCellClicked;
                 cell.PointerEntered += OnCellHovered;
-                _cells[block] = cell;
-                row.Children.Add(cell);
-            }
+                _cells[block] = text;
+                text.Tag = cell; // so toggling can flip the cell's own background if ever needed
 
-            GridPanel.Children.Add(row);
+                Grid.SetColumn(cell, track);
+                Grid.SetRow(cell, sector + 1);
+                GridPanel.Children.Add(cell);
+            }
         }
     }
 
-    /// <summary>Ported from lblBAM_Click's mode switch (optBlockEditMode.Value). When true, clicking a
-    /// block opens the Block Viewer (frmBlockViewer) instead of toggling allocation.</summary>
-    private bool _blockViewMode;
+    private void AddHeaderCell(string text, int col, int row)
+    {
+        var block = new TextBlock
+        {
+            Text = text,
+            FontWeight = Avalonia.Media.FontWeight.Bold,
+            FontSize = 9,
+            TextAlignment = Avalonia.Media.TextAlignment.Center,
+            Margin = new Thickness(2)
+        };
+        Grid.SetColumn(block, col);
+        Grid.SetRow(block, row);
+        GridPanel.Children.Add(block);
+    }
+
+    private void AddTrackHeader(int track)
+    {
+        var block = new TextBlock
+        {
+            Text = FormatNumber(track),
+            FontFamily = "monospace",
+            FontSize = 10,
+            Width = 18,
+            TextAlignment = Avalonia.Media.TextAlignment.Center,
+            Name = $"TrackHeader{track}"
+        };
+        Grid.SetColumn(block, track);
+        Grid.SetRow(block, 0);
+        GridPanel.Children.Add(block);
+    }
+
+    private void AddSectorHeader(int sector)
+    {
+        var block = new TextBlock
+        {
+            Text = FormatNumber(sector),
+            FontFamily = "monospace",
+            FontSize = 10,
+            Height = 18,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Name = $"SectorHeader{sector}"
+        };
+        Grid.SetColumn(block, 0);
+        Grid.SetRow(block, sector + 1);
+        GridPanel.Children.Add(block);
+    }
+
+    /// <summary>Ported from optHex_Click / optDecimal_Click.</summary>
+    private void OnNumberBaseChanged(object? sender, RoutedEventArgs e)
+    {
+        _hexMode = HexRadio.IsChecked == true;
+        RefreshHeaders();
+    }
+
+    private void RefreshHeaders()
+    {
+        for (int t = 1; t <= D64Image.TrackCount; t++)
+            if (GridPanel.Children.FirstOrDefault(c => c is TextBlock tb && tb.Name == $"TrackHeader{t}") is TextBlock tHeader)
+                tHeader.Text = FormatNumber(t);
+
+        for (int s = 0; s < 21; s++)
+            if (GridPanel.Children.FirstOrDefault(c => c is TextBlock tb && tb.Name == $"SectorHeader{s}") is TextBlock sHeader)
+                sHeader.Text = FormatNumber(s);
+    }
+
+    private string FormatNumber(int n) => _hexMode ? n.ToString("X2") : n.ToString("D2");
 
     /// <summary>Ported from lblBAM_Click: toggles allocation, or opens the Block Viewer depending on mode.</summary>
     private void OnCellClicked(object? sender, PointerPressedEventArgs e)
@@ -94,7 +181,7 @@ public partial class BamEditorWindow : Window
         }
 
         _image.AllocatedBlocks[block] = !_image.AllocatedBlocks[block];
-        _cells[block].Background = _image.AllocatedBlocks[block] ? AllocatedBrush : FreeBrush;
+        _cells[block].Text = _image.AllocatedBlocks[block] ? "*" : "";
     }
 
     private void OnSetToggleModeClicked(object? sender, RoutedEventArgs e) => _blockViewMode = false;
@@ -106,7 +193,7 @@ public partial class BamEditorWindow : Window
         if (sender is not Border { Tag: int block }) return;
 
         var (track, sector) = D64Image.BlockToTrackSector(block);
-        TrackSectorLabel.Text = $"TRACK: {track} SECTOR: {sector}";
+        TrackSectorLabel.Text = $"TRACK: {FormatNumber(track)} SECTOR: {FormatNumber(sector)}";
 
         string owner = block < _image.BlockOwners.Length ? _image.BlockOwners[block] : "";
         BlockOwnerLabel.Text = string.IsNullOrEmpty(owner) ? "BLOCKOWNER: <UNCLAIMED>" : $"BLOCKOWNER: {owner}";
@@ -118,7 +205,7 @@ public partial class BamEditorWindow : Window
         for (int i = 0; i < D64Image.TotalBlocks; i++)
         {
             _image.AllocatedBlocks[i] = true;
-            _cells[i].Background = AllocatedBrush;
+            _cells[i].Text = "*";
         }
     }
 
@@ -127,15 +214,13 @@ public partial class BamEditorWindow : Window
     {
         for (int i = 0; i < D64Image.TotalBlocks; i++)
         {
-            // Protect people from themselves: don't unallocate 18/0 (BAM) or 18/1 (first dir sector).
             bool protectedBlock = i == 357 || i == 358;
             _image.AllocatedBlocks[i] = protectedBlock;
-            _cells[i].Background = protectedBlock ? AllocatedBrush : FreeBrush;
+            _cells[i].Text = protectedBlock ? "*" : "";
         }
     }
 
-    /// <summary>Ported from mnuCleanDisk_Click: zeroes every unallocated block. Skips the confirmation
-    /// dialog's "safe clean" (directory-track-skip) branch for now — always does a full clean.</summary>
+    /// <summary>Ported from mnuCleanDisk_Click: zeroes every unallocated block.</summary>
     private void OnCleanDiskClicked(object? sender, RoutedEventArgs e)
     {
         int cleaned = 0;

@@ -1,0 +1,12 @@
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/bin/Debug/net10.0/D64Editor.Core.deps.json
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/bin/Debug/net10.0/D64Editor.Core.dll
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/bin/Debug/net10.0/D64Editor.Core.pdb
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/obj/Debug/net10.0/D64Editor.Core.GeneratedMSBuildEditorConfig.editorconfig
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/obj/Debug/net10.0/D64Editor.Core.AssemblyInfoInputs.cache
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/obj/Debug/net10.0/D64Editor.Core.AssemblyInfo.cs
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/obj/Debug/net10.0/D64Editor.Core.csproj.CoreCompileInputs.cache
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/obj/Debug/net10.0/D64Editor.Core.sourcelink.json
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/obj/Debug/net10.0/D64Editor.Core.dll
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/obj/Debug/net10.0/refint/D64Editor.Core.dll
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/obj/Debug/net10.0/D64Editor.Core.pdb
+/run/media/pat/store/projects/D64Editor/D64Editor.Core/obj/Debug/net10.0/ref/D64Editor.Core.dll

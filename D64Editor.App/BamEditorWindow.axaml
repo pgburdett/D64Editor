@@ -1,15 +1,15 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.BamEditorWindow"
-        Title="BAM Editor"
-        Width="640" Height="640"
-        MinWidth="480" MinHeight="480">
+        Title="BAM"
+        Width="700" Height="600"
+        MinWidth="600" MinHeight="500">
 
     <DockPanel Margin="8">
 
-        <!-- Mirrors frmBAM's menu: mnuAllocateAllSectors / mnuUNAllocateallSectors / mnuCleanDisk / mnuSave / mnuExitBAMEditor -->
+        <!-- Mirrors frmBAM's mnuFile menu: allocate/unallocate/clean/save/exit -->
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_BAM">
+            <MenuItem Header="_File">
                 <MenuItem Header="Allocate All Sectors" Click="OnAllocateAllClicked" />
                 <MenuItem Header="Unallocate All Sectors" Click="OnUnallocateAllClicked" />
                 <Separator />
@@ -18,23 +18,31 @@
                 <MenuItem Header="Save" Click="OnSaveClicked" />
                 <MenuItem Header="Exit" Click="OnExitClicked" />
             </MenuItem>
-            <MenuItem Header="Click a block to:">
-                <MenuItem Header="Toggle allocation" Name="ToggleAllocationModeItem" Click="OnSetToggleModeClicked" />
-                <MenuItem Header="View/edit bytes (Block Viewer)" Name="BlockViewModeItem" Click="OnSetViewModeClicked" />
-            </MenuItem>
         </Menu>
 
-        <!-- Mirrors lblTrackSectorLoc / lblBlockOwner, updated on lblBAM_MouseMove -->
+        <!-- Mirrors optBlockEditMode / optBAMEditMode radio buttons -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="16" Margin="0,6,0,6">
+            <RadioButton Name="BlockEditModeRadio" GroupName="EditMode" Content="BLOCK EDIT MODE" Checked="OnSetViewModeClicked" />
+            <RadioButton Name="BamEditModeRadio" GroupName="EditMode" Content="BAM EDIT MODE" IsChecked="True" Checked="OnSetToggleModeClicked" />
+        </StackPanel>
+
+        <!-- Mirrors lblTrackSectorLoc / lblBlockOwner -->
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="20" Margin="0,8,0,0">
             <TextBlock Name="TrackSectorLabel" Text="TRACK: -- SECTOR: --" FontFamily="monospace" />
             <TextBlock Name="BlockOwnerLabel" Text="BLOCKOWNER: " FontFamily="monospace" />
         </StackPanel>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <!-- Populated in code-behind: one row per track, one cell per sector.
-                 The original placed 683 individual designer-drawn PictureBox/Label
-                 controls by hand; here they're generated from D64Image geometry. -->
-            <StackPanel Name="GridPanel" Spacing="2" />
+        <!-- Mirrors optDecimal / optHex -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" Margin="0,4,0,0">
+            <RadioButton Name="DecimalRadio" GroupName="NumberBase" Content="DECIMAL" IsChecked="True" Checked="OnNumberBaseChanged" />
+            <RadioButton Name="HexRadio" GroupName="NumberBase" Content="HEX" Checked="OnNumberBaseChanged" />
+        </StackPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <!-- Populated in code-behind: columns = tracks (1-35), rows = sectors (0-20).
+                 The original placed 683 individual designer-drawn Label controls by
+                 hand; here the grid is generated from D64Image's own geometry instead. -->
+            <Grid Name="GridPanel" />
         </ScrollViewer>
 
     </DockPanel>

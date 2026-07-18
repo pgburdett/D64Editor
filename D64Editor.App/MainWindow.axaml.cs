@@ -120,6 +120,26 @@ public partial class MainWindow : Window
     private void OnVersionClicked(object? sender, RoutedEventArgs e) =>
         FileCountLabel.Text = "D64 Editor — C#/.NET 8/Avalonia port. Original by Forrest Mook, 1999-2016, GPL v2.";
 
+    /// <summary>Ported from mnuViewFile_Click / ViewSeqFile: shows the currently selected file's text content.</summary>
+    private void OnSeqViewerClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+
+        int index = DirectoryList.SelectedIndex;
+        if (index < 0 || index >= _image.Entries.Count)
+        {
+            // Mirrors the original's "Highlight the SEQ file you want to view." MsgBox.
+            FileCountLabel.Text = "Select a file in the list to view.";
+            return;
+        }
+
+        new SeqViewerWindow(_image, _image.Entries[index]).Show(this);
+    }
+
     private void OnSectorDumpClicked(object? sender, RoutedEventArgs e)
     {
         if (_image is null)
