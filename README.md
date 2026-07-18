@@ -33,6 +33,7 @@ dotnet run --project D64Editor.App
 - `ClearBlock` / `ReadBlock` / `WriteBlock` — raw block access for the Block Viewer
 - `ImportFile` / `ExportFile` ← `FileImport` / `FileExport` (plain PRG/SEQ/USR/REL/DEL
   payloads; the P00 and T64 container-format detection isn't ported)
+- `PetsciiConverter` ← the character-transform loop in `ViewSeqFile`
 
 ## What's in the demo windows (D64Editor.App)
 
@@ -41,20 +42,32 @@ Import File, Export Selected, disk name/ID display, directory listing,
 blocks-free/file-count summary. Saves after every import so changes aren't
 lost, same spirit as the original writing straight to the file on disk.
 
-`BamEditorWindow` ports `frmBAM`: a click-to-toggle grid of all 683 blocks
-(green = free, red = allocated), hover shows track/sector + owning file, menu
-has Allocate All / Unallocate All (protects 18/0 and 18/1, same as the
-original) / Clean Disk / Save, plus a mode switch (toggle allocation vs.
-view/edit bytes) matching the original's `optBlockEditMode`. The original
-hand-placed 683 Label controls in the VB6 designer (that's why `frmBAM.frm`
-was 16,000 lines) — here the grid is generated at runtime from `D64Image`'s
-own geometry instead.
+`BamEditorWindow` ports `frmBAM` ("BAM"): a click-to-toggle grid of all 683
+blocks, laid out the same way the original does it — tracks as columns,
+sectors as rows, blue cells with a white "*" for allocated blocks, and the
+directory track (18) highlighted red. BLOCK EDIT MODE / BAM EDIT MODE and
+DECIMAL / HEX are real radio-button toggles now, matching the original's
+controls instead of being buried in a menu. Hover shows track/sector +
+owning file; menu has Allocate All / Unallocate All (protects 18/0 and 18/1)
+/ Clean Disk / Save. The original hand-placed 683 Label controls in the VB6
+designer (that's why `frmBAM.frm` was 16,000 lines) — here the grid is
+generated at runtime from `D64Image`'s own geometry instead.
 
-`BlockViewerWindow` ports `frmBlockViewer`: a 16x16 hex grid of the selected
-block's 256 bytes, click a byte (or arrow-key/Tab through them) and type its
-new hex value, Wipe Block, Save Changes to Block, Next/Previous block
-navigation, and C128 auto-boot sector detection. Opens from the BAM editor
-when it's in "view/edit bytes" mode.
+`BlockViewerWindow` ports `frmBlockViewer` (captioned "Block Editor" in the
+original, despite the file name — kept that caption here too): a 16x16 hex
+grid plus a toggleable ASCII column, click a byte (or arrow-key/Tab through
+them) and type its new hex value, Wipe Block, Save Changes to Block,
+Previous/Next block navigation (◄ ►, matching the original's arrow buttons),
+C128 auto-boot sector detection. No CBM64 font is available in this
+environment, so the ASCII column shows printable ASCII (or ".") rather than
+true PETSCII glyphs — same limitation as the original's own "ASCII" display
+mode, just without the "PETASCII" mode's custom bitmap font as an alternative.
+
+`SeqViewerWindow` ports `frmFileViewer` ("SEQ File Viewer"): shows a SEQ
+file's text content, with 40/80 Column (window width only, matching the
+original) and ASCII/PETASCII toggles. PETASCII mode here is Latin-1 raw
+bytes rather than true C64 glyphs, for the same font-availability reason as
+the Block Editor's ASCII column. Printing isn't ported.
 
 `SectorDumpWindow` ports `frmSectorDump`: pick a track/sector, dump that
 block's 256 raw bytes to a file. The original's Hex/Decimal display toggle
@@ -75,12 +88,31 @@ them.
 Together these show the pattern (event handler → calls into `D64Image` →
 updates controls) so the remaining forms can follow the same shape.
 
+## Using a real PETSCII/CBM64 font
+
+The Block Editor's ASCII column and the SEQ Viewer's PETASCII mode fall back
+to plain ASCII/Latin-1 without a real C64 font. To wire one in:
+
+1. Drop the font file into `D64Editor.App/Assets/Fonts/` (any name, `.ttf` or `.otf`).
+2. Open `D64Editor.App/Fonts.cs` and update `FileName` and `FamilyName` to match
+   (FamilyName has to be the font's actual internal family name, not just the
+   filename — a font viewer or `fc-scan yourfont.ttf | grep family` will show it).
+3. Flip `PetsciiFontAvailable` to `true`.
+
+Once that's done, both windows switch to using the font directly instead of
+their ASCII/Latin-1 approximations.
+
 ## Not yet ported
 
 - T64 and P00 container-format import (multi-file T64s were unsupported in
   the original too — it explicitly rejects those)
-- 8 other forms (filename builder, error numbers, cross-links display,
-  config, file properties, etc.)
+- 7 other forms: Filename Builder (`frmFilenameBuilder` — a substantial one,
+  it's the PETSCII character-art editor used to build directory entries like
+  the "USE 38 TRACKS COPY" example disk), error numbers, cross-links display,
+  config, file properties
+- 40-track disk images (the original only partially supported these; this
+  port is standard 35-track only — flag if you want this added, since it
+  came up with a real disk)
 - The BAM editor's "safe clean" mode (skip the directory track when cleaning)
   and its confirmation dialogs
 - GEOS-specific interpretation of bytes 0x15-0x1D (currently preserved

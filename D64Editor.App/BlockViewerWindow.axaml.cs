@@ -75,9 +75,9 @@ public partial class BlockViewerWindow : Window
         }
     }
 
-    /// <summary>Mirrors the original's ASCII column next to the hex grid (chkViewASCII). No CBM64
-    /// font is available here, so bytes are shown as printable ASCII where possible and '.'
-    /// otherwise, rather than true PETSCII glyphs.</summary>
+    /// <summary>Mirrors the original's ASCII column next to the hex grid (chkViewASCII). Uses the
+    /// real PETSCII font if one's been wired up in Fonts.cs; otherwise falls back to printable
+    /// ASCII (or '.') the way the initial port did without a C64 font available.</summary>
     private void BuildAsciiPanel()
     {
         for (int row = 0; row < 16; row++)
@@ -91,7 +91,7 @@ public partial class BlockViewerWindow : Window
                     Text = ".",
                     Width = 12,
                     TextAlignment = Avalonia.Media.TextAlignment.Center,
-                    FontFamily = "monospace",
+                    FontFamily = Fonts.PetsciiFontAvailable ? Fonts.Petscii : FontFamily.Parse("monospace"),
                     Padding = new Thickness(1)
                 };
                 _asciiCells[offset] = cell;
@@ -180,7 +180,12 @@ public partial class BlockViewerWindow : Window
         }
     }
 
-    private static string ToPrintableChar(byte b) => b is >= 0x20 and <= 0x7E ? ((char)b).ToString() : ".";
+    private static string ToPrintableChar(byte b)
+    {
+        if (Fonts.PetsciiFontAvailable)
+            return ((char)b).ToString(); // the font's own glyph table handles the mapping
+        return b is >= 0x20 and <= 0x7E ? ((char)b).ToString() : ".";
+    }
 
     private void CommitByteEdit()
     {

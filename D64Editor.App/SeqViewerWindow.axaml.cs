@@ -44,6 +44,9 @@ public partial class SeqViewerWindow : Window
     {
         bool asciiMode = AsciiRadio.IsChecked == true;
         ContentBox.Text = PetsciiConverter.ToText(_rawBytes, asciiMode);
+        ContentBox.FontFamily = !asciiMode && Fonts.PetsciiFontAvailable
+            ? Fonts.Petscii
+            : Avalonia.Media.FontFamily.Parse("monospace");
     }
 
     /// <summary>Ported from mnuSaveToText_Click.</summary>

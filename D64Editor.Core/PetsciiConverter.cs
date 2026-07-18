@@ -19,7 +19,7 @@ public static class PetsciiConverter
     {
         var sb = new System.Text.StringBuilder(data.Length);
 
-        foreach (var b in data)
+        foreach (byte b in data)
         {
             if (b is 0x0D or 0x00)
             {
@@ -27,21 +27,12 @@ public static class PetsciiConverter
                 continue;
             }
 
-            var v = b;
+            int v = b;
             if (asciiMode)
             {
-                switch (v)
-                {
-                    case >= 65 and <= 90:
-                        v += 32;        // A-Z -> a-z
-                        break;
-                    case >= 97 and <= 122:
-                        v -= 32;  // a-z -> A-Z
-                        break;
-                    case >= 193 and <= 218:
-                        v -= 128; // PETSCII's second uppercase range
-                        break;
-                }
+                if (v is >= 65 and <= 90) v += 32;        // A-Z -> a-z
+                else if (v is >= 97 and <= 122) v -= 32;  // a-z -> A-Z
+                else if (v is >= 193 and <= 218) v -= 128; // PETSCII's second uppercase range
             }
 
             sb.Append(v < 256 ? (char)v : '?');

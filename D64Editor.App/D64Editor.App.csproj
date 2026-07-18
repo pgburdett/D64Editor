@@ -18,16 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\D64Editor.Core\D64Editor.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="Assets\D64Editor.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <AvaloniaResource Include="Assets\**" />
-  </ItemGroup>
 </Project>
