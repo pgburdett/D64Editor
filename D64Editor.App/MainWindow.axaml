@@ -15,10 +15,10 @@
             <MenuItem Header="_File">
                 <MenuItem Header="_Load D64 File..." Click="OnOpenClicked" />
                 <MenuItem Header="_Save D64 File" Click="OnSaveClicked" />
-                <MenuItem Header="_Trim File" IsEnabled="False" />
-                <MenuItem Header="_Revert" IsEnabled="False" />
+                <MenuItem Header="_Trim File..." Click="OnTrimFileClicked" />
+                <MenuItem Header="_Revert" Click="OnRevertClicked" />
                 <Separator />
-                <MenuItem Header="_Create Blank D64" IsEnabled="False" />
+                <MenuItem Header="_Create Blank D64..." Click="OnCreateBlankClicked" />
                 <MenuItem Header="Configuration _Menu" Click="OnConfigClicked" />
                 <Separator />
                 <MenuItem Header="_Quit" Click="OnQuitClicked" />
@@ -27,20 +27,20 @@
                 <MenuItem Header="File _Export..." Click="OnExportClicked" />
                 <MenuItem Header="File _Import..." Click="OnImportClicked" />
                 <MenuItem Header="Copy Files to _Memory..." Click="OnMemoryClicked" />
-                <MenuItem Header="Export _DIR to TXT" IsEnabled="False" />
+                <MenuItem Header="Export _DIR to TXT..." Click="OnExportDirClicked" />
                 <Separator />
                 <MenuItem Header="Modify File _Properties" Click="OnFilePropertiesClicked" />
-                <MenuItem Header="_Scratch File" IsEnabled="False" />
-                <MenuItem Header="_Unscratch File" IsEnabled="False" />
-                <MenuItem Header="_Wipe File" IsEnabled="False" />
-                <MenuItem Header="_Remove Directory Entry" IsEnabled="False" />
+                <MenuItem Header="_Scratch File" Click="OnScratchClicked" />
+                <MenuItem Header="_Unscratch File..." Click="OnUnscratchClicked" />
+                <MenuItem Header="_Wipe File" Click="OnWipeClicked" />
+                <MenuItem Header="_Remove Directory Entry" Click="OnRemoveEntryClicked" />
                 <Separator />
                 <MenuItem Header="Edit _BAM..." Click="OnBamEditorClicked" />
                 <MenuItem Header="Block Export... (Sector Dump)" Click="OnSectorDumpClicked" />
                 <MenuItem Header="_Filename Builder..." Click="OnFilenameBuilderClicked" />
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="_View File Chain" IsEnabled="False" />
+                <MenuItem Header="_View File Chain" Click="OnViewFileChainClicked" />
                 <MenuItem Header="_SEQ File Viewer" Click="OnSeqViewerClicked" />
                 <MenuItem Header="View _Error Blocks" Click="OnErrorBlocksClicked" />
                 <MenuItem Header="View _Cross-Links" Click="OnCrossLinksClicked" />
@@ -81,7 +81,7 @@
                 <TextBlock Grid.Column="4" Text="TYPE" FontWeight="Bold" TextAlignment="Center" />
             </Grid>
 
-            <ListBox Name="DirectoryList" FontFamily="monospace">
+            <ListBox Name="DirectoryList" FontFamily="monospace" SelectionMode="Multiple">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="core:D64FileEntry">
                         <Grid ColumnDefinitions="*,110,110,80,70">

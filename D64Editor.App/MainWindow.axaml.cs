@@ -303,6 +303,165 @@ public partial class MainWindow : Window
         await File.WriteAllBytesAsync(path, data);
     }
 
+    /// <summary>Ported from mnuTrimFile_Click: standalone tool, doesn't touch the currently open disk.
+    /// Truncates an oversized/corrupt dump down to the standard 174848-byte size.</summary>
+    private async void OnTrimFileClicked(object? sender, RoutedEventArgs e)
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select File to Trim",
+            AllowMultiple = false
+        });
+        if (files.Count == 0) return;
+
+        string? path = files[0].TryGetLocalPath();
+        if (path is null) return;
+
+        byte[] bytes = await File.ReadAllBytesAsync(path);
+        if (bytes.LongLength <= D64Image.StandardSize || bytes.LongLength >= D64Image.StandardSizeWithErrorInfo)
+        {
+            FileCountLabel.Text = "This file doesn't need trimming (must be between 174848 and 175531 bytes).";
+            return;
+        }
+
+        string trimmedPath = Path.Combine(Path.GetDirectoryName(path) ?? "", Path.GetFileNameWithoutExtension(path) + "_trimmed.d64");
+        byte[] trimmed = bytes[..(int)D64Image.StandardSize];
+        await File.WriteAllBytesAsync(trimmedPath, trimmed);
+        FileCountLabel.Text = $"Trimmed and saved as {Path.GetFileName(trimmedPath)}.";
+    }
+
+    /// <summary>Ported from mnuRevert_Click: reloads the currently open disk from disk, discarding
+    /// unsaved changes.</summary>
+    private async void OnRevertClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+
+        bool confirmed = await ConfirmWindow.Ask(this,
+            $"Revert to the previously saved version of\n{_image.SourcePath}?\nAny unsaved changes will be lost.",
+            "Revert?");
+        if (confirmed) LoadDisk(_image.SourcePath);
+    }
+
+    /// <summary>Ported from mnuCreateBlankD64_Click.</summary>
+    private void OnCreateBlankClicked(object? sender, RoutedEventArgs e)
+    {
+        new CreateBlankWindow(loaded =>
+        {
+            _image = loaded;
+            _image.Interleave = AppSettings.Interleave;
+            _image.PreferredStartTrack = AppSettings.StartingTrack;
+            _image.PreferredStartSector = AppSettings.StartingSector;
+            _image.ComputeBlockOwners();
+            PopulateFrom(_image);
+        }).Show(this);
+    }
+
+    /// <summary>Ported from mnuExportDirectoryToText_Click / ExportDirectory.</summary>
+    private async void OnExportDirClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export Directory Listing",
+            SuggestedFileName = Path.GetFileName(_image.SourcePath) + ".txt",
+            FileTypeChoices = new[] { new FilePickerFileType("Text Document") { Patterns = new[] { "*.txt" } } }
+        });
+
+        string? path = file?.TryGetLocalPath();
+        if (path is null) return;
+
+        await File.WriteAllTextAsync(path, _image.ExportDirectoryListing());
+        FileCountLabel.Text = $"Directory listing saved to {Path.GetFileName(path)}.";
+    }
+
+    /// <summary>Ported from mnuScratchFile_Click, over the multi-selection.</summary>
+    private void OnScratchClicked(object? sender, RoutedEventArgs e)
+    {
+        if (!RequireSelection(out var selected)) return;
+
+        foreach (var entry in selected)
+            _image!.ScratchFile(entry);
+
+        _image!.Save();
+        PopulateFrom(_image);
+    }
+
+    /// <summary>Ported from mnuUnscratchFile_Click. The original re-allocated a scratched file's
+    /// blocks without restoring a file type, leaving it to be fixed up via File Properties
+    /// afterward; this restores as an unlocked PRG by default instead, since that's right far
+    /// more often than not and File Properties is still there to correct it if it's wrong.</summary>
+    private void OnUnscratchClicked(object? sender, RoutedEventArgs e)
+    {
+        if (!RequireSelection(out var selected)) return;
+
+        int unscratched = 0;
+        foreach (var entry in selected.Where(x => x.IsScratched))
+        {
+            _image!.UnscratchFile(entry, D64FileType.Prg);
+            unscratched++;
+        }
+
+        _image!.Save();
+        PopulateFrom(_image);
+        FileCountLabel.Text = $"Unscratched {unscratched} file(s) as PRG — check File Properties if that's not right.";
+    }
+
+    /// <summary>Ported from mnuWipeFile_Click, with a confirmation since it's not recoverable.</summary>
+    private async void OnWipeClicked(object? sender, RoutedEventArgs e)
+    {
+        if (!RequireSelection(out var selected)) return;
+
+        bool confirmed = await ConfirmWindow.Ask(this,
+            $"Permanently wipe {selected.Count} file(s)? This zeroes their data and cannot be undone.",
+            "Wipe Files?");
+        if (!confirmed) return;
+
+        foreach (var entry in selected)
+            _image!.WipeFile(entry);
+
+        _image!.Save();
+        PopulateFrom(_image);
+    }
+
+    /// <summary>Ported from mnuRemoveDirectoryEntry_Click.</summary>
+    private void OnRemoveEntryClicked(object? sender, RoutedEventArgs e)
+    {
+        if (!RequireSelection(out var selected)) return;
+
+        foreach (var entry in selected)
+            _image!.RemoveDirectoryEntry(entry);
+
+        _image!.Save();
+        PopulateFrom(_image);
+    }
+
+    /// <summary>Ported from mnuViewFileChain_Click (single-selection only, matching the original).</summary>
+    private void OnViewFileChainClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+
+        var selected = DirectoryList.SelectedItems?.Cast<D64FileEntry>().ToList() ?? new List<D64FileEntry>();
+        if (selected.Count == 0) { FileCountLabel.Text = "Select a file to view its chain."; return; }
+        if (selected.Count > 1) { FileCountLabel.Text = "You can only view one file's chain at a time."; return; }
+
+        new FileChainWindow(_image, selected[0]).Show(this);
+    }
+
+    private bool RequireSelection(out List<D64FileEntry> selected)
+    {
+        selected = new List<D64FileEntry>();
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return false; }
+
+        selected = DirectoryList.SelectedItems?.Cast<D64FileEntry>().ToList() ?? new List<D64FileEntry>();
+        if (selected.Count == 0)
+        {
+            FileCountLabel.Text = "Select one or more files in the list first.";
+            return false;
+        }
+        return true;
+    }
+
     private void PopulateFrom(D64Image image)
     {
         DiskNameBox.Text = image.DiskName;

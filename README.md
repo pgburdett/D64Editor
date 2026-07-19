@@ -4,10 +4,13 @@ Original: D64 Editor by Forrest Mook, GPL v2, 1999-2016. This is a from-scratch
 C# port of the core disk engine plus one fully working window, as a template
 for porting the rest.
 
-**Everything below was hand-translated line-by-line against the
-original .bas/.frm source. 
+**I could not compile or run this in the sandbox** (no .NET SDK, no NuGet
+access there). Everything below was hand-translated line-by-line against the
+original .bas/.frm source and I'm confident in the logic, but you'll hit the
+first real compiler errors when you build it — treat that as normal, not a
+sign something's badly wrong.
 
-## Build (on your Garuda Dragonize (ARCH) or Windows 11 box)
+## Build (on your CachyOS box)
 
 ```
 sudo pacman -S dotnet-sdk    # if you don't already have it
@@ -176,6 +179,47 @@ onto Avalonia's drag-drop model closely enough for a line-by-line port to
 mean much — but the resulting behavior matches. The same container detection
 also applies to the regular "Import File..." button and to "Add File..." in
 the Memory window.
+
+## The last nine menu items
+
+All of frmMain's menu is now live. The nine that were previously grayed out:
+
+- **Trim File** — standalone tool (works without a disk open), truncates an
+  oversized/corrupt dump down to the standard 174848 bytes.
+- **Revert** — reloads the open disk from its file, discarding unsaved
+  changes, with a confirmation prompt (via the new `ConfirmWindow`, since
+  Avalonia has no built-in MessageBox).
+- **Create Blank D64** — new `CreateBlankWindow`. Builds a fresh, fully-free
+  35- or 40-track disk by reusing `WriteBam`/`WriteDirectory` against an
+  empty entry list, rather than hand-writing every BAM/directory byte the
+  way the original did. The original's "protect track 1/0" and C128
+  auto-boot-patch options aren't ported.
+- **Export DIR to TXT** — writes `D64Image.ExportDirectoryListing()` to a
+  text file; reformatted to this port's own column layout rather than
+  matching the original's fixed-width padding byte-for-byte.
+- **Scratch File / Unscratch File** — standard C64 DOS soft-delete: Scratch
+  frees the blocks and zeroes the type byte but leaves the entry in place;
+  Unscratch re-walks the still-intact track/sector chain and re-allocates
+  the blocks. One deliberate difference: the original re-allocated blocks
+  on unscratch without restoring a file type, leaving that for File
+  Properties afterward. This port restores as an unlocked PRG by default
+  instead (right far more often than not) and still leaves File Properties
+  there to correct it if it's wrong.
+- **Wipe File** — hard delete: zeroes the block data, frees it, and removes
+  the entry. Not recoverable, so it goes through the confirmation dialog.
+- **Remove Directory Entry** — pulls an entry out of the directory without
+  touching its blocks or the BAM at all, for cleaning up a corrupted/orphaned
+  entry. The original did this via a hand-rolled shuffle across a dozen
+  parallel arrays; `List<T>.Remove` is the same operation without the
+  ceremony `D64FileEntry` being one object per file makes possible.
+- **View File Chain** — new `FileChainWindow`. Shows a file's block chain as
+  an ordered track/sector/block list rather than the original's highlighted
+  overlay on the BAM grid — same information, without duplicating the BAM
+  grid UI just to highlight a handful of cells in it.
+
+The directory list is multi-select now (it was single-select before), since
+Scratch/Unscratch/Wipe/Remove all operate over however many files are
+selected, matching the original.
 
 ## Not yet ported
 

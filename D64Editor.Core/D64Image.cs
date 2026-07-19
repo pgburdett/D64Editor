@@ -739,4 +739,170 @@ public class D64Image
         WriteBam();
         return entry;
     }
+
+    // ---------------------------------------------------------------
+    // File chain inspection / scratch / unscratch / wipe / remove
+    // ---------------------------------------------------------------
+
+    /// <summary>Walks a file's block chain, returning each (track, sector, block) visited in order.
+    /// Ported from the chain-walk shared by ViewFileChain / ScratchFile / WipeFile.</summary>
+    public List<(int Track, int Sector, int Block)> GetFileChain(D64FileEntry entry)
+    {
+        var chain = new List<(int, int, int)>();
+        int track = entry.StartTrack;
+        int sector = entry.StartSector;
+
+        for (int step = 0; step < 700 && track != 0; step++)
+        {
+            if (track < 1 || track > TrackCount) break; // matches ViewFileChain's track/sector sanity checks
+            int block = TrackSectorToBlock(track, sector);
+            chain.Add((track, sector, block));
+
+            int offset = block * SectorSize;
+            int nextTrack = _data[offset];
+            int nextSector = _data[offset + 1];
+            track = nextTrack;
+            sector = nextSector;
+        }
+
+        return chain;
+    }
+
+    /// <summary>
+    /// "Soft" delete: frees the file's blocks in the BAM and zeroes its directory
+    /// type byte, but leaves the entry (and its track/sector/filename) in place —
+    /// standard C64 DOS SCRATCH behavior, and why UnscratchFile can restore it.
+    /// Ported from ScratchFile.
+    /// </summary>
+    public void ScratchFile(D64FileEntry entry)
+    {
+        foreach (var (_, _, block) in GetFileChain(entry))
+            AllocatedBlocks[block] = false;
+
+        entry.RawFileType = 0;
+        WriteBam();
+    }
+
+    /// <summary>
+    /// Reverses ScratchFile: re-walks the chain from the entry's still-intact
+    /// track/sector, re-allocates those blocks, and restores a file type (which
+    /// scratching discarded, so this can't recover the original type — it has to
+    /// be supplied). Ported from UnscratchFile.
+    /// </summary>
+    public void UnscratchFile(D64FileEntry entry, D64FileType type, bool locked = false)
+    {
+        foreach (var (_, _, block) in GetFileChain(entry))
+            AllocatedBlocks[block] = true;
+
+        byte raw = (byte)((byte)type | 0x80);
+        if (locked) raw |= 0x40;
+        entry.RawFileType = raw;
+        WriteBam();
+    }
+
+    /// <summary>
+    /// "Hard" delete: zeroes the file's block contents, frees them in the BAM,
+    /// and removes the directory entry entirely — unlike ScratchFile, this isn't
+    /// recoverable. Ported from WipeFile.
+    /// </summary>
+    public void WipeFile(D64FileEntry entry)
+    {
+        foreach (var (_, _, block) in GetFileChain(entry))
+        {
+            ClearBlock(block);
+            AllocatedBlocks[block] = false;
+        }
+
+        Entries.Remove(entry);
+        WriteDirectory();
+        WriteBam();
+    }
+
+    /// <summary>
+    /// Removes a directory entry without touching its blocks or the BAM at all —
+    /// useful for cleaning up a corrupted/orphaned entry whose track/sector
+    /// doesn't actually point at real data. Ported from RemoveDirectoryEntry.
+    /// The original did this via a hand-rolled shuffle across a dozen parallel
+    /// arrays; List&lt;T&gt;.Remove is the same operation without the ceremony.
+    /// </summary>
+    public void RemoveDirectoryEntry(D64FileEntry entry)
+    {
+        Entries.Remove(entry);
+        WriteDirectory();
+        WriteBam();
+    }
+
+    /// <summary>Formatted directory listing text. Ported from ExportDirectory, reformatted to match
+    /// this port's own column layout rather than the original's fixed-width padding scheme.</summary>
+    public string ExportDirectoryListing()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+        sb.AppendLine(SourcePath);
+        sb.AppendLine($"\"{DiskName}\" {DiskId}");
+        sb.AppendLine();
+        sb.AppendLine("FILENAME              TRACK  SECTOR  BLOCKS  TYPE");
+
+        foreach (var entry in Entries)
+        {
+            sb.AppendLine(
+                $"\"{entry.FileName}\"".PadRight(22) +
+                $"{entry.StartTrack,5}  {entry.StartSector,6}  {entry.SizeInBlocks,6}  {entry.TypeDisplay}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine($"{BlocksFree} BLOCKS FREE.");
+        return sb.ToString();
+    }
+
+    // ---------------------------------------------------------------
+    // Create blank disk
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Creates a freshly formatted, empty disk image. Ported from CreateBlankD64,
+    /// but built by reusing WriteBam/WriteDirectory against an empty Entries list
+    /// rather than hand-writing every BAM/directory byte the way the original
+    /// did — same result, and it can't drift out of sync with those methods'
+    /// own logic the way duplicated byte-twiddling code could. The original's
+    /// "protect track 1 sector 0" and C128 auto-boot patch options aren't
+    /// ported; this always creates a plain, fully-free disk.
+    /// </summary>
+    public static D64Image CreateBlank(string diskName, string diskId, int trackCount = StandardTrackCount, bool includeErrorInfo = false)
+    {
+        if (trackCount != StandardTrackCount && trackCount != ExtendedTrackCount)
+            throw new ArgumentException("trackCount must be 35 or 40.", nameof(trackCount));
+
+        int totalBlocks = trackCount == ExtendedTrackCount ? ExtendedTotalBlocks : StandardTotalBlocks;
+        long size = trackCount == ExtendedTrackCount
+            ? (includeErrorInfo ? ExtendedSizeWithErrorInfo : ExtendedSize)
+            : (includeErrorInfo ? StandardSizeWithErrorInfo : StandardSize);
+
+        var image = new D64Image
+        {
+            _data = new byte[size],
+            TrackCount = trackCount,
+            TotalBlocks = totalBlocks,
+            HasErrorInfo = includeErrorInfo,
+            DiskName = diskName.Length > 16 ? diskName[..16] : diskName,
+            DiskId = diskId.Length > 5 ? diskId[..5] : diskId,
+            AllocatedBlocks = new bool[totalBlocks],
+            ErrorInfo = new byte[totalBlocks]
+        };
+
+        if (includeErrorInfo)
+            Array.Fill(image.ErrorInfo, (byte)1); // 1 = "no error", matches the original's fill value
+
+        // Reserve the BAM sector and the directory's entry point; everything else starts free.
+        image.AllocatedBlocks[TrackSectorToBlock(18, 0)] = true;
+        image.AllocatedBlocks[TrackSectorToBlock(18, 1)] = true;
+
+        // WriteDirectory needs a terminator to write for an empty directory; it handles
+        // Entries.Count == 0 the same as any other count (one sector, immediate terminator).
+        image.WriteDirectory();
+        image.WriteBam();
+        image.WriteDiskHeader();
+
+        return image;
+    }
 }
