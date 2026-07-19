@@ -1,11 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "31xsPqBIxu8=",
+  "dgSpecHash": "ubJiSKvIJjg=",
   "success": true,
   "projectFilePath": "/run/media/pat/store/projects/D64Editor/D64Editor.Core/D64Editor.Core.csproj",
-  "expectedPackageFiles": [
-    "/home/pat/.nuget/packages/microsoft.netcore.app.ref/8.0.29/microsoft.netcore.app.ref.8.0.29.nupkg.sha512",
-    "/home/pat/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.29/microsoft.aspnetcore.app.ref.8.0.29.nupkg.sha512"
-  ],
+  "expectedPackageFiles": [],
   "logs": []
 }
