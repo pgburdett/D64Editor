@@ -1,0 +1,15 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.FileChainWindow"
+        Title="File Chain"
+        Width="360" Height="440">
+
+    <DockPanel Margin="10">
+        <TextBlock DockPanel.Dock="Top" Name="TitleLabel" FontWeight="Bold" Margin="0,0,0,8" />
+        <!-- Mirrors ViewFileChain's highlighted blocks on the BAM grid — shown here as an
+             ordered list of track/sector/block instead of a colored grid overlay, since the
+             information's the same either way and this avoids duplicating the BAM grid UI
+             just to highlight a handful of cells in it. -->
+        <ListBox Name="ChainList" FontFamily="monospace" />
+    </DockPanel>
+</Window>

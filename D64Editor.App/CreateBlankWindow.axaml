@@ -1,0 +1,29 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.CreateBlankWindow"
+        Title="Create Blank D64"
+        Width="360" Height="300"
+        CanResize="False">
+
+    <StackPanel Margin="16" Spacing="10">
+
+        <TextBlock Text="Disk Name:" />
+        <TextBox Name="DiskNameBox" MaxLength="16" />
+
+        <TextBlock Text="Disk ID:" />
+        <TextBox Name="DiskIdBox" MaxLength="5" Text="00" />
+
+        <TextBlock Text="Track count:" />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <RadioButton Name="Track35Radio" GroupName="Tracks" Content="35 Track (standard)" IsChecked="True" />
+            <RadioButton Name="Track40Radio" GroupName="Tracks" Content="40 Track (non-standard)" />
+        </StackPanel>
+
+        <CheckBox Name="ErrorInfoBox" Content="Include error-info section" />
+
+        <Button Content="Create..." Click="OnCreateClicked" HorizontalAlignment="Right" Margin="0,10,0,0" />
+
+        <TextBlock Name="StatusLabel" Foreground="OrangeRed" TextWrapping="Wrap" />
+
+    </StackPanel>
+</Window>
