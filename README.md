@@ -4,7 +4,7 @@
 
 # D64 Editor — VB6 → C#/.NET 8 / Avalonia port
 
-Original: D64 Editor by # Forrest Mook, GPL v2, 1999-2016. 
+Original: D64 Editor by  *** Forrest Mook ***, GPL v2, 1999-2016. https://www.d64editor.com 
 
 This is a C# port of the core disk engine.  
 
