@@ -2,19 +2,14 @@
 
 [![.NET](https://github.com/pgburdett/D64Editor/actions/workflows/dotnet.yml/badge.svg)](https://github.com/pgburdett/D64Editor/actions/workflows/dotnet.yml)
 
-# D64 Editor — VB6 → C#/.NET 8 / Avalonia port
+# D64 Editor — VB6 → C#/.NET 10 Core / Avalonia port
 
-Original: D64 Editor by Forrest Mook, GPL v2, 1999-2016. This is a from-scratch
-C# port of the core disk engine plus one fully working window, as a template
-for porting the rest.
+Original: D64 Editor by  **_Forrest Mook_**, GPL v2, 1999-2016. https://www.d64editor.com
 
-**I could not compile or run this in the sandbox** (no .NET SDK, no NuGet
-access there). Everything below was hand-translated line-by-line against the
-original .bas/.frm source and I'm confident in the logic, but you'll hit the
-first real compiler errors when you build it — treat that as normal, not a
-sign something's badly wrong.
+This is a C# port of the core disk engine and UI Components.
 
-## Build (on your CachyOS box)
+
+## Build (on your linux or windows machine ( I use Garuda Dr4g0niz3d as primary)
 
 ```
 sudo pacman -S dotnet-sdk    # if you don't already have it
@@ -233,11 +228,17 @@ selected, matching the original.
 - `frmMemory`'s original population path (whatever elsewhere in `frmMain`
   fed files into the memory cache before this port's "Add File..." button)
 
+## Future Plans
+
 All fourteen original forms have a C# counterpart, and the follow-up requests
 (T64/P00 import, 40-track, GEOS metadata, drag-and-drop) are in too. What's
 left above is genuinely minor scope, not missing base functionality.
 
-## A note on fidelity vs. cleanup
+## What's being code on next commit
+Start and end addresses in hex or decimnal optional plus disassembly of code at a 
+specific sector or at the starting sector of the selected file.
+
+## A note on fidelity vs. cleanups
 
 Where the VB6 code did something because VB6 forced it to (module-level
 globals instead of instance state, double-precision math to avoid writing
