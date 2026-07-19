@@ -63,7 +63,7 @@ dotnet run --project D64Editor.App
   worth testing against one if you have it, since GEOS format details have more
   variance across sources than the base 1541 format.
 
-## What's in the demo windows (D64Editor.App)
+## What has been converted thus far..
 
 `MainWindow` ports `frmMain`'s disk-browsing and file-transfer slice: Open,
 Import File, Export Selected, disk name/ID display, directory listing,
