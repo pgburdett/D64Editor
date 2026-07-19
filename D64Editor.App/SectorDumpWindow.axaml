@@ -12,7 +12,7 @@
         <Grid ColumnDefinitions="Auto,8,80,20,Auto,8,80">
             <TextBlock Grid.Column="0" Text="Track:" VerticalAlignment="Center" />
             <!-- Mirrors cmbTrack -->
-            <NumericUpDown Grid.Column="2" Name="TrackBox" Minimum="1" Maximum="40" Value="1" ValueChanged="OnTrackChanged" />
+            <NumericUpDown Grid.Column="2" Name="TrackBox" Minimum="1" Maximum="35" Value="1" ValueChanged="OnTrackChanged" />
 
             <TextBlock Grid.Column="4" Text="Sector:" VerticalAlignment="Center" />
             <!-- Mirrors cmbSector, range depends on the selected track -->

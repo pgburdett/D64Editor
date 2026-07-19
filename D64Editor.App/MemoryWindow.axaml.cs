@@ -45,16 +45,30 @@ public partial class MemoryWindow : Window
             if (path is null) continue;
 
             byte[] bytes = await File.ReadAllBytesAsync(path);
-            string name = Path.GetFileName(path);
-            var type = Path.GetExtension(path).TrimStart('.').ToUpperInvariant() switch
+            string hostName = Path.GetFileName(path);
+
+            if (ContainerFormats.IsT64(hostName))
             {
-                "SEQ" => D64FileType.Seq,
-                "USR" => D64FileType.Usr,
-                "REL" => D64FileType.Rel,
-                "DEL" => D64FileType.Del,
-                _ => D64FileType.Prg
-            };
-            _entries.Add(new MemoryCacheEntry { DisplayName = name, Data = bytes, FileType = type });
+                foreach (var extracted in ContainerFormats.ExtractT64(bytes))
+                    _entries.Add(new MemoryCacheEntry { DisplayName = extracted.Name, Data = extracted.Data, FileType = extracted.Type });
+            }
+            else if (ContainerFormats.IsP00Family(hostName))
+            {
+                var extracted = ContainerFormats.ExtractP00(bytes, hostName);
+                _entries.Add(new MemoryCacheEntry { DisplayName = extracted.Name, Data = extracted.Data, FileType = extracted.Type });
+            }
+            else
+            {
+                var type = Path.GetExtension(path).TrimStart('.').ToUpperInvariant() switch
+                {
+                    "SEQ" => D64FileType.Seq,
+                    "USR" => D64FileType.Usr,
+                    "REL" => D64FileType.Rel,
+                    "DEL" => D64FileType.Del,
+                    _ => D64FileType.Prg
+                };
+                _entries.Add(new MemoryCacheEntry { DisplayName = hostName, Data = bytes, FileType = type });
+            }
         }
 
         RefreshList();

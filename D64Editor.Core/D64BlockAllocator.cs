@@ -112,6 +112,8 @@ public class D64BlockAllocator
 
             NormalizeSector();
 
+            // This wraps back at track 35 even on 40-track images — tracks 36-40 are
+            // deliberately never allocation targets (see D64Image.ReadBam's tail comment).
             if (Track < 1) { _direction = 1; Track = 19; Sector = 0; }
             if (Track > 35) { _direction = 2; Track = 17; Sector = 0; }
 

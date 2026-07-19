@@ -32,13 +32,34 @@ dotnet run --project D64Editor.App
 - Block ownership + cross-link detection (`ComputeBlockOwners`) ← `getBlockOwners`
 - `ClearBlock` / `ReadBlock` / `WriteBlock` — raw block access for the Block Viewer
 - `ImportFile` / `ExportFile` ← `FileImport` / `FileExport` (plain PRG/SEQ/USR/REL/DEL
-  payloads; the P00 and T64 container-format detection isn't ported)
+  payloads)
+- `ImportContainerFile` + `ContainerFormats` — T64 and P00/S00/U00/R00 container
+  import. **Not ported** from the original (that part of `FileImport` wasn't part
+  of the reviewed source) — a from-scratch implementation against the published
+  T64/P00 format specs. T64 files can hold several entries and all get imported;
+  P00-family holds exactly one.
 - `PetsciiConverter` ← the character-transform loop in `ViewSeqFile`
-- `ErrorInfo` (read/write the 683-byte error-info section on 175531-byte
-  images) + `D64ErrorCodes` ← `ErrorCodeBlocks` and frmErrorNumbers' error table
+- `ErrorInfo` (read/write the error-info section, 683 or 768 bytes depending on
+  track count) + `D64ErrorCodes` ← `ErrorCodeBlocks` and frmErrorNumbers' error table
 - `PreferredStartTrack`/`PreferredStartSector` on `D64Image`, consulted by
   `ImportFile` ← `UserSpecifiedFirstTrack`/`UserSpecifiedFirstSector` from Config
 - `AddArtEntry` ← `CopySeparatorsToD64`
+- 40-track (non-standard extended) disk support — `TrackCount`/`TotalBlocks` are
+  now per-instance (35/683 or 40/768) instead of fixed constants, detected from
+  file size on load. Tracks 36-40 have no BAM representation on any real or
+  emulated 1541 (the format spec only ever reserved BAM entries for 1-35), so
+  this port always reports those blocks as allocated — existing files there
+  read/write fine, but the free-block allocator will never write new files
+  into them. This matches the original's own "only partially supported" 40-track
+  handling rather than inventing a fuller non-standard scheme with no spec to
+  check it against.
+- GEOS directory-entry metadata (`D64FileEntry.IsGeosFile`/`GeosFileTypeName`/
+  `IsGeosVlir`/`GeosInfoBlock`/`GeosModified`, `D64Image.IsGeosDisk`). **Not
+  ported** — bytes 0x15-0x1D were previously just preserved byte-for-byte
+  undecoded, same as the original. This is a from-scratch decode against
+  published GEOS format documentation, not verified against a real GEOS disk —
+  worth testing against one if you have it, since GEOS format details have more
+  variance across sources than the base 1541 format.
 
 ## What's in the demo windows (D64Editor.App)
 
@@ -145,24 +166,28 @@ approximately right. To wire a real font in:
 Once that's done, both windows switch to using the font directly instead of
 their ASCII/Latin-1 approximations.
 
+## Drag-and-drop and container import
+
+Drop a `.d64` onto the main window to open it, or drop any other file
+(including `.t64`/`.p00`/`.s00`/`.u00`/`.r00`, and multiple files at once) to
+import it into whatever disk's currently open. This isn't a port of
+`DragDrop.bas` — that wrapped Windows' OLE drag-drop APIs, which don't map
+onto Avalonia's drag-drop model closely enough for a line-by-line port to
+mean much — but the resulting behavior matches. The same container detection
+also applies to the regular "Import File..." button and to "Add File..." in
+the Memory window.
+
 ## Not yet ported
 
-- T64 and P00 container-format import (multi-file T64s were unsupported in
-  the original too — it explicitly rejects those)
-- 40-track disk images (the original only partially supported these; this
-  port is standard 35-track only)
-- GEOS-specific interpretation of bytes 0x15-0x1D (currently preserved
-  byte-for-byte on round-trip, not decoded)
-- Drag-and-drop import (`DragDrop.bas`)
-- `frmMemory`'s original population path (whatever elsewhere in `frmMain`
-  fed files into the memory cache before this port's "Add File..." button)
 - Config's separator-line setting (the original tied a single separator
   string into Config directly; this port's separator library in the
   Filename Builder covers the same need without that extra setting)
+- `frmMemory`'s original population path (whatever elsewhere in `frmMain`
+  fed files into the memory cache before this port's "Add File..." button)
 
-All fourteen original forms now have a C# counterpart. What's left above is
-genuinely optional scope (container formats, 40-track, GEOS metadata) rather
-than missing functionality from the base app.
+All fourteen original forms have a C# counterpart, and the follow-up requests
+(T64/P00 import, 40-track, GEOS metadata, drag-and-drop) are in too. What's
+left above is genuinely minor scope, not missing base functionality.
 
 ## A note on fidelity vs. cleanup
 

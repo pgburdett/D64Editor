@@ -32,6 +32,21 @@ build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 [/run/media/pat/store/projects/D64Editor/D64Editor.App/BlockViewerWindow.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
+[/run/media/pat/store/projects/D64Editor/D64Editor.App/ConfigWindow.axaml]
+build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
+
+[/run/media/pat/store/projects/D64Editor/D64Editor.App/CrossLinksWindow.axaml]
+build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
+
+[/run/media/pat/store/projects/D64Editor/D64Editor.App/ErrorNumbersWindow.axaml]
+build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
+
+[/run/media/pat/store/projects/D64Editor/D64Editor.App/FilenameBuilderWindow.axaml]
+build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
+
+[/run/media/pat/store/projects/D64Editor/D64Editor.App/FilePropertiesWindow.axaml]
+build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
+
 [/run/media/pat/store/projects/D64Editor/D64Editor.App/MainWindow.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 

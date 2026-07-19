@@ -39,6 +39,16 @@ public partial class FilePropertiesWindow : Window
             D64FileType.Rel => RelRadio,
             _ => DelRadio
         }).IsChecked = true;
+
+        if (entry.IsGeosFile)
+        {
+            GeosInfoLabel.IsVisible = true;
+            string structure = entry.IsGeosVlir ? "VLIR" : "sequential";
+            string modified = entry.GeosModified?.ToString("yyyy-MM-dd HH:mm") ?? "unknown";
+            var (infoTrack, infoSector) = entry.GeosInfoBlock ?? (0, 0);
+            GeosInfoLabel.Text = $"GEOS file — {entry.GeosFileTypeName}, {structure} structure, " +
+                $"info block at {infoTrack}/{infoSector}, modified {modified}";
+        }
     }
 
     /// <summary>Ported from cmdShowFilenameBuilder_Click.</summary>

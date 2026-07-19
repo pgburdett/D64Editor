@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using D64Editor.Core;
@@ -10,6 +11,11 @@ namespace D64Editor.App;
 /// LoadFile parses the disk and populates txtDiskName/txtDiskID/List1/lblBlocksFree/
 /// lblFileCount/lblDiskType. Here that's OnOpenClicked + PopulateFrom, working against
 /// D64Image instead of reaching into fifteen module-level globals.
+///
+/// Drag-and-drop (below) is a fresh implementation using Avalonia's drag-drop API rather
+/// than a port of DragDrop.bas, which wrapped the OLE drag-drop APIs Windows Forms/VB6
+/// exposed — Avalonia's model is different enough that porting the mechanics wouldn't mean
+/// much; the behavior (drop a .d64 to open it, drop anything else to import it) matches.
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -18,6 +24,56 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        DragDrop.SetAllowDrop(this, true);
+        AddHandler(DragDrop.DropEvent, OnDrop);
+        AddHandler(DragDrop.DragOverEvent, OnDragOver);
+    }
+
+    private void OnDragOver(object? sender, DragEventArgs e)
+    {
+        e.DragEffects = e.Data.Contains(DataFormats.Files) ? DragDropEffects.Copy : DragDropEffects.None;
+    }
+
+    /// <summary>Drops a .d64/.d71/.d81 to open it, or anything else (including multiple files,
+    /// and T64/P00 containers) to import into whatever disk is currently open.</summary>
+    private async void OnDrop(object? sender, DragEventArgs e)
+    {
+        var files = e.Data.GetFiles();
+        if (files is null) return;
+
+        foreach (var file in files)
+        {
+            string? path = file.TryGetLocalPath();
+            if (path is null) continue;
+
+            string ext = Path.GetExtension(path).ToLowerInvariant();
+            if (ext is ".d64")
+            {
+                LoadDisk(path);
+                continue;
+            }
+
+            if (_image is null)
+            {
+                FileCountLabel.Text = "Open a D64 file first, then drop files to import them.";
+                continue;
+            }
+
+            try
+            {
+                byte[] bytes = await File.ReadAllBytesAsync(path);
+                var added = _image.ImportContainerFile(bytes, Path.GetFileName(path));
+                _image.Save();
+                PopulateFrom(_image);
+                FileCountLabel.Text = added.Count == 1
+                    ? $"Imported \"{added[0].FileName}\"."
+                    : $"Imported {added.Count} files from {Path.GetFileName(path)}.";
+            }
+            catch (InvalidOperationException ex)
+            {
+                FileCountLabel.Text = ex.Message;
+            }
+        }
     }
 
     private async void OnOpenClicked(object? sender, RoutedEventArgs e)
@@ -37,6 +93,11 @@ public partial class MainWindow : Window
         string? path = files[0].TryGetLocalPath();
         if (path is null) return;
 
+        LoadDisk(path);
+    }
+
+    private void LoadDisk(string path)
+    {
         try
         {
             _image = D64Image.Load(path);
@@ -122,7 +183,7 @@ public partial class MainWindow : Window
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("C64 Files") { Patterns = new[] { "*.prg", "*.seq", "*.usr", "*.rel", "*.del" } },
+                new FilePickerFileType("C64 Files") { Patterns = new[] { "*.prg", "*.seq", "*.usr", "*.rel", "*.del", "*.t64", "*.p00", "*.s00", "*.u00", "*.r00" } },
                 new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
             }
         });
@@ -135,9 +196,12 @@ public partial class MainWindow : Window
         try
         {
             byte[] bytes = await File.ReadAllBytesAsync(path);
-            _image.ImportFile(bytes, Path.GetFileName(path));
+            var added = _image.ImportContainerFile(bytes, Path.GetFileName(path));
             _image.Save();
             PopulateFrom(_image);
+            FileCountLabel.Text = added.Count == 1
+                ? $"Imported \"{added[0].FileName}\"."
+                : $"Imported {added.Count} files from {Path.GetFileName(path)}.";
         }
         catch (InvalidOperationException ex)
         {
@@ -245,8 +309,8 @@ public partial class MainWindow : Window
         DiskIdBox.Text = image.DiskId;
         BlocksFreeLabel.Text = $"{image.BlocksFree} BLOCKS FREE.";
         DiskTypeLabel.Text = image.HasErrorInfo
-            ? "35 TRACK D64 FILE + ERROR INFO"
-            : "35 TRACK D64 FILE (STANDARD)";
+            ? $"{image.TrackCount} TRACK D64 FILE + ERROR INFO"
+            : $"{image.TrackCount} TRACK D64 FILE (STANDARD)";
 
         DirectoryList.ItemsSource = null;
         DirectoryList.ItemsSource = image.Entries;

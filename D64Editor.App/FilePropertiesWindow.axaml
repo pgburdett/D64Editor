@@ -38,6 +38,9 @@
             <CheckBox Name="SplatBox" Content="Splat (improperly closed)" />
         </StackPanel>
 
+        <!-- GEOS metadata, shown only when the entry's Byte15 looks like a GEOS file type -->
+        <TextBlock Name="GeosInfoLabel" Foreground="MediumPurple" TextWrapping="Wrap" IsVisible="False" />
+
         <Button Content="Filename Builder..." Click="OnFilenameBuilderClicked" HorizontalAlignment="Left" />
 
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,10,0,0">

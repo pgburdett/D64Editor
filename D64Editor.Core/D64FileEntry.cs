@@ -63,6 +63,60 @@ public class D64FileEntry
 
     public D64FileType FileType => D64FileTypeExtensions.FromRawByte(RawFileType);
 
+    // ---------------------------------------------------------------
+    // GEOS metadata
+    //
+    // GEOS overloads the same bytes 0x15-0x1D that REL files use for their
+    // side-sector-block info. This isn't ported from the original — that
+    // part of the VB6 source wasn't reviewed for this project (bytes were
+    // previously just preserved byte-for-byte, undecoded) — so it's a
+    // from-scratch best-effort decode against published GEOS directory-entry
+    // documentation, not verified against a real GEOS disk. Test against one
+    // if you have it; GEOS format details have more variance in secondary
+    // sources than the base 1541 format does.
+    //
+    // Byte15 = GEOS file type (0 = not a GEOS file, so that's the guard used
+    // below for all the other GEOS-only properties). Byte16 = file structure
+    // (0 = sequential, nonzero = VLIR/"variable length index record", GEOS's
+    // multi-chain format for things like applications). Byte17/18 = track/
+    // sector of the file's GEOS info block (icon + description). Byte19-1D =
+    // last-modified year(-1900)/month/day/hour/minute.
+    // ---------------------------------------------------------------
+
+    private static readonly string[] GeosFileTypeNames =
+    {
+        "Not a GEOS file", "BASIC", "Assembler", "Data", "System",
+        "Desk Accessory", "Application", "Application Data", "Font",
+        "Printer Driver", "Input Driver", "Disk Driver", "System Boot File",
+        "Temporary", "Auto-Execute File"
+    };
+
+    public bool IsGeosFile => Byte15 is >= 1 and <= 14;
+
+    public string GeosFileTypeName => IsGeosFile ? GeosFileTypeNames[Byte15] : GeosFileTypeNames[0];
+
+    public bool IsGeosVlir => IsGeosFile && Byte16 != 0;
+
+    public (int Track, int Sector)? GeosInfoBlock => IsGeosFile ? (Byte17, Byte18) : null;
+
+    /// <summary>Null if this isn't a GEOS file, or if the date bytes don't parse as a plausible date
+    /// (guards against reading REL side-sector bytes as a date on non-GEOS files with the same byte pattern).</summary>
+    public DateTime? GeosModified
+    {
+        get
+        {
+            if (!IsGeosFile) return null;
+            try
+            {
+                return new DateTime(1900 + Byte19, Byte1A, Byte1B, Byte1C, Byte1D, 0);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return null;
+            }
+        }
+    }
+
     /// <summary>bit 7 == 1: file was closed properly. bit 7 == 0: "splat" file.</summary>
     public bool IsClosed => (RawFileType & 0x80) != 0;
 

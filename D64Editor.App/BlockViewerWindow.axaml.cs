@@ -107,7 +107,7 @@ public partial class BlockViewerWindow : Window
     /// <summary>Ported from the shared Get-loop in lblBAM_Click / cmdNextBlock_Click / cmdPreviousBlock_Click.</summary>
     private void LoadBlock(int block)
     {
-        _block = ((block % D64Image.TotalBlocks) + D64Image.TotalBlocks) % D64Image.TotalBlocks;
+        _block = ((block % _image.TotalBlocks) + _image.TotalBlocks) % _image.TotalBlocks;
         _buffer = _image.ReadBlock(_block);
 
         for (int i = 0; i < 256; i++)

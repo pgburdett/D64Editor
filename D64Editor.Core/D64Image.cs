@@ -16,14 +16,37 @@ namespace D64Editor.Core;
 public class D64Image
 {
     public const int SectorSize = 256;
-    public const int TrackCount = 35;
-    public const int TotalBlocks = 683; // 17*21 + 7*19 + 6*18 + 5*17
 
-    // Valid on-disk sizes for a standard 35-track image (matches the
-    // FileLen() checks in LoadFile — this port doesn't attempt 40-track
-    // support, which the original didn't fully support either).
+    /// <summary>35-track (standard) block count: 17*21 + 7*19 + 6*18 + 5*17.</summary>
+    public const int StandardTrackCount = 35;
+    public const int StandardTotalBlocks = 683;
+
+    /// <summary>
+    /// 40-track total: the standard 683 plus 5 more 17-sector tracks (36-40),
+    /// continuing the same outermost speed zone as tracks 31-35. This is a
+    /// non-standard extension some cracking-scene tools used — real 1541
+    /// drives don't seek past track 35 — and per-track free/allocated
+    /// tracking (the BAM) only ever covered tracks 1-35 even on disks that
+    /// used it, since there's no standard BAM slot for the extra tracks.
+    /// This port follows that same convention: tracks 36-40 are readable/
+    /// writable (existing files there work fine) but always reported as
+    /// allocated, so the free-block allocator never picks them for new
+    //> files. See ReadBam's tail end for where that's enforced.
+    /// </summary>
+    public const int ExtendedTrackCount = 40;
+    public const int ExtendedTotalBlocks = 768;
+
+    // Valid on-disk sizes. 40-track sizes are the non-standard extension noted above.
     public const long StandardSize = 174848;
     public const long StandardSizeWithErrorInfo = 175531;
+    public const long ExtendedSize = 196608;
+    public const long ExtendedSizeWithErrorInfo = 197376;
+
+    /// <summary>35 for a standard image, 40 for the extended non-standard variant. Set on Load.</summary>
+    public int TrackCount { get; private set; } = StandardTrackCount;
+
+    /// <summary>683 or 768, matching TrackCount.</summary>
+    public int TotalBlocks { get; private set; } = StandardTotalBlocks;
 
     // 0-based byte offset of track 18, sector 0 (the BAM sector) within the file.
     private const int BamSectorOffset = 357 * SectorSize; // 91392
@@ -49,7 +72,7 @@ public class D64Image
     public List<D64FileEntry> Entries { get; } = new();
 
     /// <summary>true = allocated, false = free. Indexed by the same flat block numbering as ConvertTrackSectorToBlock.</summary>
-    public bool[] AllocatedBlocks { get; private set; } = new bool[TotalBlocks];
+    public bool[] AllocatedBlocks { get; private set; } = new bool[StandardTotalBlocks];
 
     /// <summary>Interleave used when searching for free blocks (findNextBlocktoUse). 1-15; original clamps invalid values to 10.</summary>
     public int Interleave { get; set; } = 10;
@@ -60,12 +83,12 @@ public class D64Image
 
     /// <summary>
     /// One error-code byte per block (0-14 = specific 1541 drive errors, 1 = no
-    /// error), present only on 175531-byte images (the 683-byte error-info
-    /// section appended after the standard 174848 data bytes). Meaningless
+    /// error), present only on images with an error-info section (175531 bytes
+    /// for 35-track, 197376 for the extended 40-track variant). Meaningless
     /// when HasErrorInfo is false. Ported from the ErrorCodeBlocks() array and
     /// its read/write loops in LoadFile / mnuSaveFile_Click.
     /// </summary>
-    public byte[] ErrorInfo { get; private set; } = new byte[TotalBlocks];
+    public byte[] ErrorInfo { get; private set; } = new byte[StandardTotalBlocks];
 
     // ---------------------------------------------------------------
     // Loading
@@ -74,30 +97,38 @@ public class D64Image
     public static D64Image Load(string path)
     {
         byte[] bytes = File.ReadAllBytes(path);
+        long len = bytes.LongLength;
 
-        if (bytes.LongLength != StandardSize && bytes.LongLength != StandardSizeWithErrorInfo)
+        int trackCount;
+        bool hasErrorInfo;
+        if (len == StandardSize) { trackCount = StandardTrackCount; hasErrorInfo = false; }
+        else if (len == StandardSizeWithErrorInfo) { trackCount = StandardTrackCount; hasErrorInfo = true; }
+        else if (len == ExtendedSize) { trackCount = ExtendedTrackCount; hasErrorInfo = false; }
+        else if (len == ExtendedSizeWithErrorInfo) { trackCount = ExtendedTrackCount; hasErrorInfo = true; }
+        else
         {
             throw new InvalidDataException(
-                $"'{path}' is not a supported D64 file (size {bytes.LongLength} bytes). " +
-                "Only standard 35-track images (174848 or 175531 bytes with error info) are supported.");
+                $"'{path}' is not a supported D64 file (size {len} bytes). " +
+                "Supported sizes: 174848/175531 (35-track) or 196608/197376 (40-track, non-standard).");
         }
 
         var image = new D64Image
         {
             _data = bytes,
             SourcePath = path,
-            HasErrorInfo = bytes.LongLength == StandardSizeWithErrorInfo
+            TrackCount = trackCount,
+            TotalBlocks = trackCount == ExtendedTrackCount ? ExtendedTotalBlocks : StandardTotalBlocks,
+            HasErrorInfo = hasErrorInfo
         };
+        image.AllocatedBlocks = new bool[image.TotalBlocks];
+        image.ErrorInfo = new byte[image.TotalBlocks];
 
         image.ReadDiskHeader();
         image.ReadBam();
         image.ReadDirectory();
 
         if (image.HasErrorInfo)
-        {
-            image.ErrorInfo = new byte[TotalBlocks];
-            Array.Copy(bytes, (int)StandardSize, image.ErrorInfo, 0, TotalBlocks);
-        }
+            Array.Copy(bytes, (int)StandardSize, image.ErrorInfo, 0, image.TotalBlocks);
 
         return image;
     }
@@ -119,24 +150,26 @@ public class D64Image
     // (ported from convertTrackSectorToBlock / blockNum2TrackandSector)
     // ---------------------------------------------------------------
 
-    /// <summary>Sectors per track for the four 1541 speed zones.</summary>
+    /// <summary>Sectors per track for the four 1541 speed zones, extended through track 40
+    /// for the non-standard 40-track variant (tracks 36-40 continue the 31-35 zone).</summary>
     public static int SectorsPerTrack(int track) => track switch
     {
         >= 1 and <= 17 => 21,
         >= 18 and <= 24 => 19,
         >= 25 and <= 30 => 18,
-        >= 31 and <= 35 => 17,
-        _ => throw new ArgumentOutOfRangeException(nameof(track), track, "Track must be 1-35.")
+        >= 31 and <= 40 => 17,
+        _ => throw new ArgumentOutOfRangeException(nameof(track), track, "Track must be 1-40.")
     };
 
-    /// <summary>Flat block index (0-682) for a track/sector, matching the original's block numbering.</summary>
+    /// <summary>Flat block index for a track/sector, matching the original's block numbering.
+    /// Naturally extends past 682 for tracks 36-40 since that's the same zone-4 formula.</summary>
     public static int TrackSectorToBlock(int track, int sector) => track switch
     {
         >= 1 and <= 17 => (track - 1) * 21 + sector,
         >= 18 and <= 24 => (track - 18) * 19 + 357 + sector,
         >= 25 and <= 30 => (track - 25) * 18 + 490 + sector,
-        >= 31 and <= 35 => (track - 31) * 17 + 598 + sector,
-        _ => throw new ArgumentOutOfRangeException(nameof(track), track, "Track must be 1-35.")
+        >= 31 and <= 40 => (track - 31) * 17 + 598 + sector,
+        _ => throw new ArgumentOutOfRangeException(nameof(track), track, "Track must be 1-40.")
     };
 
     /// <summary>Reverse of TrackSectorToBlock. The original did this via double-precision division and
@@ -160,6 +193,32 @@ public class D64Image
     {
         DiskName = ReadPetsciiField(DiskNameOffset, 16);
         DiskId = ReadPetsciiField(DiskIdOffset, 5);
+    }
+
+    /// <summary>
+    /// Best-effort GEOS disk detection: scans the BAM sector for the "GEOS"
+    /// signature GEOS format disks carry near the end of that sector. Not
+    /// ported from the original (undecoded there too) — a from-scratch
+    /// heuristic against published documentation of the GEOS disk format,
+    /// same caveats as D64FileEntry's GEOS properties.
+    /// </summary>
+    public bool IsGeosDisk
+    {
+        get
+        {
+            byte[] signature = { 0x47, 0x45, 0x4F, 0x53 }; // "GEOS"
+            int sectorStart = BamSectorOffset;
+            for (int i = 0xAB; i <= SectorSize - signature.Length; i++)
+            {
+                bool match = true;
+                for (int j = 0; j < signature.Length; j++)
+                {
+                    if (_data[sectorStart + i + j] != signature[j]) { match = false; break; }
+                }
+                if (match) return true;
+            }
+            return false;
+        }
     }
 
     private void WriteDiskHeader()
@@ -189,12 +248,15 @@ public class D64Image
     // (ported from READBAM / BAMWRITE)
     // ---------------------------------------------------------------
 
+    /// <summary>The BAM only ever has entries for tracks 1-35 (35*4 = 140 bytes reserved in the
+    /// BAM sector) — even on 40-track images, per StandardTotalBlocks's doc comment. This loops
+    /// over StandardTrackCount regardless of TrackCount for that reason.</summary>
     public void ReadBam()
     {
         var allocated = new bool[TotalBlocks];
         int blockBase = 0;
 
-        for (int track = 1; track <= TrackCount; track++)
+        for (int track = 1; track <= StandardTrackCount; track++)
         {
             int entryOffset = BamEntriesOffset + (track - 1) * 4;
             // entryOffset + 0 = free-sector count for this track (not needed for the bitmap itself)
@@ -216,6 +278,12 @@ public class D64Image
             blockBase += sectors;
         }
 
+        // Tracks 36-40 (if present) have no BAM representation at all — always report them
+        // allocated so the free-block allocator never picks them for new files, even though
+        // existing files that already live there still read/write fine via ReadBlock/WriteBlock.
+        for (int b = StandardTotalBlocks; b < TotalBlocks; b++)
+            allocated[b] = true;
+
         AllocatedBlocks = allocated;
     }
 
@@ -224,7 +292,7 @@ public class D64Image
         int blockBase = 0;
         int totalFree = 0;
 
-        for (int track = 1; track <= TrackCount; track++)
+        for (int track = 1; track <= StandardTrackCount; track++)
         {
             int sectors = SectorsPerTrack(track);
             byte b1 = 0, b2 = 0, b3 = 0;
@@ -406,7 +474,7 @@ public class D64Image
     // ---------------------------------------------------------------
 
     /// <summary>Which file (if any) owns each block, e.g. for the BAM editor's hover display. Call after ReadDirectory().</summary>
-    public string[] BlockOwners { get; private set; } = new string[TotalBlocks];
+    public string[] BlockOwners { get; private set; } = new string[StandardTotalBlocks];
 
     /// <summary>Human-readable cross-link warnings, e.g. "&quot;A&quot; IS CROSSLINKED WITH &quot;B&quot; AT BLOCK #5, 3".</summary>
     public List<string> CrossLinkWarnings { get; private set; } = new();
@@ -425,7 +493,7 @@ public class D64Image
             for (int step = 0; step < 256 && track != 0; step++)
             {
                 int block = TrackSectorToBlock(track, sector);
-                if (block is >= 0 and < TotalBlocks)
+                if (block >= 0 && block < TotalBlocks)
                 {
                     if (string.IsNullOrEmpty(owners[block]))
                     {
@@ -459,7 +527,7 @@ public class D64Image
     /// <summary>Zeroes a block's 256 bytes in place, e.g. for the BAM editor's "Clean Disk" command. Doesn't touch AllocatedBlocks.</summary>
     public void ClearBlock(int block)
     {
-        if (block is < 0 or >= TotalBlocks)
+        if (block < 0 || block >= TotalBlocks)
             throw new ArgumentOutOfRangeException(nameof(block));
         Array.Clear(_data, block * SectorSize, SectorSize);
     }
@@ -473,7 +541,7 @@ public class D64Image
 
     public byte[] ReadBlock(int block)
     {
-        if (block is < 0 or >= TotalBlocks)
+        if (block < 0 || block >= TotalBlocks)
             throw new ArgumentOutOfRangeException(nameof(block));
         byte[] buffer = new byte[SectorSize];
         Array.Copy(_data, block * SectorSize, buffer, 0, SectorSize);
@@ -482,7 +550,7 @@ public class D64Image
 
     public void WriteBlock(int block, byte[] bytes)
     {
-        if (block is < 0 or >= TotalBlocks)
+        if (block < 0 || block >= TotalBlocks)
             throw new ArgumentOutOfRangeException(nameof(block));
         if (bytes.Length != SectorSize)
             throw new ArgumentException($"Block data must be exactly {SectorSize} bytes.", nameof(bytes));
@@ -504,6 +572,33 @@ public class D64Image
     /// Call WriteDirectory()/WriteBam() (done automatically here) and then Save()
     /// to persist to disk.
     /// </summary>
+    /// <summary>
+    /// Detects T64/P00-family containers by extension and imports everything they
+    /// contain (a T64 can hold several files; P00-family holds exactly one),
+    /// otherwise falls through to a plain ImportFile call. This is the entry
+    /// point the UI should use for "Import File..." and drag-and-drop, rather
+    /// than calling ImportFile directly, so container files just work.
+    /// </summary>
+    public List<D64FileEntry> ImportContainerFile(byte[] fileBytes, string hostFileName)
+    {
+        if (ContainerFormats.IsT64(hostFileName))
+        {
+            var extracted = ContainerFormats.ExtractT64(fileBytes);
+            var added = new List<D64FileEntry>();
+            foreach (var file in extracted)
+                added.Add(ImportFile(file.Data, file.Name, file.Type));
+            return added;
+        }
+
+        if (ContainerFormats.IsP00Family(hostFileName))
+        {
+            var file = ContainerFormats.ExtractP00(fileBytes, hostFileName);
+            return new List<D64FileEntry> { ImportFile(file.Data, file.Name, file.Type) };
+        }
+
+        return new List<D64FileEntry> { ImportFile(fileBytes, hostFileName) };
+    }
+
     public D64FileEntry ImportFile(byte[] fileBytes, string hostFileName, D64FileType? typeOverride = null)
     {
         int sectorsNeeded = (Entries.Count + 1 + 7) / 8;

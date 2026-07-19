@@ -28,7 +28,7 @@ public static class Fonts
     /// Set to true once a real font file has been dropped into Assets/Fonts —
     /// keeps the app from pointing at a resource that doesn't exist yet.
     /// </summary>
-    public const bool PetsciiFontAvailable = true;
+    public const bool PetsciiFontAvailable = false;
 
     public static FontFamily Petscii => PetsciiFontAvailable
         ? new FontFamily($"avares://D64Editor.App/Assets/Fonts/{FileName}#{FamilyName}")

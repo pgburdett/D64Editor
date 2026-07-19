@@ -22,7 +22,7 @@ namespace D64Editor.App;
 public partial class BamEditorWindow : Window
 {
     private readonly D64Image _image;
-    private readonly TextBlock[] _cells = new TextBlock[D64Image.TotalBlocks];
+    private readonly TextBlock[] _cells;
     private bool _hexMode;
 
     /// <summary>Ported from lblBAM_Click's mode switch (optBlockEditMode.Value / the "Error Blocks
@@ -40,6 +40,7 @@ public partial class BamEditorWindow : Window
     public BamEditorWindow(D64Image image, bool startInErrorMode = false)
     {
         _image = image;
+        _cells = new TextBlock[_image.TotalBlocks];
         InitializeComponent();
         BuildGrid();
 
@@ -57,7 +58,7 @@ public partial class BamEditorWindow : Window
 
         // Row 0 / Column 0 are headers; tracks run across columns 1-35, sectors down rows 1-21.
         GridPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-        for (int t = 1; t <= D64Image.TrackCount; t++)
+        for (int t = 1; t <= _image.TrackCount; t++)
             GridPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
 
         GridPanel.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
@@ -66,13 +67,13 @@ public partial class BamEditorWindow : Window
 
         AddHeaderCell("TRACK ►\n▼ SECTOR", 0, 0);
 
-        for (int t = 1; t <= D64Image.TrackCount; t++)
+        for (int t = 1; t <= _image.TrackCount; t++)
             AddTrackHeader(t);
 
         for (int s = 0; s < maxSectors; s++)
             AddSectorHeader(s);
 
-        for (int track = 1; track <= D64Image.TrackCount; track++)
+        for (int track = 1; track <= _image.TrackCount; track++)
         {
             int sectors = D64Image.SectorsPerTrack(track);
             for (int sector = 0; sector < sectors; sector++)
@@ -166,7 +167,7 @@ public partial class BamEditorWindow : Window
 
     private void RefreshHeaders()
     {
-        for (int t = 1; t <= D64Image.TrackCount; t++)
+        for (int t = 1; t <= _image.TrackCount; t++)
             if (GridPanel.Children.FirstOrDefault(c => c is TextBlock tb && tb.Name == $"TrackHeader{t}") is TextBlock tHeader)
                 tHeader.Text = FormatNumber(t);
 
@@ -217,7 +218,7 @@ public partial class BamEditorWindow : Window
     /// <summary>Ported from mnuAllocateAllSectors_Click.</summary>
     private void OnAllocateAllClicked(object? sender, RoutedEventArgs e)
     {
-        for (int i = 0; i < D64Image.TotalBlocks; i++)
+        for (int i = 0; i < _image.TotalBlocks; i++)
         {
             _image.AllocatedBlocks[i] = true;
             _cells[i].Text = "*";
@@ -227,7 +228,7 @@ public partial class BamEditorWindow : Window
     /// <summary>Ported from mnuUNAllocateallSectors_Click, including the guard that protects 18/0 and 18/1.</summary>
     private void OnUnallocateAllClicked(object? sender, RoutedEventArgs e)
     {
-        for (int i = 0; i < D64Image.TotalBlocks; i++)
+        for (int i = 0; i < _image.TotalBlocks; i++)
         {
             bool protectedBlock = i == 357 || i == 358;
             _image.AllocatedBlocks[i] = protectedBlock;
@@ -240,7 +241,7 @@ public partial class BamEditorWindow : Window
     private void OnCleanDiskClicked(object? sender, RoutedEventArgs e)
     {
         int cleaned = 0;
-        for (int i = 0; i < D64Image.TotalBlocks; i++)
+        for (int i = 0; i < _image.TotalBlocks; i++)
         {
             if (AppSettings.SafeClean)
             {
