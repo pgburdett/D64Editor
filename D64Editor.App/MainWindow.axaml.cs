@@ -60,6 +60,9 @@ public partial class MainWindow : Window
 
     private void OnConfigClicked(object? sender, RoutedEventArgs e) => new ConfigWindow(_image).Show(this);
 
+    private void OnFilenameBuilderClicked(object? sender, RoutedEventArgs e) =>
+        new FilenameBuilderWindow(_image).Show(this);
+
     private void OnFilePropertiesClicked(object? sender, RoutedEventArgs e)
     {
         if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }

@@ -37,6 +37,7 @@
                 <Separator />
                 <MenuItem Header="Edit _BAM..." Click="OnBamEditorClicked" />
                 <MenuItem Header="Block Export... (Sector Dump)" Click="OnSectorDumpClicked" />
+                <MenuItem Header="_Filename Builder..." Click="OnFilenameBuilderClicked" />
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_View File Chain" IsEnabled="False" />

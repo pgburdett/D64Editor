@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.FilenameBuilderWindow"
+        Title="Filename Builder"
+        Width="560" Height="480"
+        MinWidth="480" MinHeight="420">
+
+    <DockPanel Margin="10">
+
+        <!-- Mirrors mnuFile / mnuSeparators -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="Save Separators to File" Click="OnSaveSeparatorsClicked" />
+                <MenuItem Header="Exit" Click="OnExitClicked" />
+            </MenuItem>
+            <MenuItem Header="_Separators">
+                <MenuItem Header="Select All" Click="OnSelectAllClicked" />
+                <MenuItem Header="Invert Selection" Click="OnInvertSelectionClicked" />
+                <MenuItem Header="Unselect All" Click="OnUnselectAllClicked" />
+                <Separator />
+                <MenuItem Header="Modify Selected" Click="OnModifyClicked" />
+                <MenuItem Header="Delete Selected" Click="OnDeleteClicked" />
+                <Separator />
+                <MenuItem Header="Copy Selected into Disk" Click="OnCopyIntoDiskClicked" FontWeight="Bold" />
+            </MenuItem>
+        </Menu>
+
+        <!-- Mirrors txtNameBuilder + cmdAddSeparator -->
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,10,Auto" Margin="0,6,0,10">
+            <TextBlock Grid.Column="0" Text="Filename:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Grid.Column="1" Name="NameBuilderBox" MaxLength="16" FontFamily="monospace" />
+            <Button Grid.Column="3" Content="+ Add Separator" Click="OnAddSeparatorClicked" />
+        </Grid>
+
+        <!-- Apply/Discard only shown when opened from File Properties -->
+        <StackPanel DockPanel.Dock="Bottom" Name="ApplyDiscardPanel" Orientation="Horizontal"
+                    Spacing="8" HorizontalAlignment="Right" IsVisible="False" Margin="0,10,0,0">
+            <Button Content="Discard Changes" Click="OnDiscardClicked" />
+            <Button Content="Apply Changes" Click="OnApplyClicked" />
+        </StackPanel>
+
+        <Grid ColumnDefinitions="*,10,220">
+
+            <!-- Mirrors the DirChar(0..255) PETSCII character grid -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <UniformGrid Name="CharGrid" Columns="16" />
+            </ScrollViewer>
+
+            <!-- Mirrors listSeparators + the sort/save/delete toolbar -->
+            <DockPanel Grid.Column="2">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="4" Margin="0,0,0,4">
+                    <Button Content="↑" Click="OnSortUpClicked" ToolTip.Tip="Sort Up" />
+                    <Button Content="↓" Click="OnSortDownClicked" ToolTip.Tip="Sort Down" />
+                    <Button Content="✕" Click="OnDeleteClicked" ToolTip.Tip="Delete Selected" />
+                </StackPanel>
+                <ListBox Name="SeparatorsList" SelectionMode="Multiple" FontFamily="monospace" />
+            </DockPanel>
+
+        </Grid>
+
+    </DockPanel>
+</Window>

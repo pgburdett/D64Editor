@@ -41,6 +41,12 @@ public partial class FilePropertiesWindow : Window
         }).IsChecked = true;
     }
 
+    /// <summary>Ported from cmdShowFilenameBuilder_Click.</summary>
+    private void OnFilenameBuilderClicked(object? sender, RoutedEventArgs e)
+    {
+        new FilenameBuilderWindow(_image, FilenameBox.Text, applied => FilenameBox.Text = applied).Show(this);
+    }
+
     /// <summary>Ported from mnuSaveChanges_Click, including its Track/Sector/Size range checks.</summary>
     private void OnSaveChangesClicked(object? sender, RoutedEventArgs e)
     {

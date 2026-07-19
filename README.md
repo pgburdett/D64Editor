@@ -38,6 +38,7 @@ dotnet run --project D64Editor.App
   images) + `D64ErrorCodes` ← `ErrorCodeBlocks` and frmErrorNumbers' error table
 - `PreferredStartTrack`/`PreferredStartSector` on `D64Image`, consulted by
   `ImportFile` ← `UserSpecifiedFirstTrack`/`UserSpecifiedFirstSector` from Config
+- `AddArtEntry` ← `CopySeparatorsToD64`
 
 ## What's in the demo windows (D64Editor.App)
 
@@ -110,13 +111,30 @@ applies to 175531-byte images with an error-info section. Cross-Links opens
 automatically after loading a disk if any cross-linked blocks are found,
 same as the original's automatic popup, unless disabled in Config.
 
+`FilenameBuilderWindow` ports `frmFilenameBuilder` — the last of the fourteen
+original forms. It's not just a character-art tool: it's a reusable library
+of "separator" snippets that can be copied straight into a disk's directory
+as zero-block DEL entries, which is how art like "USE 38 TRACKS COPY" (or
+that Krestology disk) actually gets built — a handful of saved lines,
+recombined per disk. Two entry points, matching the original's dual purpose:
+standalone from the main Edit menu (build art, copy separators into the open
+disk), or from File Properties' "Filename Builder..." button (builds a name
+and feeds it back into that filename field instead). The PETSCII character
+grid shows decimal byte codes rather than glyphs until a real font's wired
+up via `Fonts.cs` — same limitation as the Block Editor's ASCII column, for
+the same reason. Separators persist to a file under the user's app-data
+folder now instead of the original's hard-coded Windows install directory.
+
 Together these show the pattern (event handler → calls into `D64Image` →
-updates controls) so the remaining form can follow the same shape.
+updates controls) that all fourteen forms follow.
 
 ## Using a real PETSCII/CBM64 font
 
 The Block Editor's ASCII column and the SEQ Viewer's PETASCII mode fall back
-to plain ASCII/Latin-1 without a real C64 font. To wire one in:
+to plain ASCII/Latin-1 without a real C64 font. The Filename Builder's
+character grid falls back to decimal byte codes instead, since a Latin-1
+guess at 256 arbitrary values would mostly be wrong rather than
+approximately right. To wire a real font in:
 
 1. Drop the font file into `D64Editor.App/Assets/Fonts/` (any name, `.ttf` or `.otf`).
 2. Open `D64Editor.App/Fonts.cs` and update `FileName` and `FamilyName` to match
@@ -131,11 +149,6 @@ their ASCII/Latin-1 approximations.
 
 - T64 and P00 container-format import (multi-file T64s were unsupported in
   the original too — it explicitly rejects those)
-- Filename Builder (`frmFilenameBuilder`) — the PETSCII character-art editor
-  used to build directory entries like the "USE 38 TRACKS COPY" example disk.
-  This is the one substantial form left; it's a big one (6,196 lines in the
-  original, mostly a hand-placed PETSCII character grid) and worth scoping
-  as its own pass.
 - 40-track disk images (the original only partially supported these; this
   port is standard 35-track only)
 - GEOS-specific interpretation of bytes 0x15-0x1D (currently preserved
@@ -143,8 +156,13 @@ their ASCII/Latin-1 approximations.
 - Drag-and-drop import (`DragDrop.bas`)
 - `frmMemory`'s original population path (whatever elsewhere in `frmMain`
   fed files into the memory cache before this port's "Add File..." button)
-- Config's separator-line setting and Filename Builder-related options
-  (belong with that form)
+- Config's separator-line setting (the original tied a single separator
+  string into Config directly; this port's separator library in the
+  Filename Builder covers the same need without that extra setting)
+
+All fourteen original forms now have a C# counterpart. What's left above is
+genuinely optional scope (container formats, 40-track, GEOS metadata) rather
+than missing functionality from the base app.
 
 ## A note on fidelity vs. cleanup
 

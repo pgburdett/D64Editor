@@ -617,4 +617,31 @@ public class D64Image
         string ext = entry.FileType == D64FileType.Unknown ? "___" : entry.FileType.ToDisplayCode();
         return $"{clean}.{ext}".ToLowerInvariant();
     }
+
+    /// <summary>
+    /// Adds a zero-block directory entry with no block chain — used for "directory art":
+    /// filenames chosen purely for how they read in a disk listing (like the "USE 38 TRACKS
+    /// COPY" example), not real files. Ported from CopySeparatorsToD64 in frmFilenameBuilder.frm.
+    /// </summary>
+    public D64FileEntry AddArtEntry(string name)
+    {
+        int sectorsNeeded = (Entries.Count + 1 + 7) / 8;
+        if (sectorsNeeded > 18)
+            throw new InvalidOperationException("Sorry, you can't add a file to the disk. The directory is completely full.");
+
+        var entry = new D64FileEntry
+        {
+            FileName = name.Length > 16 ? name[..16] : name,
+            StartTrack = 0,
+            StartSector = 0,
+            SizeLow = 0,
+            SizeHigh = 0,
+            RawFileType = 0x80 // closed, type bits 000 = DEL — matches the original's &H80 exactly
+        };
+
+        Entries.Add(entry);
+        WriteDirectory();
+        WriteBam();
+        return entry;
+    }
 }

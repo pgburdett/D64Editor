@@ -38,7 +38,7 @@
             <CheckBox Name="SplatBox" Content="Splat (improperly closed)" />
         </StackPanel>
 
-        <Button Content="Filename Builder..." IsEnabled="False" HorizontalAlignment="Left" />
+        <Button Content="Filename Builder..." Click="OnFilenameBuilderClicked" HorizontalAlignment="Left" />
 
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,10,0,0">
             <Button Content="Discard Changes" Click="OnDiscardClicked" />
