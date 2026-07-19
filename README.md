@@ -4,17 +4,12 @@
 
 # D64 Editor — VB6 → C#/.NET 8 / Avalonia port
 
-Original: D64 Editor by Forrest Mook, GPL v2, 1999-2016. This is a from-scratch
-C# port of the core disk engine plus one fully working window, as a template
-for porting the rest.
+Original: D64 Editor by # Forrest Mook, GPL v2, 1999-2016. 
 
-**I could not compile or run this in the sandbox** (no .NET SDK, no NuGet
-access there). Everything below was hand-translated line-by-line against the
-original .bas/.frm source and I'm confident in the logic, but you'll hit the
-first real compiler errors when you build it — treat that as normal, not a
-sign something's badly wrong.
+This is a C# port of the core disk engine.  
 
-## Build (on your CachyOS box)
+
+## Build (on your linux or windows machine ( I use Garuda Dr4g0niz3d as primary)
 
 ```
 sudo pacman -S dotnet-sdk    # if you don't already have it
