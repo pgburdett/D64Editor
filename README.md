@@ -1,3 +1,7 @@
+
+
+[![.NET](https://github.com/pgburdett/D64Editor/actions/workflows/dotnet.yml/badge.svg)](https://github.com/pgburdett/D64Editor/actions/workflows/dotnet.yml)
+
 # D64 Editor — VB6 → C#/.NET 8 / Avalonia port
 
 Original: D64 Editor by Forrest Mook, GPL v2, 1999-2016. This is a from-scratch
