@@ -235,8 +235,7 @@ All fourteen original forms have a C# counterpart, and the follow-up requests
 left above is genuinely minor scope, not missing base functionality.
 
 ## What's being code on next commit
-Start and end addresses in hex or decimnal optional plus disassembly of code at a 
-specific sector or at the starting sector of the selected file.
+disassembly of code at a specific sector or at the starting sector of the selected file.
 
 ## A note on fidelity vs. cleanups
 
