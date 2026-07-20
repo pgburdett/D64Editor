@@ -7,10 +7,12 @@ namespace D64Editor.App;
 /// <summary>Ported from frmErrorNumbers.frm. Opened from the BAM editor's "Set Error Code" mode.</summary>
 public partial class ErrorNumbersWindow : Window
 {
-    private readonly D64Image _image;
     private readonly int _block;
+    private readonly D64Image _image;
 
-    public ErrorNumbersWindow() : this(new D64Image(), 0) { }
+    public ErrorNumbersWindow() : this(new D64Image(), 0)
+    {
+    }
 
     public ErrorNumbersWindow(D64Image image, int block)
     {
@@ -23,7 +25,7 @@ public partial class ErrorNumbersWindow : Window
 
         ErrorList.ItemsSource = D64ErrorCodes.All;
 
-        byte current = _image.ErrorInfo[block];
+        var current = _image.ErrorInfo[block];
         ErrorList.SelectedItem = D64ErrorCodes.For(current);
     }
 

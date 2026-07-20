@@ -7,15 +7,14 @@ using D64Editor.Core;
 namespace D64Editor.App;
 
 /// <summary>
-/// Ported from frmMain.frm: cmdOpen_Click opens a file dialog and calls LoadFile;
-/// LoadFile parses the disk and populates txtDiskName/txtDiskID/List1/lblBlocksFree/
-/// lblFileCount/lblDiskType. Here that's OnOpenClicked + PopulateFrom, working against
-/// D64Image instead of reaching into fifteen module-level globals.
-///
-/// Drag-and-drop (below) is a fresh implementation using Avalonia's drag-drop API rather
-/// than a port of DragDrop.bas, which wrapped the OLE drag-drop APIs Windows Forms/VB6
-/// exposed — Avalonia's model is different enough that porting the mechanics wouldn't mean
-/// much; the behavior (drop a .d64 to open it, drop anything else to import it) matches.
+///     Ported from frmMain.frm: cmdOpen_Click opens a file dialog and calls LoadFile;
+///     LoadFile parses the disk and populates txtDiskName/txtDiskID/List1/lblBlocksFree/
+///     lblFileCount/lblDiskType. Here that's OnOpenClicked + PopulateFrom, working against
+///     D64Image instead of reaching into fifteen module-level globals.
+///     Drag-and-drop (below) is a fresh implementation using Avalonia's drag-drop API rather
+///     than a port of DragDrop.bas, which wrapped the OLE drag-drop APIs Windows Forms/VB6
+///     exposed — Avalonia's model is different enough that porting the mechanics wouldn't mean
+///     much; the behavior (drop a .d64 to open it, drop anything else to import it) matches.
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -34,8 +33,10 @@ public partial class MainWindow : Window
         e.DragEffects = e.Data.Contains(DataFormats.Files) ? DragDropEffects.Copy : DragDropEffects.None;
     }
 
-    /// <summary>Drops a .d64/.d71/.d81 to open it, or anything else (including multiple files,
-    /// and T64/P00 containers) to import into whatever disk is currently open.</summary>
+    /// <summary>
+    ///     Drops a .d64/.d71/.d81 to open it, or anything else (including multiple files,
+    ///     and T64/P00 containers) to import into whatever disk is currently open.
+    /// </summary>
     private async void OnDrop(object? sender, DragEventArgs e)
     {
         var files = e.Data.GetFiles();
@@ -43,10 +44,10 @@ public partial class MainWindow : Window
 
         foreach (var file in files)
         {
-            string? path = file.TryGetLocalPath();
+            var path = file.TryGetLocalPath();
             if (path is null) continue;
 
-            string ext = Path.GetExtension(path).ToLowerInvariant();
+            var ext = Path.GetExtension(path).ToLowerInvariant();
             if (ext is ".d64")
             {
                 LoadDisk(path);
@@ -61,7 +62,7 @@ public partial class MainWindow : Window
 
             try
             {
-                byte[] bytes = await File.ReadAllBytesAsync(path);
+                var bytes = await File.ReadAllBytesAsync(path);
                 var added = _image.ImportContainerFile(bytes, Path.GetFileName(path));
                 _image.Save();
                 PopulateFrom(_image);
@@ -90,7 +91,7 @@ public partial class MainWindow : Window
 
         if (files.Count == 0) return;
 
-        string? path = files[0].TryGetLocalPath();
+        var path = files[0].TryGetLocalPath();
         if (path is null) return;
 
         LoadDisk(path);
@@ -119,16 +120,25 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnConfigClicked(object? sender, RoutedEventArgs e) => new ConfigWindow(_image).Show(this);
+    private void OnConfigClicked(object? sender, RoutedEventArgs e)
+    {
+        new ConfigWindow(_image).Show(this);
+    }
 
-    private void OnFilenameBuilderClicked(object? sender, RoutedEventArgs e) =>
+    private void OnFilenameBuilderClicked(object? sender, RoutedEventArgs e)
+    {
         new FilenameBuilderWindow(_image).Show(this);
+    }
 
     private void OnFilePropertiesClicked(object? sender, RoutedEventArgs e)
     {
-        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
 
-        int index = DirectoryList.SelectedIndex;
+        var index = DirectoryList.SelectedIndex;
         if (index < 0 || index >= _image.Entries.Count)
         {
             FileCountLabel.Text = "Select a file in the list to modify.";
@@ -141,19 +151,29 @@ public partial class MainWindow : Window
     /// <summary>Ported from the "View Error Blocks" path: opens the BAM editor pre-set to error-code mode.</summary>
     private void OnErrorBlocksClicked(object? sender, RoutedEventArgs e)
     {
-        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+
         if (!_image.HasErrorInfo)
         {
             FileCountLabel.Text = "This disk has no error-info section (needs to be a 175531-byte image).";
             return;
         }
 
-        new BamEditorWindow(_image, startInErrorMode: true).Show(this);
+        new BamEditorWindow(_image, true).Show(this);
     }
 
     private void OnCrossLinksClicked(object? sender, RoutedEventArgs e)
     {
-        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+
         new CrossLinksWindow(_image).Show(this);
     }
 
@@ -183,19 +203,23 @@ public partial class MainWindow : Window
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("C64 Files") { Patterns = new[] { "*.prg", "*.seq", "*.usr", "*.rel", "*.del", "*.t64", "*.p00", "*.s00", "*.u00", "*.r00" } },
+                new FilePickerFileType("C64 Files")
+                {
+                    Patterns = new[]
+                        { "*.prg", "*.seq", "*.usr", "*.rel", "*.del", "*.t64", "*.p00", "*.s00", "*.u00", "*.r00" }
+                },
                 new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
             }
         });
 
         if (files.Count == 0) return;
 
-        string? path = files[0].TryGetLocalPath();
+        var path = files[0].TryGetLocalPath();
         if (path is null) return;
 
         try
         {
-            byte[] bytes = await File.ReadAllBytesAsync(path);
+            var bytes = await File.ReadAllBytesAsync(path);
             var added = _image.ImportContainerFile(bytes, Path.GetFileName(path));
             _image.Save();
             PopulateFrom(_image);
@@ -224,11 +248,16 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Ported from mnuQuit_Click.</summary>
-    private void OnQuitClicked(object? sender, RoutedEventArgs e) => Close();
+    private void OnQuitClicked(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
 
     /// <summary>Ported from mnuVersion_Click.</summary>
-    private void OnVersionClicked(object? sender, RoutedEventArgs e) =>
+    private void OnVersionClicked(object? sender, RoutedEventArgs e)
+    {
         FileCountLabel.Text = "D64 Editor — C#/.NET 8/Avalonia port. Original by Forrest Mook, 1999-2016, GPL v2.";
+    }
 
     /// <summary>Ported from mnuViewFile_Click / ViewSeqFile: shows the currently selected file's text content.</summary>
     private void OnSeqViewerClicked(object? sender, RoutedEventArgs e)
@@ -239,7 +268,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        int index = DirectoryList.SelectedIndex;
+        var index = DirectoryList.SelectedIndex;
         if (index < 0 || index >= _image.Entries.Count)
         {
             // Mirrors the original's "Highlight the SEQ file you want to view." MsgBox.
@@ -281,7 +310,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        int index = DirectoryList.SelectedIndex;
+        var index = DirectoryList.SelectedIndex;
         if (index < 0 || index >= _image.Entries.Count)
         {
             // Mirrors the original's "Highlight the files you want to export." MsgBox.
@@ -296,15 +325,17 @@ public partial class MainWindow : Window
             SuggestedFileName = D64Image.SuggestedExportFileName(entry)
         });
 
-        string? path = file?.TryGetLocalPath();
+        var path = file?.TryGetLocalPath();
         if (path is null) return;
 
-        byte[] data = _image.ExportFile(entry);
+        var data = _image.ExportFile(entry);
         await File.WriteAllBytesAsync(path, data);
     }
 
-    /// <summary>Ported from mnuTrimFile_Click: standalone tool, doesn't touch the currently open disk.
-    /// Truncates an oversized/corrupt dump down to the standard 174848-byte size.</summary>
+    /// <summary>
+    ///     Ported from mnuTrimFile_Click: standalone tool, doesn't touch the currently open disk.
+    ///     Truncates an oversized/corrupt dump down to the standard 174848-byte size.
+    /// </summary>
     private async void OnTrimFileClicked(object? sender, RoutedEventArgs e)
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
@@ -314,29 +345,36 @@ public partial class MainWindow : Window
         });
         if (files.Count == 0) return;
 
-        string? path = files[0].TryGetLocalPath();
+        var path = files[0].TryGetLocalPath();
         if (path is null) return;
 
-        byte[] bytes = await File.ReadAllBytesAsync(path);
+        var bytes = await File.ReadAllBytesAsync(path);
         if (bytes.LongLength <= D64Image.StandardSize || bytes.LongLength >= D64Image.StandardSizeWithErrorInfo)
         {
             FileCountLabel.Text = "This file doesn't need trimming (must be between 174848 and 175531 bytes).";
             return;
         }
 
-        string trimmedPath = Path.Combine(Path.GetDirectoryName(path) ?? "", Path.GetFileNameWithoutExtension(path) + "_trimmed.d64");
-        byte[] trimmed = bytes[..(int)D64Image.StandardSize];
+        var trimmedPath = Path.Combine(Path.GetDirectoryName(path) ?? "",
+            Path.GetFileNameWithoutExtension(path) + "_trimmed.d64");
+        var trimmed = bytes[..(int)D64Image.StandardSize];
         await File.WriteAllBytesAsync(trimmedPath, trimmed);
         FileCountLabel.Text = $"Trimmed and saved as {Path.GetFileName(trimmedPath)}.";
     }
 
-    /// <summary>Ported from mnuRevert_Click: reloads the currently open disk from disk, discarding
-    /// unsaved changes.</summary>
+    /// <summary>
+    ///     Ported from mnuRevert_Click: reloads the currently open disk from disk, discarding
+    ///     unsaved changes.
+    /// </summary>
     private async void OnRevertClicked(object? sender, RoutedEventArgs e)
     {
-        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
 
-        bool confirmed = await ConfirmWindow.Ask(this,
+        var confirmed = await ConfirmWindow.Ask(this,
             $"Revert to the previously saved version of\n{_image.SourcePath}?\nAny unsaved changes will be lost.",
             "Revert?");
         if (confirmed) LoadDisk(_image.SourcePath);
@@ -359,7 +397,11 @@ public partial class MainWindow : Window
     /// <summary>Ported from mnuExportDirectoryToText_Click / ExportDirectory.</summary>
     private async void OnExportDirClicked(object? sender, RoutedEventArgs e)
     {
-        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
 
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
@@ -368,7 +410,7 @@ public partial class MainWindow : Window
             FileTypeChoices = new[] { new FilePickerFileType("Text Document") { Patterns = new[] { "*.txt" } } }
         });
 
-        string? path = file?.TryGetLocalPath();
+        var path = file?.TryGetLocalPath();
         if (path is null) return;
 
         await File.WriteAllTextAsync(path, _image.ExportDirectoryListing());
@@ -387,15 +429,17 @@ public partial class MainWindow : Window
         PopulateFrom(_image);
     }
 
-    /// <summary>Ported from mnuUnscratchFile_Click. The original re-allocated a scratched file's
-    /// blocks without restoring a file type, leaving it to be fixed up via File Properties
-    /// afterward; this restores as an unlocked PRG by default instead, since that's right far
-    /// more often than not and File Properties is still there to correct it if it's wrong.</summary>
+    /// <summary>
+    ///     Ported from mnuUnscratchFile_Click. The original re-allocated a scratched file's
+    ///     blocks without restoring a file type, leaving it to be fixed up via File Properties
+    ///     afterward; this restores as an unlocked PRG by default instead, since that's right far
+    ///     more often than not and File Properties is still there to correct it if it's wrong.
+    /// </summary>
     private void OnUnscratchClicked(object? sender, RoutedEventArgs e)
     {
         if (!RequireSelection(out var selected)) return;
 
-        int unscratched = 0;
+        var unscratched = 0;
         foreach (var entry in selected.Where(x => x.IsScratched))
         {
             _image!.UnscratchFile(entry, D64FileType.Prg);
@@ -412,7 +456,7 @@ public partial class MainWindow : Window
     {
         if (!RequireSelection(out var selected)) return;
 
-        bool confirmed = await ConfirmWindow.Ask(this,
+        var confirmed = await ConfirmWindow.Ask(this,
             $"Permanently wipe {selected.Count} file(s)? This zeroes their data and cannot be undone.",
             "Wipe Files?");
         if (!confirmed) return;
@@ -439,11 +483,25 @@ public partial class MainWindow : Window
     /// <summary>Ported from mnuViewFileChain_Click (single-selection only, matching the original).</summary>
     private void OnViewFileChainClicked(object? sender, RoutedEventArgs e)
     {
-        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
 
-        var selected = DirectoryList.SelectedItems?.Cast<DirectoryRow>().Select(r => r.Entry).ToList() ?? new List<D64FileEntry>();
-        if (selected.Count == 0) { FileCountLabel.Text = "Select a file to view its chain."; return; }
-        if (selected.Count > 1) { FileCountLabel.Text = "You can only view one file's chain at a time."; return; }
+        var selected = DirectoryList.SelectedItems?.Cast<DirectoryRow>().Select(r => r.Entry).ToList() ??
+                       new List<D64FileEntry>();
+        if (selected.Count == 0)
+        {
+            FileCountLabel.Text = "Select a file to view its chain.";
+            return;
+        }
+
+        if (selected.Count > 1)
+        {
+            FileCountLabel.Text = "You can only view one file's chain at a time.";
+            return;
+        }
 
         new FileChainWindow(_image, selected[0]).Show(this);
     }
@@ -451,19 +509,27 @@ public partial class MainWindow : Window
     private bool RequireSelection(out List<D64FileEntry> selected)
     {
         selected = new List<D64FileEntry>();
-        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return false; }
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return false;
+        }
 
-        selected = DirectoryList.SelectedItems?.Cast<DirectoryRow>().Select(r => r.Entry).ToList() ?? new List<D64FileEntry>();
+        selected = DirectoryList.SelectedItems?.Cast<DirectoryRow>().Select(r => r.Entry).ToList() ??
+                   new List<D64FileEntry>();
         if (selected.Count == 0)
         {
             FileCountLabel.Text = "Select one or more files in the list first.";
             return false;
         }
+
         return true;
     }
 
-    /// <summary>Ported from optHex_Click/optDecimal_Click on the address display (new, not in the original,
-    /// since it never showed addresses in the first place). Rebuilds display strings without reloading the disk.</summary>
+    /// <summary>
+    ///     Ported from optHex_Click/optDecimal_Click on the address display (new, not in the original,
+    ///     since it never showed addresses in the first place). Rebuilds display strings without reloading the disk.
+    /// </summary>
     private void OnAddressBaseChanged(object? sender, RoutedEventArgs e)
     {
         if (_image is not null) PopulateFrom(_image);
@@ -478,7 +544,7 @@ public partial class MainWindow : Window
             ? $"{image.TrackCount} TRACK D64 FILE + ERROR INFO"
             : $"{image.TrackCount} TRACK D64 FILE (STANDARD)";
 
-        bool hex = HexAddressRadio.IsChecked == true;
+        var hex = HexAddressRadio.IsChecked == true;
         var rows = image.Entries.Select(entry =>
         {
             var (start, end) = image.GetAddressRange(entry);
@@ -493,12 +559,14 @@ public partial class MainWindow : Window
         DirectoryList.ItemsSource = null;
         DirectoryList.ItemsSource = rows;
 
-        string filesWord = image.Entries.Count == 1 ? "file" : "files";
+        var filesWord = image.Entries.Count == 1 ? "file" : "files";
         FileCountLabel.Text = $"D64 contains {image.Entries.Count} {filesWord} ({BuildTypeBreakdown(image)})";
     }
 
-    private static string FormatAddress(ushort address, bool hex) =>
-        hex ? $"${address:X4}" : address.ToString();
+    private static string FormatAddress(ushort address, bool hex)
+    {
+        return hex ? $"${address:X4}" : address.ToString();
+    }
 
     /// <summary>Mirrors updateFileCount's "(N PRG,N SEQ,...)" breakdown string.</summary>
     private static string BuildTypeBreakdown(D64Image image)
@@ -506,13 +574,13 @@ public partial class MainWindow : Window
         var counts = new Dictionary<string, int>();
         foreach (var entry in image.Entries)
         {
-            string key = entry.IsScratched ? "SCR" : entry.FileType.ToDisplayCode();
+            var key = entry.IsScratched ? "SCR" : entry.FileType.ToDisplayCode();
             counts[key] = counts.GetValueOrDefault(key) + 1;
         }
 
         var parts = new List<string>();
-        foreach (string type in new[] { "PRG", "SEQ", "DEL", "REL", "USR", "SCR", "???" })
-            if (counts.TryGetValue(type, out int count) && count > 0)
+        foreach (var type in new[] { "PRG", "SEQ", "DEL", "REL", "USR", "SCR", "???" })
+            if (counts.TryGetValue(type, out var count) && count > 0)
                 parts.Add($"{count} {type}");
 
         return string.Join(",", parts);

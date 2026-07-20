@@ -3,13 +3,16 @@ namespace D64Editor.Core;
 /// <summary>One entry from the standard 1541 drive error table, e.g. code 20 "Header descriptor byte not found".</summary>
 public record D64ErrorCode(byte Code, string CbmError, string Category, string Description)
 {
-    public override string ToString() => $"{Code,2}    {CbmError}    {Category,-6} {Description}";
+    public override string ToString()
+    {
+        return $"{Code,2}    {CbmError}    {Category,-6} {Description}";
+    }
 }
 
 /// <summary>
-/// Standard 1541 drive error codes, ported from the option-button captions in
-/// frmErrorNumbers.frm. Codes 12-14 aren't defined by the 1541's firmware
-/// (the original form had placeholder/duplicate captions for those slots too).
+///     Standard 1541 drive error codes, ported from the option-button captions in
+///     frmErrorNumbers.frm. Codes 12-14 aren't defined by the 1541's firmware
+///     (the original form had placeholder/duplicate captions for those slots too).
 /// </summary>
 public static class D64ErrorCodes
 {
@@ -26,10 +29,12 @@ public static class D64ErrorCodes
         new(9, "27", "SEEK", "Checksum error in header block"),
         new(10, "28", "WRITE", "Write error"),
         new(11, "29", "SEEK", "Disk sector ID mismatch"),
-        new(15, "74", "READ", "Drive Not Ready"),
+        new(15, "74", "READ", "Drive Not Ready")
     };
 
     /// <summary>Ported from the check in lblBAM_Click: codes outside this table default to "No Error".</summary>
-    public static D64ErrorCode For(byte rawCode) =>
-        All.FirstOrDefault(e => e.Code == rawCode) ?? All[0];
+    public static D64ErrorCode For(byte rawCode)
+    {
+        return All.FirstOrDefault(e => e.Code == rawCode) ?? All[0];
+    }
 }

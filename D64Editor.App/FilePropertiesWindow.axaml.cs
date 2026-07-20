@@ -5,18 +5,20 @@ using D64Editor.Core;
 namespace D64Editor.App;
 
 /// <summary>
-/// Ported from frmFileProperties.frm's mnuSaveChanges_Click. The original
-/// rebuilt the file-type byte by hand-assembling a binary string ("0" & "010"
-/// etc.) and parsing it back with convBinToLong — with D64FileEntry already
-/// modeling closed/locked/type as separate fields, this just sets them
-/// directly instead.
+///     Ported from frmFileProperties.frm's mnuSaveChanges_Click. The original
+///     rebuilt the file-type byte by hand-assembling a binary string ("0" & "010"
+///     etc.) and parsing it back with convBinToLong — with D64FileEntry already
+///     modeling closed/locked/type as separate fields, this just sets them
+///     directly instead.
 /// </summary>
 public partial class FilePropertiesWindow : Window
 {
-    private readonly D64Image _image;
     private readonly D64FileEntry _entry;
+    private readonly D64Image _image;
 
-    public FilePropertiesWindow() : this(new D64Image(), new D64FileEntry { FileName = "" }) { }
+    public FilePropertiesWindow() : this(new D64Image(), new D64FileEntry { FileName = "" })
+    {
+    }
 
     public FilePropertiesWindow(D64Image image, D64FileEntry entry)
     {
@@ -43,11 +45,11 @@ public partial class FilePropertiesWindow : Window
         if (entry.IsGeosFile)
         {
             GeosInfoLabel.IsVisible = true;
-            string structure = entry.IsGeosVlir ? "VLIR" : "sequential";
-            string modified = entry.GeosModified?.ToString("yyyy-MM-dd HH:mm") ?? "unknown";
+            var structure = entry.IsGeosVlir ? "VLIR" : "sequential";
+            var modified = entry.GeosModified?.ToString("yyyy-MM-dd HH:mm") ?? "unknown";
             var (infoTrack, infoSector) = entry.GeosInfoBlock ?? (0, 0);
             GeosInfoLabel.Text = $"GEOS file — {entry.GeosFileTypeName}, {structure} structure, " +
-                $"info block at {infoTrack}/{infoSector}, modified {modified}";
+                                 $"info block at {infoTrack}/{infoSector}, modified {modified}";
         }
     }
 
@@ -60,20 +62,22 @@ public partial class FilePropertiesWindow : Window
     /// <summary>Ported from mnuSaveChanges_Click, including its Track/Sector/Size range checks.</summary>
     private void OnSaveChangesClicked(object? sender, RoutedEventArgs e)
     {
-        int track = (int)(StartTrackBox.Value ?? 0);
-        int sector = (int)(StartSectorBox.Value ?? 0);
-        int size = (int)(SizeBox.Value ?? 0);
+        var track = (int)(StartTrackBox.Value ?? 0);
+        var sector = (int)(StartSectorBox.Value ?? 0);
+        var size = (int)(SizeBox.Value ?? 0);
 
         if (track is < 0 or > 35 || sector < 0)
         {
             StatusLabel.Text = "Invalid Starting Track or Starting Sector";
             return;
         }
+
         if (track > 0 && sector > D64Image.SectorsPerTrack(track) - 1)
         {
             StatusLabel.Text = "Invalid Track/Sector selection";
             return;
         }
+
         if (size is < 0 or > 65535)
         {
             StatusLabel.Text = "Filesize cannot be larger than 65535.";
@@ -86,13 +90,13 @@ public partial class FilePropertiesWindow : Window
         _entry.SizeLow = (byte)(size % 256);
         _entry.SizeHigh = (byte)(size / 256);
 
-        D64FileType type = PrgRadio.IsChecked == true ? D64FileType.Prg
+        var type = PrgRadio.IsChecked == true ? D64FileType.Prg
             : SeqRadio.IsChecked == true ? D64FileType.Seq
             : UsrRadio.IsChecked == true ? D64FileType.Usr
             : RelRadio.IsChecked == true ? D64FileType.Rel
             : D64FileType.Del;
 
-        byte raw = (byte)type;
+        var raw = (byte)type;
         if (LockedBox.IsChecked == true) raw |= 0x40;
         if (SplatBox.IsChecked != true) raw |= 0x80; // closed bit set unless "splat" is checked
         _entry.RawFileType = raw;
@@ -105,5 +109,8 @@ public partial class FilePropertiesWindow : Window
     }
 
     /// <summary>Ported from mnuDiscardChanges_Click.</summary>
-    private void OnDiscardClicked(object? sender, RoutedEventArgs e) => Close();
+    private void OnDiscardClicked(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
 }

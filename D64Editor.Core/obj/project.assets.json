@@ -1,11 +1,51 @@
 {
   "version": 3,
   "targets": {
-    "net10.0": {}
+    "net10.0": {
+      "Tmds.DBus.Protocol/0.94.2": {
+        "type": "package",
+        "compile": {
+          "lib/net9.0/Tmds.DBus.Protocol.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/Tmds.DBus.Protocol.dll": {
+            "related": ".xml"
+          }
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "Tmds.DBus.Protocol/0.94.2": {
+      "sha512": "AePc2k7vqIXCR/a6hsG4afO22LuSaGLR3tLUBPWkZAH2mhLu/PL3/dYABEniWV7QHzV444No8IiTRV4+oCq37g==",
+      "type": "package",
+      "path": "tmds.dbus.protocol/0.94.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "icon_128.png",
+        "lib/net6.0/Tmds.DBus.Protocol.dll",
+        "lib/net6.0/Tmds.DBus.Protocol.xml",
+        "lib/net8.0/Tmds.DBus.Protocol.dll",
+        "lib/net8.0/Tmds.DBus.Protocol.xml",
+        "lib/net9.0/Tmds.DBus.Protocol.dll",
+        "lib/net9.0/Tmds.DBus.Protocol.xml",
+        "lib/netstandard2.0/Tmds.DBus.Protocol.dll",
+        "lib/netstandard2.0/Tmds.DBus.Protocol.xml",
+        "lib/netstandard2.1/Tmds.DBus.Protocol.dll",
+        "lib/netstandard2.1/Tmds.DBus.Protocol.xml",
+        "tmds.dbus.protocol.0.94.2.nupkg.sha512",
+        "tmds.dbus.protocol.nuspec"
+      ]
+    }
+  },
   "projectFileDependencyGroups": {
-    "net10.0": []
+    "net10.0": [
+      "Tmds.DBus.Protocol >= 0.94.2"
+    ]
   },
   "packageFolders": {
     "/home/pat/.nuget/packages/": {}
@@ -50,6 +90,12 @@
     "frameworks": {
       "net10.0": {
         "targetAlias": "net10.0",
+        "dependencies": {
+          "Tmds.DBus.Protocol": {
+            "target": "Package",
+            "version": "[0.94.2, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",

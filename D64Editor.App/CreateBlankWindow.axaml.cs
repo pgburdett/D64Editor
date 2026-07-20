@@ -6,17 +6,19 @@ using D64Editor.Core;
 namespace D64Editor.App;
 
 /// <summary>
-/// Ported from frmMainCreateNewD64 + CreateBlankD64. The original's "protect
-/// track 1 sector 0" and C128 auto-boot patch options aren't ported — this
-/// always creates a plain, fully-free disk. onCreated lets the caller (the
-/// main window) load the freshly made disk immediately, matching the
-/// original opening it right after creation.
+///     Ported from frmMainCreateNewD64 + CreateBlankD64. The original's "protect
+///     track 1 sector 0" and C128 auto-boot patch options aren't ported — this
+///     always creates a plain, fully-free disk. onCreated lets the caller (the
+///     main window) load the freshly made disk immediately, matching the
+///     original opening it right after creation.
 /// </summary>
 public partial class CreateBlankWindow : Window
 {
     private readonly Action<D64Image>? _onCreated;
 
-    public CreateBlankWindow() : this(null) { }
+    public CreateBlankWindow() : this(null)
+    {
+    }
 
     public CreateBlankWindow(Action<D64Image>? onCreated)
     {
@@ -36,11 +38,11 @@ public partial class CreateBlankWindow : Window
             }
         });
 
-        string? path = file?.TryGetLocalPath();
+        var path = file?.TryGetLocalPath();
         if (path is null) return;
 
-        int trackCount = Track40Radio.IsChecked == true ? D64Image.ExtendedTrackCount : D64Image.StandardTrackCount;
-        bool errorInfo = ErrorInfoBox.IsChecked == true;
+        var trackCount = Track40Radio.IsChecked == true ? D64Image.ExtendedTrackCount : D64Image.StandardTrackCount;
+        var errorInfo = ErrorInfoBox.IsChecked == true;
 
         var image = D64Image.CreateBlank(DiskNameBox.Text ?? "", DiskIdBox.Text ?? "00", trackCount, errorInfo);
         image.Save(path);

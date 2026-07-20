@@ -2,40 +2,36 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using D64Editor.Core;
 
 namespace D64Editor.App;
 
 /// <summary>
-/// Ported from frmBAM.frm. The original hand-placed 683 individual Label
-/// controls (lblBAM(0) .. lblBAM(682)) in the VB6 designer, one per block,
-/// which is why that .frm file was 16,000 lines. Here the grid is generated
-/// from D64Image's geometry (SectorsPerTrack / TrackSectorToBlock) instead.
-///
-/// Layout matches the original: columns are tracks (1-35), rows are sectors
-/// (0-20, with higher tracks simply not having cells past their sector
-/// count) — earlier ports of this window had that transposed, which is
-/// worth calling out since it's an easy mistake to reintroduce if this file
-/// gets touched again.
+///     Ported from frmBAM.frm. The original hand-placed 683 individual Label
+///     controls (lblBAM(0) .. lblBAM(682)) in the VB6 designer, one per block,
+///     which is why that .frm file was 16,000 lines. Here the grid is generated
+///     from D64Image's geometry (SectorsPerTrack / TrackSectorToBlock) instead.
+///     Layout matches the original: columns are tracks (1-35), rows are sectors
+///     (0-20, with higher tracks simply not having cells past their sector
+///     count) — earlier ports of this window had that transposed, which is
+///     worth calling out since it's an easy mistake to reintroduce if this file
+///     gets touched again.
 /// </summary>
 public partial class BamEditorWindow : Window
 {
-    private readonly D64Image _image;
-    private readonly TextBlock[] _cells;
-    private bool _hexMode;
-
-    /// <summary>Ported from lblBAM_Click's mode switch (optBlockEditMode.Value / the "Error Blocks
-    /// Viewer" caption check). The original only had two real modes plus a caption-based hack for
-    /// the third; here it's just a third explicit mode.</summary>
-    private enum ClickMode { ToggleAllocation, ViewBlock, SetErrorCode }
-    private ClickMode _mode = ClickMode.ToggleAllocation;
-
     private static readonly IBrush NormalBrush = new SolidColorBrush(Color.Parse("#2244AA"));
     private static readonly IBrush DirTrackBrush = new SolidColorBrush(Color.Parse("#CC2222"));
     private static readonly IBrush GridLineBrush = new SolidColorBrush(Color.Parse("#FFD700"));
+    private readonly TextBlock[] _cells;
+    private readonly D64Image _image;
+    private bool _hexMode;
+    private ClickMode _mode = ClickMode.ToggleAllocation;
 
-    public BamEditorWindow() : this(new D64Image()) { }
+    public BamEditorWindow() : this(new D64Image())
+    {
+    }
 
     public BamEditorWindow(D64Image image, bool startInErrorMode = false)
     {
@@ -58,27 +54,27 @@ public partial class BamEditorWindow : Window
 
         // Row 0 / Column 0 are headers; tracks run across columns 1-35, sectors down rows 1-21.
         GridPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-        for (int t = 1; t <= _image.TrackCount; t++)
+        for (var t = 1; t <= _image.TrackCount; t++)
             GridPanel.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
 
         GridPanel.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-        for (int s = 0; s < maxSectors; s++)
+        for (var s = 0; s < maxSectors; s++)
             GridPanel.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
 
         AddHeaderCell("TRACK ►\n▼ SECTOR", 0, 0);
 
-        for (int t = 1; t <= _image.TrackCount; t++)
+        for (var t = 1; t <= _image.TrackCount; t++)
             AddTrackHeader(t);
 
-        for (int s = 0; s < maxSectors; s++)
+        for (var s = 0; s < maxSectors; s++)
             AddSectorHeader(s);
 
-        for (int track = 1; track <= _image.TrackCount; track++)
+        for (var track = 1; track <= _image.TrackCount; track++)
         {
-            int sectors = D64Image.SectorsPerTrack(track);
-            for (int sector = 0; sector < sectors; sector++)
+            var sectors = D64Image.SectorsPerTrack(track);
+            for (var sector = 0; sector < sectors; sector++)
             {
-                int block = D64Image.TrackSectorToBlock(track, sector);
+                var block = D64Image.TrackSectorToBlock(track, sector);
                 var cell = new Border
                 {
                     Width = 18,
@@ -95,8 +91,8 @@ public partial class BamEditorWindow : Window
                     Foreground = Brushes.White,
                     FontFamily = "monospace",
                     FontSize = 11,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
                 };
                 cell.Child = text;
                 cell.PointerPressed += OnCellClicked;
@@ -116,9 +112,9 @@ public partial class BamEditorWindow : Window
         var block = new TextBlock
         {
             Text = text,
-            FontWeight = Avalonia.Media.FontWeight.Bold,
+            FontWeight = FontWeight.Bold,
             FontSize = 9,
-            TextAlignment = Avalonia.Media.TextAlignment.Center,
+            TextAlignment = TextAlignment.Center,
             Margin = new Thickness(2)
         };
         Grid.SetColumn(block, col);
@@ -134,7 +130,7 @@ public partial class BamEditorWindow : Window
             FontFamily = "monospace",
             FontSize = 10,
             Width = 18,
-            TextAlignment = Avalonia.Media.TextAlignment.Center,
+            TextAlignment = TextAlignment.Center,
             Name = $"TrackHeader{track}"
         };
         Grid.SetColumn(block, track);
@@ -150,7 +146,7 @@ public partial class BamEditorWindow : Window
             FontFamily = "monospace",
             FontSize = 10,
             Height = 18,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
             Name = $"SectorHeader{sector}"
         };
         Grid.SetColumn(block, 0);
@@ -167,19 +163,26 @@ public partial class BamEditorWindow : Window
 
     private void RefreshHeaders()
     {
-        for (int t = 1; t <= _image.TrackCount; t++)
-            if (GridPanel.Children.FirstOrDefault(c => c is TextBlock tb && tb.Name == $"TrackHeader{t}") is TextBlock tHeader)
+        for (var t = 1; t <= _image.TrackCount; t++)
+            if (GridPanel.Children.FirstOrDefault(c => c is TextBlock tb && tb.Name == $"TrackHeader{t}") is TextBlock
+                tHeader)
                 tHeader.Text = FormatNumber(t);
 
-        for (int s = 0; s < 21; s++)
-            if (GridPanel.Children.FirstOrDefault(c => c is TextBlock tb && tb.Name == $"SectorHeader{s}") is TextBlock sHeader)
+        for (var s = 0; s < 21; s++)
+            if (GridPanel.Children.FirstOrDefault(c => c is TextBlock tb && tb.Name == $"SectorHeader{s}") is TextBlock
+                sHeader)
                 sHeader.Text = FormatNumber(s);
     }
 
-    private string FormatNumber(int n) => _hexMode ? n.ToString("X2") : n.ToString("D2");
+    private string FormatNumber(int n)
+    {
+        return _hexMode ? n.ToString("X2") : n.ToString("D2");
+    }
 
-    /// <summary>Ported from lblBAM_Click: toggles allocation, opens the Block Viewer, or opens the
-    /// error-code picker, depending on mode.</summary>
+    /// <summary>
+    ///     Ported from lblBAM_Click: toggles allocation, opens the Block Viewer, or opens the
+    ///     error-code picker, depending on mode.
+    /// </summary>
     private void OnCellClicked(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Border { Tag: int block }) return;
@@ -199,9 +202,20 @@ public partial class BamEditorWindow : Window
         }
     }
 
-    private void OnSetToggleModeClicked(object? sender, RoutedEventArgs e) => _mode = ClickMode.ToggleAllocation;
-    private void OnSetViewModeClicked(object? sender, RoutedEventArgs e) => _mode = ClickMode.ViewBlock;
-    private void OnSetErrorModeClicked(object? sender, RoutedEventArgs e) => _mode = ClickMode.SetErrorCode;
+    private void OnSetToggleModeClicked(object? sender, RoutedEventArgs e)
+    {
+        _mode = ClickMode.ToggleAllocation;
+    }
+
+    private void OnSetViewModeClicked(object? sender, RoutedEventArgs e)
+    {
+        _mode = ClickMode.ViewBlock;
+    }
+
+    private void OnSetErrorModeClicked(object? sender, RoutedEventArgs e)
+    {
+        _mode = ClickMode.SetErrorCode;
+    }
 
     /// <summary>Ported from lblBAM_MouseMove: shows track/sector and block owner for the hovered cell.</summary>
     private void OnCellHovered(object? sender, PointerEventArgs e)
@@ -211,14 +225,14 @@ public partial class BamEditorWindow : Window
         var (track, sector) = D64Image.BlockToTrackSector(block);
         TrackSectorLabel.Text = $"TRACK: {FormatNumber(track)} SECTOR: {FormatNumber(sector)}";
 
-        string owner = block < _image.BlockOwners.Length ? _image.BlockOwners[block] : "";
+        var owner = block < _image.BlockOwners.Length ? _image.BlockOwners[block] : "";
         BlockOwnerLabel.Text = string.IsNullOrEmpty(owner) ? "BLOCKOWNER: <UNCLAIMED>" : $"BLOCKOWNER: {owner}";
     }
 
     /// <summary>Ported from mnuAllocateAllSectors_Click.</summary>
     private void OnAllocateAllClicked(object? sender, RoutedEventArgs e)
     {
-        for (int i = 0; i < _image.TotalBlocks; i++)
+        for (var i = 0; i < _image.TotalBlocks; i++)
         {
             _image.AllocatedBlocks[i] = true;
             _cells[i].Text = "*";
@@ -228,20 +242,22 @@ public partial class BamEditorWindow : Window
     /// <summary>Ported from mnuUNAllocateallSectors_Click, including the guard that protects 18/0 and 18/1.</summary>
     private void OnUnallocateAllClicked(object? sender, RoutedEventArgs e)
     {
-        for (int i = 0; i < _image.TotalBlocks; i++)
+        for (var i = 0; i < _image.TotalBlocks; i++)
         {
-            bool protectedBlock = i == 357 || i == 358;
+            var protectedBlock = i == 357 || i == 358;
             _image.AllocatedBlocks[i] = protectedBlock;
             _cells[i].Text = protectedBlock ? "*" : "";
         }
     }
 
-    /// <summary>Ported from mnuCleanDisk_Click: zeroes every unallocated block, skipping the
-    /// directory track (18) when AppSettings.SafeClean is on, matching the original's safeClean flag.</summary>
+    /// <summary>
+    ///     Ported from mnuCleanDisk_Click: zeroes every unallocated block, skipping the
+    ///     directory track (18) when AppSettings.SafeClean is on, matching the original's safeClean flag.
+    /// </summary>
     private void OnCleanDiskClicked(object? sender, RoutedEventArgs e)
     {
-        int cleaned = 0;
-        for (int i = 0; i < _image.TotalBlocks; i++)
+        var cleaned = 0;
+        for (var i = 0; i < _image.TotalBlocks; i++)
         {
             if (AppSettings.SafeClean)
             {
@@ -255,6 +271,7 @@ public partial class BamEditorWindow : Window
                 cleaned++;
             }
         }
+
         TrackSectorLabel.Text = $"{cleaned} blocks cleaned.";
     }
 
@@ -266,5 +283,20 @@ public partial class BamEditorWindow : Window
     }
 
     /// <summary>Ported from mnuExitBAMEditor_Click / Form_Unload.</summary>
-    private void OnExitClicked(object? sender, RoutedEventArgs e) => Close();
+    private void OnExitClicked(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    /// <summary>
+    ///     Ported from lblBAM_Click's mode switch (optBlockEditMode.Value / the "Error Blocks
+    ///     Viewer" caption check). The original only had two real modes plus a caption-based hack for
+    ///     the third; here it's just a third explicit mode.
+    /// </summary>
+    private enum ClickMode
+    {
+        ToggleAllocation,
+        ViewBlock,
+        SetErrorCode
+    }
 }

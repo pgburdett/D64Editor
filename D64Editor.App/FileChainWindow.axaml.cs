@@ -3,11 +3,15 @@ using D64Editor.Core;
 
 namespace D64Editor.App;
 
-/// <summary>Ported from ViewFileChain — see the XAML for the one presentation difference
-/// (a list instead of a highlighted BAM grid).</summary>
+/// <summary>
+///     Ported from ViewFileChain — see the XAML for the one presentation difference
+///     (a list instead of a highlighted BAM grid).
+/// </summary>
 public partial class FileChainWindow : Window
 {
-    public FileChainWindow() : this(new D64Image(), new D64FileEntry { FileName = "" }) { }
+    public FileChainWindow() : this(new D64Image(), new D64FileEntry { FileName = "" })
+    {
+    }
 
     public FileChainWindow(D64Image image, D64FileEntry entry)
     {

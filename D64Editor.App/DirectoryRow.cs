@@ -3,11 +3,11 @@ using D64Editor.Core;
 namespace D64Editor.App;
 
 /// <summary>
-/// One row in MainWindow's directory list. D64FileEntry itself doesn't know about
-/// addresses (computing them means reading the file's actual bytes, which needs the
-/// D64Image, not just the entry) or about hex/decimal display preference, so this
-/// wraps an entry with those two extra, UI-facing pieces. Rebuilt whenever the list
-/// is (re)populated or the hex/decimal toggle changes.
+///     One row in MainWindow's directory list. D64FileEntry itself doesn't know about
+///     addresses (computing them means reading the file's actual bytes, which needs the
+///     D64Image, not just the entry) or about hex/decimal display preference, so this
+///     wraps an entry with those two extra, UI-facing pieces. Rebuilt whenever the list
+///     is (re)populated or the hex/decimal toggle changes.
 /// </summary>
 public class DirectoryRow
 {

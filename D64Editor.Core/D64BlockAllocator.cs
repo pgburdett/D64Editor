@@ -1,39 +1,39 @@
 namespace D64Editor.Core;
 
 /// <summary>
-/// Finds free blocks to write a file into, starting near track 17/18 and
-/// spiraling outward, then stepping by the configured interleave for each
-/// subsequent block of the same file. Ported from findFirstBlocktoUse and
-/// findNextBlocktoUse in Module1.bas.
-///
-/// The original kept Track/Sector/Block/Direction/Distance as module-level
-/// globals because findFirstBlocktoUse seeds them and findNextBlocktoUse
-/// (called once per block while writing a file) continues from wherever the
-/// previous call left off. That's a stateful cursor, which is exactly what
-/// this class is — just without it leaking into globals every form can touch.
+///     Finds free blocks to write a file into, starting near track 17/18 and
+///     spiraling outward, then stepping by the configured interleave for each
+///     subsequent block of the same file. Ported from findFirstBlocktoUse and
+///     findNextBlocktoUse in Module1.bas.
+///     The original kept Track/Sector/Block/Direction/Distance as module-level
+///     globals because findFirstBlocktoUse seeds them and findNextBlocktoUse
+///     (called once per block while writing a file) continues from wherever the
+///     previous call left off. That's a stateful cursor, which is exactly what
+///     this class is — just without it leaking into globals every form can touch.
 /// </summary>
 public class D64BlockAllocator
 {
     private readonly D64Image _image;
-
-    public int Track { get; private set; }
-    public int Sector { get; private set; }
-    public int Block { get; private set; }
     private int _direction; // 1 = outward/upward, 2 = inward/downward
     private int _distance;
-
-    /// <summary>Optional starting point; original defaults to track 17 when unset.</summary>
-    public int StartTrack { get; set; }
-    public int StartSector { get; set; }
 
     public D64BlockAllocator(D64Image image)
     {
         _image = image;
     }
 
+    public int Track { get; private set; }
+    public int Sector { get; private set; }
+    public int Block { get; private set; }
+
+    /// <summary>Optional starting point; original defaults to track 17 when unset.</summary>
+    public int StartTrack { get; set; }
+
+    public int StartSector { get; set; }
+
     /// <summary>
-    /// Finds the first free block, searching outward from the start track/sector
-    /// (default: track 17). Sets Track/Sector/Block to (0,0,-1) if the disk is full.
+    ///     Finds the first free block, searching outward from the start track/sector
+    ///     (default: track 17). Sets Track/Sector/Block to (0,0,-1) if the disk is full.
     /// </summary>
     public bool FindFirst()
     {
@@ -45,8 +45,8 @@ public class D64BlockAllocator
         if (!_image.AllocatedBlocks[Block])
             return true;
 
-        int tries = 0;
-        for (int attempts = 0; attempts < 1500; attempts++)
+        var tries = 0;
+        for (var attempts = 0; attempts < 1500; attempts++)
         {
             StepOutward();
             Block = D64Image.TrackSectorToBlock(Track, Sector);
@@ -69,7 +69,7 @@ public class D64BlockAllocator
 
     private void StepOutward()
     {
-        int maxSector = D64Image.SectorsPerTrack(Track) - 1;
+        var maxSector = D64Image.SectorsPerTrack(Track) - 1;
 
         if (Sector < maxSector)
         {
@@ -85,19 +85,19 @@ public class D64BlockAllocator
     }
 
     /// <summary>
-    /// Finds the next free block for the same file, stepping by Interleave
-    /// sectors within the current track and wrapping to adjacent tracks as needed.
+    ///     Finds the next free block for the same file, stepping by Interleave
+    ///     sectors within the current track and wrapping to adjacent tracks as needed.
     /// </summary>
     public bool FindNext()
     {
-        int interleave = _image.Interleave is > 0 and <= 15 ? _image.Interleave : 10;
+        var interleave = _image.Interleave is > 0 and <= 15 ? _image.Interleave : 10;
 
         Sector += interleave;
-        int previousSector = Sector;
+        var previousSector = Sector;
         NormalizeSector();
 
         Block = D64Image.TrackSectorToBlock(Track, Sector);
-        int tries = 0;
+        var tries = 0;
 
         while (_image.AllocatedBlocks[Block])
         {
@@ -114,8 +114,19 @@ public class D64BlockAllocator
 
             // This wraps back at track 35 even on 40-track images — tracks 36-40 are
             // deliberately never allocation targets (see D64Image.ReadBam's tail comment).
-            if (Track < 1) { _direction = 1; Track = 19; Sector = 0; }
-            if (Track > 35) { _direction = 2; Track = 17; Sector = 0; }
+            if (Track < 1)
+            {
+                _direction = 1;
+                Track = 19;
+                Sector = 0;
+            }
+
+            if (Track > 35)
+            {
+                _direction = 2;
+                Track = 17;
+                Sector = 0;
+            }
 
             Block = D64Image.TrackSectorToBlock(Track, Sector);
             if (_image.AllocatedBlocks[Block])
@@ -136,9 +147,9 @@ public class D64BlockAllocator
 
     private void NormalizeSector()
     {
-        int maxSector = D64Image.SectorsPerTrack(Track) - 1;
+        var maxSector = D64Image.SectorsPerTrack(Track) - 1;
         _direction = Track < 18 ? 2 : 1;
         if (Sector > maxSector)
-            Sector -= (maxSector + 1);
+            Sector -= maxSector + 1;
     }
 }

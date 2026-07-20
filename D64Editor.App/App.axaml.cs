@@ -4,9 +4,12 @@ using Avalonia.Markup.Xaml;
 
 namespace D64Editor.App;
 
-public partial class App : Application
+public class App : Application
 {
-    public override void Initialize() => AvaloniaXamlLoader.Load(this);
+    public override void Initialize()
+    {
+        AvaloniaXamlLoader.Load(this);
+    }
 
     public override void OnFrameworkInitializationCompleted()
     {

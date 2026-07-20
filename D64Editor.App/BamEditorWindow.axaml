@@ -24,9 +24,12 @@
              (not a real radio in the original — that used the dual-purpose "Error Blocks
              Viewer" caption trick instead) for setting a block's error code. -->
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="16" Margin="0,6,0,6">
-            <RadioButton Name="BlockEditModeRadio" GroupName="EditMode" Content="BLOCK EDIT MODE" Checked="OnSetViewModeClicked" />
-            <RadioButton Name="BamEditModeRadio" GroupName="EditMode" Content="BAM EDIT MODE" IsChecked="True" Checked="OnSetToggleModeClicked" />
-            <RadioButton Name="ErrorCodeModeRadio" GroupName="EditMode" Content="SET ERROR CODE" Checked="OnSetErrorModeClicked" />
+            <RadioButton Name="BlockEditModeRadio" GroupName="EditMode" Content="BLOCK EDIT MODE"
+                         Checked="OnSetViewModeClicked" />
+            <RadioButton Name="BamEditModeRadio" GroupName="EditMode" Content="BAM EDIT MODE" IsChecked="True"
+                         Checked="OnSetToggleModeClicked" />
+            <RadioButton Name="ErrorCodeModeRadio" GroupName="EditMode" Content="SET ERROR CODE"
+                         Checked="OnSetErrorModeClicked" />
         </StackPanel>
 
         <!-- Mirrors lblTrackSectorLoc / lblBlockOwner -->
@@ -36,8 +39,10 @@
         </StackPanel>
 
         <!-- Mirrors optDecimal / optHex -->
-        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" Margin="0,4,0,0">
-            <RadioButton Name="DecimalRadio" GroupName="NumberBase" Content="DECIMAL" IsChecked="True" Checked="OnNumberBaseChanged" />
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right"
+                    Margin="0,4,0,0">
+            <RadioButton Name="DecimalRadio" GroupName="NumberBase" Content="DECIMAL" IsChecked="True"
+                         Checked="OnNumberBaseChanged" />
             <RadioButton Name="HexRadio" GroupName="NumberBase" Content="HEX" Checked="OnNumberBaseChanged" />
         </StackPanel>
 

@@ -1,16 +1,45 @@
+using System.Text;
+
 namespace D64Editor.Core;
 
 /// <summary>
-/// A single 1541 directory entry (32 bytes on disk).
-///
-/// In the original VB6 app this was spread across a dozen parallel global
-/// arrays (sfilename(), sstartingtrack(), sstartingsector(), sfilesize1(),
-/// sfilesize2(), sfiletype(), byte15()..byte1D()) all indexed by the same
-/// directory-slot number. That pattern only exists because VB6 forms reach
-/// into module-level globals directly; here it's just one object per file.
+///     A single 1541 directory entry (32 bytes on disk).
+///     In the original VB6 app this was spread across a dozen parallel global
+///     arrays (sfilename(), sstartingtrack(), sstartingsector(), sfilesize1(),
+///     sfilesize2(), sfiletype(), byte15()..byte1D()) all indexed by the same
+///     directory-slot number. That pattern only exists because VB6 forms reach
+///     into module-level globals directly; here it's just one object per file.
 /// </summary>
 public class D64FileEntry
 {
+    // ---------------------------------------------------------------
+    // GEOS metadata
+    //
+    // GEOS overloads the same bytes 0x15-0x1D that REL files use for their
+    // side-sector-block info. This isn't ported from the original — that
+    // part of the VB6 source wasn't reviewed for this project (bytes were
+    // previously just preserved byte-for-byte, undecoded) — so it's a
+    // from-scratch best-effort decode against published GEOS directory-entry
+    // documentation, not verified against a real GEOS disk. Test against one
+    // if you have it; GEOS format details have more variance in secondary
+    // sources than the base 1541 format does.
+    //
+    // Byte15 = GEOS file type (0 = not a GEOS file, so that's the guard used
+    // below for all the other GEOS-only properties). Byte16 = file structure
+    // (0 = sequential, nonzero = VLIR/"variable length index record", GEOS's
+    // multi-chain format for things like applications). Byte17/18 = track/
+    // sector of the file's GEOS info block (icon + description). Byte19-1D =
+    // last-modified year(-1900)/month/day/hour/minute.
+    // ---------------------------------------------------------------
+
+    private static readonly string[] GeosFileTypeNames =
+    {
+        "Not a GEOS file", "BASIC", "Assembler", "Data", "System",
+        "Desk Accessory", "Application", "Application Data", "Font",
+        "Printer Driver", "Input Driver", "Disk Driver", "System Boot File",
+        "Temporary", "Auto-Execute File"
+    };
+
     /// <summary>Raw 16-byte PETSCII filename, padded with 0xA0 on disk.</summary>
     public byte[] RawFilename { get; set; } = new byte[16];
 
@@ -19,17 +48,17 @@ public class D64FileEntry
     {
         get
         {
-            int end = Array.IndexOf(RawFilename, (byte)0xA0);
+            var end = Array.IndexOf(RawFilename, (byte)0xA0);
             if (end < 0) end = RawFilename.Length;
-            return System.Text.Encoding.Latin1.GetString(RawFilename, 0, end);
+            return Encoding.Latin1.GetString(RawFilename, 0, end);
         }
         set
         {
             RawFilename = new byte[16];
-            byte[] bytes = System.Text.Encoding.Latin1.GetBytes(value);
-            int len = Math.Min(bytes.Length, 16);
+            var bytes = Encoding.Latin1.GetBytes(value);
+            var len = Math.Min(bytes.Length, 16);
             Array.Copy(bytes, RawFilename, len);
-            for (int i = len; i < 16; i++)
+            for (var i = len; i < 16; i++)
                 RawFilename[i] = 0xA0;
         }
     }
@@ -63,34 +92,6 @@ public class D64FileEntry
 
     public D64FileType FileType => D64FileTypeExtensions.FromRawByte(RawFileType);
 
-    // ---------------------------------------------------------------
-    // GEOS metadata
-    //
-    // GEOS overloads the same bytes 0x15-0x1D that REL files use for their
-    // side-sector-block info. This isn't ported from the original — that
-    // part of the VB6 source wasn't reviewed for this project (bytes were
-    // previously just preserved byte-for-byte, undecoded) — so it's a
-    // from-scratch best-effort decode against published GEOS directory-entry
-    // documentation, not verified against a real GEOS disk. Test against one
-    // if you have it; GEOS format details have more variance in secondary
-    // sources than the base 1541 format does.
-    //
-    // Byte15 = GEOS file type (0 = not a GEOS file, so that's the guard used
-    // below for all the other GEOS-only properties). Byte16 = file structure
-    // (0 = sequential, nonzero = VLIR/"variable length index record", GEOS's
-    // multi-chain format for things like applications). Byte17/18 = track/
-    // sector of the file's GEOS info block (icon + description). Byte19-1D =
-    // last-modified year(-1900)/month/day/hour/minute.
-    // ---------------------------------------------------------------
-
-    private static readonly string[] GeosFileTypeNames =
-    {
-        "Not a GEOS file", "BASIC", "Assembler", "Data", "System",
-        "Desk Accessory", "Application", "Application Data", "Font",
-        "Printer Driver", "Input Driver", "Disk Driver", "System Boot File",
-        "Temporary", "Auto-Execute File"
-    };
-
     public bool IsGeosFile => Byte15 is >= 1 and <= 14;
 
     public string GeosFileTypeName => IsGeosFile ? GeosFileTypeNames[Byte15] : GeosFileTypeNames[0];
@@ -99,8 +100,10 @@ public class D64FileEntry
 
     public (int Track, int Sector)? GeosInfoBlock => IsGeosFile ? (Byte17, Byte18) : null;
 
-    /// <summary>Null if this isn't a GEOS file, or if the date bytes don't parse as a plausible date
-    /// (guards against reading REL side-sector bytes as a date on non-GEOS files with the same byte pattern).</summary>
+    /// <summary>
+    ///     Null if this isn't a GEOS file, or if the date bytes don't parse as a plausible date
+    ///     (guards against reading REL side-sector bytes as a date on non-GEOS files with the same byte pattern).
+    /// </summary>
     public DateTime? GeosModified
     {
         get
@@ -131,8 +134,8 @@ public class D64FileEntry
         get
         {
             if (IsScratched) return "SCR";
-            string closedMark = IsClosed ? "" : "*";
-            string lockedMark = IsLocked ? "<" : "";
+            var closedMark = IsClosed ? "" : "*";
+            var lockedMark = IsLocked ? "<" : "";
             return $"{closedMark}{FileType.ToDisplayCode()}{lockedMark}";
         }
     }

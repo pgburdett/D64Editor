@@ -1,10 +1,10 @@
 namespace D64Editor.App;
 
 /// <summary>
-/// Ported from the module-level globals frmConfig.cmdEnableChanges_Click wrote
-/// into (InterLeave, UserSpecifiedFirstTrack/Sector, safeClean,
-/// disableCrosslinkCheck, convertToASCII). One static class instead of five
-/// scattered globals in Module1.bas.
+///     Ported from the module-level globals frmConfig.cmdEnableChanges_Click wrote
+///     into (InterLeave, UserSpecifiedFirstTrack/Sector, safeClean,
+///     disableCrosslinkCheck, convertToASCII). One static class instead of five
+///     scattered globals in Module1.bas.
 /// </summary>
 public static class AppSettings
 {

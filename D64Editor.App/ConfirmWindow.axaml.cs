@@ -3,13 +3,17 @@ using Avalonia.Interactivity;
 
 namespace D64Editor.App;
 
-/// <summary>Small reusable Yes/No confirmation, used in place of the original's several
-/// vbYesNo MsgBox calls (Revert, Wipe File, etc.) — Avalonia has no built-in MessageBox.</summary>
+/// <summary>
+///     Small reusable Yes/No confirmation, used in place of the original's several
+///     vbYesNo MsgBox calls (Revert, Wipe File, etc.) — Avalonia has no built-in MessageBox.
+/// </summary>
 public partial class ConfirmWindow : Window
 {
     private readonly TaskCompletionSource<bool> _result = new();
 
-    public ConfirmWindow() : this("", "Confirm") { }
+    public ConfirmWindow() : this("")
+    {
+    }
 
     public ConfirmWindow(string message, string title = "Confirm")
     {

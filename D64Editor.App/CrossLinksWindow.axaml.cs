@@ -4,13 +4,15 @@ using D64Editor.Core;
 namespace D64Editor.App;
 
 /// <summary>
-/// Ported from frmCrossLinks.frm — trivially small in the original since it's
-/// just a list box populated by getBlockOwners' crosslink detection, which
-/// lives in D64Image.ComputeBlockOwners() in this port.
+///     Ported from frmCrossLinks.frm — trivially small in the original since it's
+///     just a list box populated by getBlockOwners' crosslink detection, which
+///     lives in D64Image.ComputeBlockOwners() in this port.
 /// </summary>
 public partial class CrossLinksWindow : Window
 {
-    public CrossLinksWindow() : this(new D64Image()) { }
+    public CrossLinksWindow() : this(new D64Image())
+    {
+    }
 
     public CrossLinksWindow(D64Image image)
     {

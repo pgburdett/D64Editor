@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("D64Editor.App")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0bc6d2b358caff15fe934c17d277ec8ba916f117")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+67eca8d02f057c26ecf94f57c9abb0b6c870a288")]
 [assembly: System.Reflection.AssemblyProductAttribute("D64Editor.App")]
 [assembly: System.Reflection.AssemblyTitleAttribute("D64Editor.App")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

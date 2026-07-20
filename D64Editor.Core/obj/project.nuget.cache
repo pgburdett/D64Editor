@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "ubJiSKvIJjg=",
+  "dgSpecHash": "rm5xNb34F9w=",
   "success": true,
   "projectFilePath": "/run/media/pat/store/projects/D64Editor/D64Editor.Core/D64Editor.Core.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/home/pat/.nuget/packages/tmds.dbus.protocol/0.94.2/tmds.dbus.protocol.0.94.2.nupkg.sha512"
+  ],
   "logs": []
 }
