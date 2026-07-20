@@ -32,8 +32,16 @@ public static class SeparatorLibrary
 
     public static void Save(IEnumerable<string> separators)
     {
-        var dir = Path.GetDirectoryName(FilePath);
-        if (dir is not null) Directory.CreateDirectory(dir);
-        File.WriteAllLines(FilePath, separators);
+        ArgumentNullException.ThrowIfNull(separators);
+
+        if (Path.GetDirectoryName(FilePath) is { } dir) Directory.CreateDirectory(dir);
+
+        // Filter out empty or whitespace-only separators before saving.
+        // This also handles cases where the user might have entered an empty string
+        // or just spaces, ensuring only valid separators are stored.
+        // The original VB6 code implicitly handled this by only writing non-empty strings.
+        var filteredSeparators = separators.Where(s => !string.IsNullOrWhiteSpace(s));
+
+        File.WriteAllLines(FilePath, filteredSeparators.Distinct().OrderBy(s => s, StringComparer.OrdinalIgnoreCase));
     }
 }
