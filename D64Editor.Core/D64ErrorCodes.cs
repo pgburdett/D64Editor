@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Linq;
+
 namespace D64Editor.Core;
 
 /// <summary>One entry from the standard 1541 drive error table, e.g. code 20 "Header descriptor byte not found".</summary>
