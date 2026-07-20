@@ -714,6 +714,26 @@ public class D64Image
     }
 
     /// <summary>
+    /// A file's start/end memory addresses, as they'd be shown in a disk editor. The
+    /// first two bytes of any C64 file are conventionally its load address (that's
+    /// the actual PRG load-address convention; SEQ/USR/REL files don't really have
+    /// one, but the bytes are there either way, so this reports the same thing for
+    /// every type — treat it as meaningful for PRG and merely informational otherwise).
+    /// End address = start + (total bytes on disk - 2), since those first 2 bytes
+    /// are the address itself, not loaded data.
+    /// </summary>
+    public (ushort Start, ushort End) GetAddressRange(D64FileEntry entry)
+    {
+        byte[] data = ExportFile(entry);
+        if (data.Length < 2) return (0, 0);
+
+        ushort start = (ushort)(data[0] | (data[1] << 8));
+        int loadedLength = data.Length - 2;
+        ushort end = (ushort)(start + loadedLength);
+        return (start, end);
+    }
+
+    /// <summary>
     /// Adds a zero-block directory entry with no block chain — used for "directory art":
     /// filenames chosen purely for how they read in a disk listing (like the "USE 38 TRACKS
     /// COPY" example), not real files. Ported from CopySeparatorsToD64 in frmFilenameBuilder.frm.

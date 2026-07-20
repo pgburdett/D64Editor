@@ -228,17 +228,11 @@ selected, matching the original.
 - `frmMemory`'s original population path (whatever elsewhere in `frmMain`
   fed files into the memory cache before this port's "Add File..." button)
 
-## Future Plans
-
 All fourteen original forms have a C# counterpart, and the follow-up requests
 (T64/P00 import, 40-track, GEOS metadata, drag-and-drop) are in too. What's
 left above is genuinely minor scope, not missing base functionality.
 
-## What's being code on next commit
-Start and end addresses in hex or decimnal optional plus disassembly of code at a 
-specific sector or at the starting sector of the selected file.
-
-## A note on fidelity vs. cleanups
+## A note on fidelity vs. cleanup
 
 Where the VB6 code did something because VB6 forced it to (module-level
 globals instead of instance state, double-precision math to avoid writing

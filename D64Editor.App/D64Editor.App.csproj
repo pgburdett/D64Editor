@@ -7,7 +7,6 @@
     <Nullable>enable</Nullable>
     <RootNamespace>D64Editor.App</RootNamespace>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <LangVersion>12</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

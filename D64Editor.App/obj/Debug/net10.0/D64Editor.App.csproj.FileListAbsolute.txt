@@ -67,3 +67,6 @@
 /run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net10.0/D64Edito.C7D80B86.Up2Date
 /run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net10.0/D64Editor.App.genruntimeconfig.cache
 /run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net10.0/ref/D64Editor.App.dll
+/run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net10.0/D64Editor.App.dll
+/run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net10.0/refint/D64Editor.App.dll
+/run/media/pat/store/projects/D64Editor/D64Editor.App/obj/Debug/net10.0/D64Editor.App.pdb

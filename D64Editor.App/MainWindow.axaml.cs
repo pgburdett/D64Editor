@@ -441,7 +441,7 @@ public partial class MainWindow : Window
     {
         if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
 
-        var selected = DirectoryList.SelectedItems?.Cast<D64FileEntry>().ToList() ?? new List<D64FileEntry>();
+        var selected = DirectoryList.SelectedItems?.Cast<DirectoryRow>().Select(r => r.Entry).ToList() ?? new List<D64FileEntry>();
         if (selected.Count == 0) { FileCountLabel.Text = "Select a file to view its chain."; return; }
         if (selected.Count > 1) { FileCountLabel.Text = "You can only view one file's chain at a time."; return; }
 
@@ -453,13 +453,20 @@ public partial class MainWindow : Window
         selected = new List<D64FileEntry>();
         if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return false; }
 
-        selected = DirectoryList.SelectedItems?.Cast<D64FileEntry>().ToList() ?? new List<D64FileEntry>();
+        selected = DirectoryList.SelectedItems?.Cast<DirectoryRow>().Select(r => r.Entry).ToList() ?? new List<D64FileEntry>();
         if (selected.Count == 0)
         {
             FileCountLabel.Text = "Select one or more files in the list first.";
             return false;
         }
         return true;
+    }
+
+    /// <summary>Ported from optHex_Click/optDecimal_Click on the address display (new, not in the original,
+    /// since it never showed addresses in the first place). Rebuilds display strings without reloading the disk.</summary>
+    private void OnAddressBaseChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_image is not null) PopulateFrom(_image);
     }
 
     private void PopulateFrom(D64Image image)
@@ -471,12 +478,27 @@ public partial class MainWindow : Window
             ? $"{image.TrackCount} TRACK D64 FILE + ERROR INFO"
             : $"{image.TrackCount} TRACK D64 FILE (STANDARD)";
 
+        bool hex = HexAddressRadio.IsChecked == true;
+        var rows = image.Entries.Select(entry =>
+        {
+            var (start, end) = image.GetAddressRange(entry);
+            return new DirectoryRow
+            {
+                Entry = entry,
+                StartAddressDisplay = FormatAddress(start, hex),
+                EndAddressDisplay = FormatAddress(end, hex)
+            };
+        }).ToList();
+
         DirectoryList.ItemsSource = null;
-        DirectoryList.ItemsSource = image.Entries;
+        DirectoryList.ItemsSource = rows;
 
         string filesWord = image.Entries.Count == 1 ? "file" : "files";
         FileCountLabel.Text = $"D64 contains {image.Entries.Count} {filesWord} ({BuildTypeBreakdown(image)})";
     }
+
+    private static string FormatAddress(ushort address, bool hex) =>
+        hex ? $"${address:X4}" : address.ToString();
 
     /// <summary>Mirrors updateFileCount's "(N PRG,N SEQ,...)" breakdown string.</summary>
     private static string BuildTypeBreakdown(D64Image image)
