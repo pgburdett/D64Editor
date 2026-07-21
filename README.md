@@ -8,16 +8,6 @@ Original: D64 Editor by  **_Forrest Mook_**, GPL v2, 1999-2016. https://www.d64e
 
 This is a C# port of the core disk engine and UI Components.
 
-
-## Build (on your linux or windows machine ( I use Garuda Dr4g0niz3d as primary)
-
-```
-sudo pacman -S dotnet-sdk    # if you don't already have it
-cd D64Editor
-dotnet restore
-dotnet run --project D64Editor.App
-```
-
 ## What's ported (D64Editor.Core)
 
 - `D64Image` — load/save, disk name/ID, geometry
