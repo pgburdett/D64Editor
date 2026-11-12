@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.CrossLinksWindow"
-        Title="Cross-Linked Blocks"
+        Title="CrossLinked Files"
         Width="480" Height="320">
 
     <DockPanel Margin="10">

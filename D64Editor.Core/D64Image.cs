@@ -18,7 +18,7 @@ namespace D64Editor.Core;
 ///     translate to C# — and shouldn't; it's exactly the kind of thing OOP
 ///     exists to fix. Everything below is instance state on one class instead.
 /// </summary>
-public class D64Image
+public class D64Image : IDiskImage
 {
     public const int SectorSize = 256;
 
@@ -74,7 +74,7 @@ public class D64Image
     /// <summary>683 or 768, matching TrackCount.</summary>
     public int TotalBlocks { get; private set; } = StandardTotalBlocks;
 
-    public string SourcePath { get; private set; } = "";
+    public string SourcePath { get; set; } = "";
     public string DiskName { get; private set; } = "";
     public string DiskId { get; private set; } = "";
     public bool HasErrorInfo { get; private set; }
@@ -106,6 +106,31 @@ public class D64Image
     ///     its read/write loops in LoadFile / mnuSaveFile_Click.
     /// </summary>
     public byte[] ErrorInfo { get; private set; } = new byte[StandardTotalBlocks];
+
+    // Explicit IDiskImage members: the concrete List<> properties above satisfy the
+    // internal code, while callers through IDiskImage see the read-only shape.
+    IReadOnlyList<D64FileEntry> IDiskImage.Entries => Entries;
+    IReadOnlyList<string> IDiskImage.CrossLinkWarnings => CrossLinkWarnings;
+
+    // Dirty-state tracking (DirMaster shows a '*' and prompts on unsaved changes).
+    // Implemented as a checksum of the track-data region captured on Load/Save: any
+    // in-memory mutation changes the checksum without touching every mutating method.
+    private long _snapshot;
+
+    /// <summary>True when the in-memory image differs from the last Load/Save.</summary>
+    public bool Dirty => TrackDataChecksum() != _snapshot;
+
+    private long TrackDataChecksum()
+    {
+        // Track region is everything except the trailing error-info section (if any).
+        var length = HasErrorInfo ? _data.Length - TotalBlocks : _data.Length;
+        long hash = 1469598103934665603L;
+        for (var i = 0; i < length; i++)
+            unchecked { hash = (hash ^ _data[i]) * 1099511628211L; }
+        return hash;
+    }
+
+    private void CaptureSnapshot() => _snapshot = TrackDataChecksum();
 
     /// <summary>
     ///     Best-effort GEOS disk detection: scans the BAM sector for the "GEOS"
@@ -204,6 +229,7 @@ public class D64Image
         if (image.HasErrorInfo)
             Array.Copy(bytes, (int)StandardSize, image.ErrorInfo, 0, image.TotalBlocks);
 
+        image.CaptureSnapshot();
         return image;
     }
 
@@ -217,6 +243,7 @@ public class D64Image
             Array.Copy(ErrorInfo, 0, _data, (int)StandardSize, TotalBlocks);
 
         File.WriteAllBytes(path ?? SourcePath, _data);
+        CaptureSnapshot();
     }
 
     // ---------------------------------------------------------------
@@ -776,6 +803,32 @@ public class D64Image
     }
 
     /// <summary>
+    ///     Moves a directory entry to the top of the directory (ported from MoveFileToTop/SortUp).
+    /// </summary>
+    public void MoveEntryToTop(D64FileEntry entry)
+    {
+        var index = Entries.IndexOf(entry);
+        if (index <= 0) return;
+        Entries.RemoveAt(index);
+        Entries.Insert(0, entry);
+        WriteDirectory();
+        WriteBam();
+    }
+
+    /// <summary>
+    ///     Moves a directory entry to the bottom of the directory (ported from MoveFileToBottom/SortDown).
+    /// </summary>
+    public void MoveEntryToBottom(D64FileEntry entry)
+    {
+        var index = Entries.IndexOf(entry);
+        if (index < 0 || index >= Entries.Count - 1) return;
+        Entries.RemoveAt(index);
+        Entries.Add(entry);
+        WriteDirectory();
+        WriteBam();
+    }
+
+    /// <summary>
     ///     A file's start/end memory addresses, as they'd be shown in a disk editor. The
     ///     first two bytes of any C64 file are conventionally its load address (that's
     ///     the actual PRG load-address convention; SEQ/USR/REL files don't really have
@@ -949,12 +1002,10 @@ public class D64Image
     ///     but built by reusing WriteBam/WriteDirectory against an empty Entries list
     ///     rather than hand-writing every BAM/directory byte the way the original
     ///     did — same result, and it can't drift out of sync with those methods'
-    ///     own logic the way duplicated byte-twiddling code could. The original's
-    ///     "protect track 1 sector 0" and C128 auto-boot patch options aren't
-    ///     ported; this always creates a plain, fully-free disk.
+    ///     own logic the way duplicated byte-twiddling code could.
     /// </summary>
     public static D64Image CreateBlank(string diskName, string diskId, int trackCount = StandardTrackCount,
-        bool includeErrorInfo = false)
+        bool includeErrorInfo = false, bool protectTrack1Sector0 = false)
     {
         if (trackCount != StandardTrackCount && trackCount != ExtendedTrackCount)
             throw new ArgumentException("trackCount must be 35 or 40.", nameof(trackCount));
@@ -984,6 +1035,8 @@ public class D64Image
         // Reserve the BAM sector and the directory's entry point; everything else starts free.
         image.AllocatedBlocks[TrackSectorToBlock(18, 0)] = true;
         image.AllocatedBlocks[TrackSectorToBlock(18, 1)] = true;
+        if (protectTrack1Sector0)
+            image.AllocatedBlocks[TrackSectorToBlock(1, 0)] = true;
 
         // WriteDirectory needs a terminator to write for an empty directory; it handles
         // Entries.Count == 0 the same as any other count (one sector, immediate terminator).
@@ -992,5 +1045,75 @@ public class D64Image
         image.WriteDiskHeader();
 
         return image;
+    }
+
+    /// <summary>
+    ///     Applies a C128 auto-boot sector to track 1, sector 0 (ported from
+    ///     CreateBlankD64's c128BootSector path). Writes the boot signature/code
+    ///     into T1/S0 and adds the marker directory entry; T1/S0 is marked
+    ///     allocated in the BAM.
+    /// </summary>
+    public void ApplyC128AutoBoot(string bootFileName)
+    {
+        bootFileName ??= "";
+        var bootBytes = Encoding.Latin1.GetBytes(bootFileName);
+        var block = TrackSectorToBlock(1, 0);
+        var data = new byte[SectorSize];
+
+        // "CBM" signature
+        data[0] = 0x43; data[1] = 0x42; data[2] = 0x4D; data[3] = 0x00;
+        data[4] = 0x00; data[5] = 0x00; data[6] = 0x00;
+
+        var i = 7;
+        var copyLen = Math.Min(bootBytes.Length, SectorSize - i - 32);
+        if (copyLen > 0)
+        {
+            Array.Copy(bootBytes, 0, data, i, copyLen);
+            i += copyLen;
+        }
+
+        // Boot stub (as in frmMain.CreateBlankD64)
+        byte[] stub = {
+            0x00, 0x00, 0x20, 0xE4, 0xFF, 0xC9, 0x03, // ... JSR $FFE4 / CMP #$03
+            0xD0, 0x01, 0x60, 0xA2,
+            (byte)(23 + bootBytes.Length),
+            0xA0, 0x0B, 0x4C, 0xA5, 0xAF,
+            0x55, 0x3D, 0x50, 0x45, 0x45, 0x4B, 0x28, 0x31, 0x38, 0x36, 0x29, 0x3A, // U=PEEK(186):
+            0x52, 0x55, 0x4E, 0x22 // RUN"
+        };
+        var stubLen = Math.Min(stub.Length, SectorSize - i);
+        Array.Copy(stub, 0, data, i, stubLen);
+        i += stubLen;
+
+        copyLen = Math.Min(bootBytes.Length, SectorSize - i - 8);
+        if (copyLen > 0)
+        {
+            Array.Copy(bootBytes, 0, data, i, copyLen);
+            i += copyLen;
+        }
+
+        byte[] tail = { 0x22, 0x2C, 0x55, 0x28, 0x55, 0x29, 0x00, 0x0D }; // ",U(U)" + 00 0D
+        var tailLen = Math.Min(tail.Length, SectorSize - i);
+        Array.Copy(tail, 0, data, i, tailLen);
+
+        WriteBlock(block, data);
+        AllocatedBlocks[block] = true;
+
+        // Marker directory entry (shows autoboot/protected sector), as VB wrote at 91651.
+        var markerName = new byte[16];
+        byte[] marker = { 0xA2, 0xB9, 0x43, 0x31, 0x32, 0x38, 0x41, 0x55, 0x54, 0x4F, 0x42, 0x4F, 0x4F, 0x54, 0xB9, 0xA2 };
+        Array.Copy(marker, markerName, 16);
+        Entries.Insert(0, new D64FileEntry
+        {
+            RawFileType = 0xC0,
+            StartTrack = 0,
+            StartSector = 0,
+            RawFilename = markerName,
+            SizeLow = 0,
+            SizeHigh = 0
+        });
+
+        WriteDirectory();
+        WriteBam();
     }
 }

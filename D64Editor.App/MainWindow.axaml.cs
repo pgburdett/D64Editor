@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using D64Editor.Core;
 
@@ -19,14 +20,69 @@ namespace D64Editor.App;
 public partial class MainWindow : Window
 {
     private D64Image? _image;
+    private MemoryWindow? _memoryWindow;
+    private bool _upperCase;
+    private bool _showDelFiles = true;
+    private int _dirFontSize = 14;
+
+    /// <summary>Open disk windows, for the Window menu (DirMaster MDI is per-window disks).</summary>
+    public static readonly List<MainWindow> OpenWindows = new();
 
     public MainWindow()
     {
         InitializeComponent();
+        if (Fonts.PetsciiFontAvailable)
+        {
+            DiskNameBox.FontFamily = Fonts.Petscii;
+            DiskIdBox.FontFamily = Fonts.Petscii;
+            DirectoryList.FontFamily = Fonts.Petscii;
+        }
+        DiskNameBox.Text = "";
+        DiskIdBox.Text = "";
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
+
+        OpenWindows.Add(this);
+        Closed += (_, _) => OpenWindows.Remove(this);
     }
+
+    /// <summary>Opens the file picker in this window (used by "Open in New Window").</summary>
+    public void PromptOpen() => OnOpenClicked(this, new RoutedEventArgs());
+
+    /// <summary>Loads a disk image by path (used by the partition/container opener).</summary>
+    public void OpenDiskFile(string path) => LoadDisk(path);
+
+    /// <summary>Window &gt; New Disk Window — opens another independent disk window.</summary>
+    private void OnNewDiskWindowClicked(object? sender, RoutedEventArgs e)
+    {
+        var w = new MainWindow();
+        w.Show();
+        w.PromptOpen();
+    }
+
+    /// <summary>Rebuilds the Window menu's open-window list each time it opens.</summary>
+    private void OnWindowMenuOpened(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem menu) return;
+
+        // Keep the first two items (New + separator); drop the rest.
+        while (menu.Items.Count > 2)
+            menu.Items.RemoveAt(2);
+
+        for (var i = 0; i < OpenWindows.Count; i++)
+        {
+            var win = OpenWindows[i];
+            var label = string.IsNullOrEmpty(win.Title) || win.Title == "D64 Editor"
+                ? $"{i + 1} (empty)"
+                : $"{i + 1} {win.Title.Replace("D64 Editor — ", "")}";
+            var item = new MenuItem { Header = label };
+            var target = win;
+            item.Click += (_, _) => target.Activate();
+            menu.Items.Add(item);
+        }
+    }
+
 
     private void OnDragOver(object? sender, DragEventArgs e)
     {
@@ -79,21 +135,28 @@ public partial class MainWindow : Window
 
     private async void OnOpenClicked(object? sender, RoutedEventArgs e)
     {
-        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        var options = new FilePickerOpenOptions
         {
             Title = "Open D64 Disk Image",
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("D64 Disk Image") { Patterns = new[] { "*.d64", "*.D64" } }
+                new FilePickerFileType("Disk Images") { Patterns = new[] { "*.d64", "*.d71", "*.d81", "*.d80", "*.d82", "*.dnp", "*.dhd", "*.d2m", "*.d4m", "*.g64", "*.t64", "*.lbr", "*.cpm", "*.dsk", "*.img", "*.d40", "*.d67", "*.nib" } },
+                new FilePickerFileType("D64 Disk Image") { Patterns = new[] { "*.d64", "*.D64" } },
             }
-        });
+        };
+        if (!string.IsNullOrEmpty(AppSettings.LastDirectoryPath))
+        {
+            try { options.SuggestedStartLocation = await StorageProvider.TryGetFolderFromPathAsync(AppSettings.LastDirectoryPath); } catch { }
+        }
+        var files = await StorageProvider.OpenFilePickerAsync(options);
 
         if (files.Count == 0) return;
 
         var path = files[0].TryGetLocalPath();
         if (path is null) return;
 
+        AppSettings.LastDirectoryPath = Path.GetDirectoryName(path) ?? AppSettings.LastDirectoryPath;
         LoadDisk(path);
     }
 
@@ -101,12 +164,108 @@ public partial class MainWindow : Window
     {
         try
         {
+            var format = DiskFormats.FromExtension(path);
+            var length = new FileInfo(path).Length;
+            // Bail early for formats this build can't parse (other than a bad-sized D64,
+            // which D64Image.Load reports precisely), so opening one can never take the
+            // app down — it just shows a clear message (reported "it blew up" crash).
+            if (format == DiskFormat.T64)
+            {
+                var t64 = T64Image.TryLoad(path);
+                if (t64 is null)
+                    FileCountLabel.Text = $"Could not read T64 archive '{Path.GetFileName(path)}'.";
+                else
+                    new T64ViewerWindow(t64, path).Show(this);
+                return;
+            }
+
+            if (format is DiskFormat.D71 or DiskFormat.D81 or DiskFormat.D80 or DiskFormat.D82 or DiskFormat.Dnp)
+            {
+                var info = CbmCatalog.Open(path);
+                if (info is null)
+                    FileCountLabel.Text = $"Could not read {format} image '{Path.GetFileName(path)}'.";
+                else
+                    new ExtendedImageWindow(info).Show(this);
+                return;
+            }
+
+            if (format is DiskFormat.Cpm or DiskFormat.Lbr or DiskFormat.D40)
+            {
+                var files = CpmDisk.Read(path);
+                new CpmViewerWindow(format.ToString().ToUpperInvariant(), files, path).Show(this);
+                return;
+            }
+
+            if (format == DiskFormat.G64)
+            {
+                var g64 = G64Image.TryLoad(path);
+                if (g64 is null)
+                {
+                    FileCountLabel.Text = $"Could not read G64 image '{Path.GetFileName(path)}'.";
+                    return;
+                }
+
+                var (d64Bytes, warnings, tracks) = g64.ToD64Bytes();
+                var outPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(path) + ".d64");
+                File.WriteAllBytes(outPath, d64Bytes);
+
+                FileCountLabel.Text = warnings.Count == 0
+                    ? $"Converted G64→D64 ({tracks} tracks, all sectors clean); opening it."
+                    : $"Converted G64→D64 ({tracks} tracks); {warnings.Count} sector(s) undecoded (copy protection); opening it.";
+                LoadDisk(outPath);
+                return;
+            }
+
+            if (format is DiskFormat.Nib)
+            {
+                var nibImg = NibImage.TryLoad(path);
+                if (nibImg is null)
+                {
+                    FileCountLabel.Text = $"Could not read NIB image '{Path.GetFileName(path)}'.";
+                    return;
+                }
+
+                var (n64, nibWarnings, nibTracks) = nibImg.ToD64Bytes();
+                var nout = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(path) + ".d64");
+                File.WriteAllBytes(nout, n64);
+                FileCountLabel.Text = nibWarnings.Count == 0
+                    ? $"Converted NIB→D64 ({nibTracks} tracks, all sectors clean); opening it."
+                    : $"Converted NIB→D64 ({nibTracks} tracks); {nibWarnings.Count} sector(s) undecoded; opening it.";
+                LoadDisk(nout);
+                return;
+            }
+
+            if (format is DiskFormat.D2m or DiskFormat.D4m or DiskFormat.Dhd)
+            {
+                if (DiskContainers.IsContainer(path))
+                    new PartitionsWindow(path).Show(this);
+                else
+                    FileCountLabel.Text = $"Could not read CMD container '{Path.GetFileName(path)}'.";
+                return;
+            }
+
+            if (format != DiskFormat.D64 && !DiskFormats.IsD64Size(length))
+            {
+                FileCountLabel.Text = format == DiskFormat.Unknown
+                    ? $"Unsupported image format '{Path.GetExtension(path)}' — only .d64 in this build."
+                    : $"{format} images aren't supported yet (D64 only).";
+                return;
+            }
+
             _image = D64Image.Load(path);
             _image.Interleave = AppSettings.Interleave;
             _image.PreferredStartTrack = AppSettings.StartingTrack;
             _image.PreferredStartSector = AppSettings.StartingSector;
             _image.ComputeBlockOwners();
             PopulateFrom(_image);
+            Title = $"D64 Editor — {Path.GetFileName(path)}";
+
+            try
+            {
+                if (File.GetAttributes(path).HasFlag(FileAttributes.ReadOnly))
+                    FileCountLabel.Text += "  (Read-only file)";
+            }
+            catch { }
 
             // Ported from getBlockOwners' showcrosslinks flag: the original popped up
             // frmCrossLinks automatically when it found any, unless disabled in Config.
@@ -117,6 +276,12 @@ public partial class MainWindow : Window
         {
             // Mirrors the original's "That is not a D64 file" MsgBox.
             FileCountLabel.Text = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            // Never let a malformed image take the whole app down — surface the
+            // problem in the status bar instead (reported as "it blew up" crashes).
+            FileCountLabel.Text = $"Could not open '{Path.GetFileName(path)}': {ex.Message}";
         }
     }
 
@@ -145,7 +310,21 @@ public partial class MainWindow : Window
             return;
         }
 
-        new FilePropertiesWindow(_image, _image.Entries[index]).Show(this);
+        var entry = _image.Entries[index];
+        new FilePropertiesWindow(_image, entry, saved =>
+        {
+            if (!saved || _image is null) return;
+            PopulateFrom(_image);
+            if (AppSettings.SelectNextFileUponSave)
+            {
+                var next = Math.Min(index + 1, _image.Entries.Count - 1);
+                if (next >= 0 && DirectoryList.ItemsSource is IEnumerable<DirectoryRow> rows)
+                {
+                    var row = rows.ElementAtOrDefault(next);
+                    if (row is not null) DirectoryList.SelectedItem = row;
+                }
+            }
+        }).Show(this);
     }
 
     /// <summary>Ported from the "View Error Blocks" path: opens the BAM editor pre-set to error-code mode.</summary>
@@ -244,19 +423,366 @@ public partial class MainWindow : Window
         }
 
         _image.Save();
+        Title = (Title ?? "D64 Editor").TrimEnd('*').TrimEnd();
         FileCountLabel.Text = "Disk saved.";
     }
 
-    /// <summary>Ported from mnuQuit_Click.</summary>
-    private void OnQuitClicked(object? sender, RoutedEventArgs e)
+    /// <summary>DirMaster-style Save As... with format selection.</summary>
+    private async void OnSaveAsClicked(object? sender, RoutedEventArgs e)
     {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+
+        var topLevel = GetTopLevel(this);
+        if (topLevel is null) return;
+
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save Disk Image As...",
+            SuggestedFileName = Path.GetFileName(_image.SourcePath),
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("D64 Disk Image") { Patterns = new[] { "*.d64" } },
+                new FilePickerFileType("D71 Disk Image") { Patterns = new[] { "*.d71" } },
+                new FilePickerFileType("D81 Disk Image") { Patterns = new[] { "*.d81" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } },
+            }
+        });
+
+        if (file is null) return;
+
+        var path = file.Path.LocalPath;
+        try
+        {
+            _image.Save(path);
+            _image.SourcePath = path;
+            Title = $"D64 Editor — {Path.GetFileName(path)}";
+            FileCountLabel.Text = $"Saved as {Path.GetFileName(path)}.";
+        }
+        catch (Exception ex)
+        {
+            FileCountLabel.Text = $"Save failed: {ex.Message}";
+        }
+    }
+
+    /// <summary>Ported from mnuQuit_Click.</summary>
+    private async void OnQuitClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is { Dirty: true })
+        {
+            var save = await ConfirmWindow.Ask(this,
+                "This disk has unsaved changes. Save before quitting?", "Unsaved Changes");
+            if (save) _image.Save();
+        }
+
         Close();
+    }
+
+    /// <summary>DirMaster-style Close disk with unsaved-changes prompt.</summary>
+    private async void OnCloseClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "No disk open.";
+            return;
+        }
+
+        if (_image.Dirty)
+        {
+            var save = await ConfirmWindow.Ask(this,
+                "This disk has unsaved changes. Save before closing?", "Unsaved Changes");
+            if (save) _image.Save();
+        }
+
+        _image = null;
+        Title = "D64 Editor";
+        DiskNameBox.Text = "";
+        DiskIdBox.Text = "";
+        DirectoryList.ItemsSource = null;
+        FileCountLabel.Text = "Disk closed.";
+        BlocksFreeLabel.Text = "";
     }
 
     /// <summary>Ported from mnuVersion_Click.</summary>
     private void OnVersionClicked(object? sender, RoutedEventArgs e)
     {
         FileCountLabel.Text = "D64 Editor — C#/.NET 8/Avalonia port. Original by Forrest Mook, 1999-2016, GPL v2.";
+    }
+
+    /// <summary>Ported from mnuAbout_Click.</summary>
+    private void OnAboutClicked(object? sender, RoutedEventArgs e)
+    {
+        new AboutWindow().Show(this);
+    }
+
+    private void OnNotImplementedClicked(object? sender, RoutedEventArgs e)
+    {
+        FileCountLabel.Text = "This DirMaster-mode function is not implemented yet.";
+    }
+
+    /// <summary>Recolors the C64-style directory canvas from the toolbar color selectors.</summary>
+    private void OnColorChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (DirectoryCanvas is null) return;
+
+        var bg = ComboColor(PrimaryColorCombo, "Blue") ?? C64Palette.Primary["Blue"];
+        var fg = ComboColor(SecondaryColorCombo, "Lt Blue") ?? C64Palette.Secondary["Lt Blue"];
+
+        DirectoryCanvas.Background = new SolidColorBrush(bg);
+        DirectoryList.Foreground = new SolidColorBrush(fg);
+    }
+
+    private static Color? ComboColor(ComboBox? combo, string fallback)
+    {
+        if (combo?.SelectedItem is ComboBoxItem item)
+        {
+            var key = item.Content?.ToString() ?? fallback;
+            if (C64Palette.Primary.TryGetValue(key, out var p)) return p;
+            if (C64Palette.Secondary.TryGetValue(key, out var s)) return s;
+        }
+        return null;
+    }
+
+    /// <summary>DirMaster-style Find in Disks — filename search across a folder of images.</summary>
+    private void OnFindInDisksClicked(object? sender, RoutedEventArgs e)
+    {
+        var folder = !string.IsNullOrEmpty(AppSettings.LastDirectoryPath)
+            ? AppSettings.LastDirectoryPath
+            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        new FindInDisksWindow(folder).Show(this);
+    }
+
+    /// <summary>DirMaster Tools &gt; Compare — diff the open disk against another image.</summary>
+    private void OnCompareDisksClicked(object? sender, RoutedEventArgs e)
+    {
+        new CompareDisksWindow(_image?.SourcePath ?? string.Empty).Show(this);
+    }
+
+    /// <summary>DirMaster Tools &gt; Batch Processing — export all files from a folder of images.</summary>
+    private void OnBatchClicked(object? sender, RoutedEventArgs e)
+    {
+        var folder = !string.IsNullOrEmpty(AppSettings.LastDirectoryPath)
+            ? AppSettings.LastDirectoryPath
+            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        new BatchWindow(folder).Show(this);
+    }
+
+    /// <summary>DirMaster Disk &gt; Show DEL Files — toggles inclusion of scratched entries.</summary>
+    private void OnShowDelFilesClicked(object? sender, RoutedEventArgs e)
+    {
+        _showDelFiles = !_showDelFiles;
+        if (_image is not null) PopulateFrom(_image);
+        FileCountLabel.Text = _showDelFiles ? "Showing deleted files." : "Hiding deleted files.";
+    }
+
+    /// <summary>DirMaster File &gt; Rename — renames the selected directory entry.</summary>
+    private void OnRenameClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        var selected = DirectoryList.SelectedItems?.OfType<DirectoryRow>().ToList();
+        if (selected is null || selected.Count != 1) { FileCountLabel.Text = "Select exactly one file to rename."; return; }
+
+        var entry = selected[0].Entry;
+        new RenameWindow(entry.FileName, newName =>
+        {
+            if (string.IsNullOrWhiteSpace(newName)) return;
+            entry.FileName = newName.Trim().ToUpperInvariant()[..Math.Min(16, newName.Trim().Length)];
+            _image.WriteDirectory();
+            _image.Save();
+            PopulateFrom(_image);
+            FileCountLabel.Text = $"Renamed to {entry.FileName}.";
+        }).Show(this);
+    }
+
+    /// <summary>DirMaster View &gt; Toggle Case — switches displayed name case.</summary>
+    private void OnToggleCaseClicked(object? sender, RoutedEventArgs e)
+    {
+        _upperCase = !_upperCase;
+        if (_image is not null) PopulateFrom(_image);
+        FileCountLabel.Text = _upperCase ? "Names: UPPER CASE." : "Names: lower case.";
+    }
+
+    /// <summary>DirMaster View &gt; Font Size — cycles the directory font size.</summary>
+    private void OnFontSizeClicked(object? sender, RoutedEventArgs e)
+    {
+        _dirFontSize = _dirFontSize switch
+        {
+            >= 20 => 10,
+            _ => _dirFontSize + 2
+        };
+        if (_image is not null) PopulateFrom(_image);
+        FileCountLabel.Text = $"Directory font size: {_dirFontSize}";
+    }
+
+    /// <summary>DirMaster View &gt; Refresh — re-reads the directory from the image.</summary>
+    private void OnRefreshClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        PopulateFrom(_image);
+        FileCountLabel.Text = "Directory refreshed.";
+    }
+
+    /// <summary>DirMaster View &gt; Hex Viewer — reads the selected file's bytes into a
+    /// read-only hex dump window.</summary>
+    private void OnHexViewerClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        var selected = DirectoryList.SelectedItems?.OfType<DirectoryRow>().ToList();
+        if (selected is null || selected.Count != 1) { FileCountLabel.Text = "Select exactly one file to view."; return; }
+
+        var entry = selected[0].Entry;
+        var bytes = _image.ExportFile(entry);
+        new HexViewerWindow(entry.FileName, bytes).Show(this);
+    }
+
+    /// <summary>DirMaster View &gt; BASIC Viewer — de-tokenizes the selected PRG as C64 BASIC.</summary>
+    private void OnBasicViewerClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        var selected = DirectoryList.SelectedItems?.OfType<DirectoryRow>().ToList();
+        if (selected is null || selected.Count != 1) { FileCountLabel.Text = "Select exactly one file to view."; return; }
+
+        var entry = selected[0].Entry;
+        var bytes = _image.ExportFile(entry);
+        new BasicViewerWindow(entry.FileName, bytes).Show(this);
+    }
+
+    /// <summary>DirMaster View &gt; Disassembly Viewer — 6502 disassembly of the selected file.</summary>
+    private void OnDisassemblyViewerClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        var selected = DirectoryList.SelectedItems?.OfType<DirectoryRow>().ToList();
+        if (selected is null || selected.Count != 1) { FileCountLabel.Text = "Select exactly one file to view."; return; }
+
+        var entry = selected[0].Entry;
+        var bytes = _image.ExportFile(entry);
+        new DisassemblyWindow(entry.FileName, bytes).Show(this);
+    }
+
+    /// <summary>Ported from mnuSelectAllFiles_Click.</summary>
+    private void OnSelectAllFilesClicked(object? sender, RoutedEventArgs e)
+    {
+        DirectoryList.SelectAll();
+    }
+
+    /// <summary>Ported from mnuUnselectAllFiles_Click.</summary>
+    private void OnUnselectAllFilesClicked(object? sender, RoutedEventArgs e)
+    {
+        DirectoryList.SelectedItems?.Clear();
+    }
+
+    /// <summary>Ported from mnuInvertSelection_Click.</summary>
+    private void OnInvertSelectionClicked(object? sender, RoutedEventArgs e)
+    {
+        var rows = DirectoryList.ItemsSource as IEnumerable<DirectoryRow>;
+        if (rows is null) return;
+        var currentlySelected = new HashSet<object>(DirectoryList.SelectedItems?.Cast<object>() ?? Enumerable.Empty<object>());
+        DirectoryList.SelectedItems?.Clear();
+        foreach (var row in rows)
+            if (!currentlySelected.Contains(row))
+                DirectoryList.SelectedItems?.Add(row);
+    }
+
+    /// <summary>Ported from mnuMoveFileToTop_Click/MoveFileToTop.</summary>
+    private void OnMoveFileToTopClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) return;
+        var selected = DirectoryList.SelectedItems?.Cast<DirectoryRow>().Select(r => r.Entry).ToList() ?? new();
+        if (selected.Count != 1)
+        {
+            FileCountLabel.Text = selected.Count == 0 ? "Select one file to move." : "You can only move one file at a time.";
+            return;
+        }
+
+        _image.MoveEntryToTop(selected[0]);
+        _image.Save();
+        PopulateFrom(_image);
+        var row = (DirectoryList.ItemsSource as IEnumerable<DirectoryRow>)?.FirstOrDefault(r => r.Entry == selected[0]);
+        if (row is not null) DirectoryList.SelectedItem = row;
+    }
+
+    /// <summary>Ported from mnuMoveFileToBottom_Click/MoveFileToBottom.</summary>
+    private void OnMoveFileToBottomClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) return;
+        var selected = DirectoryList.SelectedItems?.Cast<DirectoryRow>().Select(r => r.Entry).ToList() ?? new();
+        if (selected.Count != 1)
+        {
+            FileCountLabel.Text = selected.Count == 0 ? "Select one file to move." : "You can only move one file at a time.";
+            return;
+        }
+
+        _image.MoveEntryToBottom(selected[0]);
+        _image.Save();
+        PopulateFrom(_image);
+        var row = (DirectoryList.ItemsSource as IEnumerable<DirectoryRow>)?.FirstOrDefault(r => r.Entry == selected[0]);
+        if (row is not null) DirectoryList.SelectedItem = row;
+    }
+
+    /// <summary>Ported from mnuAddSeperatorLine_Click (opens Filename Builder / separator workflow).</summary>
+    private void OnAddSeparatorLineClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+        new FilenameBuilderWindow(_image).Show(this);
+    }
+
+    /// <summary>Ported from mnuCopySelectedintoSeparatorBuilder_Click.</summary>
+    private void OnCopySelectedIntoSeparatorBuilderClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null)
+        {
+            FileCountLabel.Text = "Open a D64 file first.";
+            return;
+        }
+        var selected = DirectoryList.SelectedItems?.Cast<DirectoryRow>().Select(r => r.Entry.FileName).ToList() ?? new();
+        if (selected.Count == 0)
+        {
+            FileCountLabel.Text = "Select one or more files first.";
+            return;
+        }
+        var win = new FilenameBuilderWindow(_image);
+        win.AddSeparatorNames(selected);
+        win.Show(this);
+    }
+
+    /// <summary>
+    ///     Ported from List1_dblClick: open SEQ viewer for SEQ files, otherwise file properties.
+    /// </summary>
+    private void OnDirectoryDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (_image is null) return;
+        if (DirectoryList.SelectedItem is not DirectoryRow row) return;
+        var index = _image.Entries.IndexOf(row.Entry);
+        if (index < 0) return;
+
+        if (row.Entry.FileType == D64FileType.Seq)
+        {
+            new SeqViewerWindow(_image, row.Entry).Show(this);
+            return;
+        }
+
+        var entry = row.Entry;
+        new FilePropertiesWindow(_image, entry, saved =>
+        {
+            if (!saved || _image is null) return;
+            PopulateFrom(_image);
+            if (AppSettings.SelectNextFileUponSave)
+            {
+                var next = Math.Min(index + 1, _image.Entries.Count - 1);
+                if (next >= 0 && DirectoryList.ItemsSource is IEnumerable<DirectoryRow> rows)
+                {
+                    var row2 = rows.ElementAtOrDefault(next);
+                    if (row2 is not null) DirectoryList.SelectedItem = row2;
+                }
+            }
+        }).Show(this);
     }
 
     /// <summary>Ported from mnuViewFile_Click / ViewSeqFile: shows the currently selected file's text content.</summary>
@@ -290,6 +816,11 @@ public partial class MainWindow : Window
         new SectorDumpWindow(_image).Show(this);
     }
 
+    /// <summary>
+    ///     Ported from mnuCopyFilesToMemory_Click/CopyFilesToMemory: copies the
+    ///     currently selected directory entries into the memory staging area and
+    ///     shows the memory window. If nothing is selected, just opens/shows it.
+    /// </summary>
     private void OnMemoryClicked(object? sender, RoutedEventArgs e)
     {
         if (_image is null)
@@ -298,7 +829,24 @@ public partial class MainWindow : Window
             return;
         }
 
-        new MemoryWindow(_image).Show(this);
+        if (_memoryWindow is null || !_memoryWindow.IsVisible)
+        {
+            _memoryWindow = new MemoryWindow(_image, () => { if (_image is not null) PopulateFrom(_image); });
+            _memoryWindow.Closed += (_, _) => _memoryWindow = null;
+        }
+
+        var selected = DirectoryList.SelectedItems?.Cast<DirectoryRow>().Select(r => r.Entry).ToList() ??
+                       new List<D64FileEntry>();
+        foreach (var entry in selected)
+            _memoryWindow.AddFromDiskEntry(entry, _image);
+
+        if (!_memoryWindow.IsVisible)
+            _memoryWindow.Show(this);
+        else
+            _memoryWindow.Activate();
+
+        if (selected.Count > 0)
+            FileCountLabel.Text = $"Copied {selected.Count} file(s) to memory.";
     }
 
     /// <summary>Ported from the export menu item + FileExport, for the currently selected directory entry.</summary>
@@ -532,7 +1080,12 @@ public partial class MainWindow : Window
     /// </summary>
     private void OnAddressBaseChanged(object? sender, RoutedEventArgs e)
     {
-        if (_image is not null) PopulateFrom(_image);
+        if (_image is null) return;
+        // IsCheckedChanged fires for both checked and unchecked transitions; refresh only on checked.
+        if (HexAddressRadio?.IsChecked == true)
+            PopulateFrom(_image);
+        else if (DecimalAddressRadio?.IsChecked == true)
+            PopulateFrom(_image);
     }
 
     private void PopulateFrom(D64Image image)
@@ -545,22 +1098,27 @@ public partial class MainWindow : Window
             : $"{image.TrackCount} TRACK D64 FILE (STANDARD)";
 
         var hex = HexAddressRadio.IsChecked == true;
-        var rows = image.Entries.Select(entry =>
+        var entries = _showDelFiles ? image.Entries : image.Entries.Where(e => !e.IsScratched).ToList();
+        var rows = entries.Select(entry =>
         {
             var (start, end) = image.GetAddressRange(entry);
+            var name = _upperCase ? entry.FileName.ToUpperInvariant() : entry.FileName;
             return new DirectoryRow
             {
                 Entry = entry,
+                FileNameOverride = name,
                 StartAddressDisplay = FormatAddress(start, hex),
                 EndAddressDisplay = FormatAddress(end, hex)
             };
         }).ToList();
 
+        DirectoryList.FontSize = _dirFontSize;
+
         DirectoryList.ItemsSource = null;
         DirectoryList.ItemsSource = rows;
 
-        var filesWord = image.Entries.Count == 1 ? "file" : "files";
-        FileCountLabel.Text = $"D64 contains {image.Entries.Count} {filesWord} ({BuildTypeBreakdown(image)})";
+        var filesWord = entries.Count == 1 ? "file" : "files";
+        FileCountLabel.Text = $"D64 contains {entries.Count} {filesWord} ({BuildTypeBreakdown(image)})";
     }
 
     private static string FormatAddress(ushort address, bool hex)

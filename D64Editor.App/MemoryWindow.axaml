@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.MemoryWindow"
-        Title="Memory (File Staging)"
+        Title="Memory"
         Width="480" Height="440"
         MinWidth="360" MinHeight="300">
 
@@ -9,17 +9,17 @@
 
         <!-- Mirrors mnuFile popup menu: select all / invert / deselect / remove / export / copy into D64 -->
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_Memory">
+            <MenuItem Header="_File">
+                <MenuItem Header="Copy Files Into D64" Click="OnCopyIntoDiskClicked" FontWeight="Bold" />
+                <MenuItem Header="Export to a File" Click="OnExportClicked" />
+                <MenuItem Header="Remove selected files from memory" Click="OnRemoveClicked" />
+                <Separator />
                 <MenuItem Header="Add File..." Click="OnAddClicked" />
-                <Separator />
+            </MenuItem>
+            <MenuItem Header="_Edit">
                 <MenuItem Header="Select All Files" Click="OnSelectAllClicked" />
+                <MenuItem Header="UnSelect All Files" Click="OnUnselectAllClicked" />
                 <MenuItem Header="Invert Selection" Click="OnInvertSelectionClicked" />
-                <MenuItem Header="Unselect All Files" Click="OnUnselectAllClicked" />
-                <Separator />
-                <MenuItem Header="Export Selected to File..." Click="OnExportClicked" />
-                <MenuItem Header="Remove Selected from Memory" Click="OnRemoveClicked" />
-                <Separator />
-                <MenuItem Header="Copy Selected into Disk" Click="OnCopyIntoDiskClicked" FontWeight="Bold" />
             </MenuItem>
         </Menu>
 

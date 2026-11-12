@@ -12,11 +12,29 @@ namespace D64Editor.App;
 public class DirectoryRow
 {
     public required D64FileEntry Entry { get; init; }
-    public string FileName => Entry.FileName;
+    public string? FileNameOverride { get; init; }
+    public string FileName => FileNameOverride ?? Entry.FileName;
     public int StartTrack => Entry.StartTrack;
     public int StartSector => Entry.StartSector;
     public int SizeInBlocks => Entry.SizeInBlocks;
     public string TypeDisplay => Entry.TypeDisplay;
     public required string StartAddressDisplay { get; init; }
     public required string EndAddressDisplay { get; init; }
+
+    /// <summary>Raw C64-directory line, as shown on a 1541 screen: block count, quoted
+    /// PETSCII name, file type at the right. Rendered in the PETSCII font on the C64 blue.</summary>
+    public string C64Line
+    {
+        get
+        {
+            var name = Entry.IsScratched ? StrikeFirstChar(FileName) : FileName;
+            var quoted = $"\"{name}\"";
+            quoted = quoted.PadRight(18);
+            var type = Entry.IsScratched ? "DEL" : Entry.TypeDisplay;
+            return $"{SizeInBlocks,4} {quoted}{type}";
+        }
+    }
+
+    private static string StrikeFirstChar(string s) =>
+        s.Length == 0 ? s : "\u2588" + s.Substring(1); // █ stands in for the reverse-video struck char
 }

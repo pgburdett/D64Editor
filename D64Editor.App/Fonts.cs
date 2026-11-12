@@ -20,14 +20,14 @@ namespace D64Editor.App;
 /// </summary>
 public static class Fonts
 {
-    private const string FileName = "c64pro.ttf";
-    private const string FamilyName = "C64 Pro Mono"; // <-- adjust to match your font file
+    private const string FileName = "C64_Pro_Mono-STYLE.ttf";
+    private const string FamilyName = "C64 Pro Mono"; // internal family name for C64 Pro Mono (style64.org)
 
     /// <summary>
     ///     Set to true once a real font file has been dropped into Assets/Fonts —
     ///     keeps the app from pointing at a resource that doesn't exist yet.
     /// </summary>
-    public const bool PetsciiFontAvailable = false;
+    public const bool PetsciiFontAvailable = true;
 
     public static FontFamily Petscii => PetsciiFontAvailable
         ? new FontFamily($"avares://D64Editor.App/Assets/Fonts/{FileName}#{FamilyName}")

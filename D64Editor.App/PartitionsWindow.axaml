@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:D64Editor.App"
+        x:Class="D64Editor.App.PartitionsWindow"
+        Title="Partitions"
+        Width="560" Height="440">
+
+    <DockPanel Margin="10">
+        <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+            <Button Content="Open Partition..." Click="OnOpenClicked" />
+            <TextBlock Name="StatusLabel" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <ListBox Name="PartitionList" DoubleTapped="OnOpenClicked">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="local:PartitionRow">
+                    <TextBlock Text="{Binding Summary}" FontFamily="Consolas,Monospace" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</Window>

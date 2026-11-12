@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.RenameWindow"
+        Title="Rename File"
+        Width="320" Height="160"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <StackPanel Margin="16" Spacing="12">
+        <TextBlock Text="New filename:" />
+        <TextBox Name="NameBox" MaxLength="16" />
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="OK" Click="OnOkClicked" />
+            <Button Content="Cancel" Click="OnCancelClicked" />
+        </StackPanel>
+    </StackPanel>
+</Window>

@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.SectorDumpWindow"
-        Title="Sector Dump"
+        Title="Sector Dumper"
         Width="360" Height="200"
         CanResize="False">
 
@@ -9,7 +9,7 @@
 
         <TextBlock Text="Dump a single track/sector's 256 bytes to a file." TextWrapping="Wrap" />
 
-        <Grid ColumnDefinitions="Auto,8,80,20,Auto,8,80">
+        <Grid ColumnDefinitions="Auto,8,90,20,Auto,8,90">
             <TextBlock Grid.Column="0" Text="Track:" VerticalAlignment="Center" />
             <!-- Mirrors cmbTrack -->
             <NumericUpDown Grid.Column="2" Name="TrackBox" Minimum="1" Maximum="35" Value="1"

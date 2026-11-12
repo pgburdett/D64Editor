@@ -2,28 +2,28 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.FilePropertiesWindow"
         Title="File Properties"
-        Width="380" Height="420"
+        Width="480" Height="420"
         CanResize="False">
 
     <StackPanel Margin="16" Spacing="10">
 
-        <TextBlock Text="Filename:" />
+        <TextBlock Text="FILENAME:" />
         <TextBox Name="FilenameBox" MaxLength="16" />
 
-        <Grid ColumnDefinitions="Auto,8,60,20,Auto,8,60">
-            <TextBlock Grid.Column="0" Text="Track:" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Column="2" Name="StartTrackBox" Minimum="0" Maximum="35" />
-            <TextBlock Grid.Column="4" Text="Sector:" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Column="6" Name="StartSectorBox" Minimum="0" Maximum="20" />
+        <Grid ColumnDefinitions="Auto,8,90,20,Auto,8,90">
+            <TextBlock Grid.Column="0" Text="STARTING TRACK:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Name="StartTrackBox" Minimum="0" Maximum="35" ShowButtonSpinner="False" />
+            <TextBlock Grid.Column="4" Text="STARTING SECTOR:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="6" Name="StartSectorBox" Minimum="0" Maximum="20" ShowButtonSpinner="False" />
         </Grid>
 
-        <Grid ColumnDefinitions="Auto,8,80">
-            <TextBlock Grid.Column="0" Text="Size (blocks):" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Column="2" Name="SizeBox" Minimum="0" Maximum="65535" />
+        <Grid ColumnDefinitions="Auto,8,120">
+            <TextBlock Grid.Column="0" Text="SIZE:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Name="SizeBox" Minimum="0" Maximum="65535" ShowButtonSpinner="False" />
         </Grid>
 
         <!-- Mirrors optPRG/optSeq/optUsr/optRel/optDel -->
-        <TextBlock Text="Type:" />
+        <TextBlock Text="FILE TYPE:" />
         <StackPanel Orientation="Horizontal" Spacing="10">
             <RadioButton Name="PrgRadio" GroupName="FileType" Content="PRG" />
             <RadioButton Name="SeqRadio" GroupName="FileType" Content="SEQ" />
@@ -34,14 +34,15 @@
 
         <!-- Mirrors chkLocked / chkSplat -->
         <StackPanel Orientation="Horizontal" Spacing="16">
-            <CheckBox Name="LockedBox" Content="Locked" />
-            <CheckBox Name="SplatBox" Content="Splat (improperly closed)" />
+            <CheckBox Name="LockedBox" Content="LOCKED (&lt;)" />
+            <CheckBox Name="SplatBox" Content="SPLAT (*)" />
         </StackPanel>
 
         <!-- GEOS metadata, shown only when the entry's Byte15 looks like a GEOS file type -->
         <TextBlock Name="GeosInfoLabel" Foreground="MediumPurple" TextWrapping="Wrap" IsVisible="False" />
 
-        <Button Content="Filename Builder..." Click="OnFilenameBuilderClicked" HorizontalAlignment="Left" />
+        <Button Content="Filename Builder" Click="OnFilenameBuilderClicked" HorizontalAlignment="Left" />
+        <CheckBox Name="SelectNextBox" Content="Select Next File Upon Saving Changes" />
 
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,10,0,0">
             <Button Content="Discard Changes" Click="OnDiscardClicked" />

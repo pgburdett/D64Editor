@@ -104,27 +104,27 @@ plain decimal (the underlying math was identical either way).
 
 `MemoryWindow` ports `frmMemory` — a staging area where files are collected
 and then batch-copied into the currently open disk, exported back out, or
-dropped. The original populated this list via a "copy to memory" action
-elsewhere in `frmMain` that wasn't part of the source reviewed for this port;
-here there's a direct "Add File..." picker instead. Selection uses Avalonia's
-native multi-select `ListBox` rather than the original's hand-rolled
-`Selected(i)` boolean array walked by `mnuInvertSelection`/`mnuSelectAllFiles`.
-Note: copying files in from here doesn't yet refresh the main window's
-directory listing — reopen the disk (or wire up a refresh callback) to see
-them.
+dropped. "Copy Files to Memory..." in the main window copies the currently
+selected directory entries into memory (mirroring the original population
+path), and the memory window also has a direct "Add File..." picker. Selection
+uses Avalonia's native multi-select `ListBox` rather than the original's
+hand-rolled `Selected(i)` boolean array walked by `mnuInvertSelection`/
+`mnuSelectAllFiles`. When files are copied into the disk from the memory
+window, the main window's directory listing is refreshed.
 
 `ConfigWindow` ports `frmConfig`: import interleave, starting track/sector,
-disable cross-link checking, safe disk clean, and SEQ viewer's default
-character mode. Settings live in the static `AppSettings` class (one place
-instead of the half-dozen scattered globals the original wrote into) and get
-applied to a `D64Image` immediately when set. The separator-line and
-Filename Builder settings aren't here since that form isn't ported yet.
+disable cross-link checking, safe disk clean, SEQ viewer's default character
+mode, the separator-line text setting, and the "treat track 18/0-1 start
+files as empty when copying to memory" option. Settings live in the static
+`AppSettings` class (one place instead of the scattered globals the original
+wrote into) and get applied to a `D64Image` immediately when set.
 
 `FilePropertiesWindow` ports `frmFileProperties`: edit a directory entry's
 filename, starting track/sector, size, type, locked/splat flags directly.
 Much less code than the original needed, since `D64FileEntry` already models
-these as real fields instead of a hand-assembled binary string. The
-"Filename Builder..." button is present but disabled until that form exists.
+these as real fields instead of a hand-assembled binary string. "Filename
+Builder..." opens the Filename Builder and feeds the built name back into the
+filename field.
 
 `ErrorNumbersWindow` + `CrossLinksWindow` port `frmErrorNumbers` and
 `frmCrossLinks`. Error Numbers opens from the BAM editor's new third mode
@@ -188,11 +188,11 @@ All of frmMain's menu is now live. The nine that were previously grayed out:
 - **Revert** — reloads the open disk from its file, discarding unsaved
   changes, with a confirmation prompt (via the new `ConfirmWindow`, since
   Avalonia has no built-in MessageBox).
-- **Create Blank D64** — new `CreateBlankWindow`. Builds a fresh, fully-free
-  35- or 40-track disk by reusing `WriteBam`/`WriteDirectory` against an
-  empty entry list, rather than hand-writing every BAM/directory byte the
-  way the original did. The original's "protect track 1/0" and C128
-  auto-boot-patch options aren't ported.
+- **Create Blank D64** — new `CreateBlankWindow`. Builds a fresh 35- or 40-track
+  disk by reusing `WriteBam`/`WriteDirectory` against an empty entry list,
+  rather than hand-writing every BAM/directory byte the way the original did.
+  "Protect track 1, sector 0" and the C128 auto-boot-patch option are
+  supported.
 - **Export DIR to TXT** — writes `D64Image.ExportDirectoryListing()` to a
   text file; reformatted to this port's own column layout rather than
   matching the original's fixed-width padding byte-for-byte.
@@ -222,15 +222,68 @@ selected, matching the original.
 
 ## Not yet ported
 
-- Config's separator-line setting (the original tied a single separator
-  string into Config directly; this port's separator library in the
-  Filename Builder covers the same need without that extra setting)
-- `frmMemory`'s original population path (whatever elsewhere in `frmMain`
-  fed files into the memory cache before this port's "Add File..." button)
+- (none noted) All fourteen original forms have a C# counterpart, and the
+  follow-up requests (T64/P00 import, 40-track, GEOS metadata, drag-and-drop)
+  are in too. Config now includes the separator-line text setting and the
+  "treat track 18/0-1 start files as empty when copying to memory" option, and
+  "Copy Files to Memory" copies the currently selected directory entries into
+  the memory staging window (in addition to adding files from disk inside the
+  memory window).
 
-All fourteen original forms have a C# counterpart, and the follow-up requests
-(T64/P00 import, 40-track, GEOS metadata, drag-and-drop) are in too. What's
-left above is genuinely minor scope, not missing base functionality.
+## Multi-format engine + DirMaster-style features (added)
+
+Beyond the VB6 D64 port, this build now carries a format-agnostic layer and a
+growing set of DirMaster-style functions. The current port scope / status is
+tracked in `D64Editor.App/DirMasterPhases.md`.
+
+**Disk image formats**
+
+- **D64** — full editor (load/save, BAM, scratch/unscratch/wipe, import,
+  properties, viewers, multi-window).
+- **D71 / D81 / D80 / D82 / DNP** — directory viewer + Hex/BASIC viewers +
+  Export-PRG. Directory-entry editing (rename, file type, start t/s, size) is
+  supported for all of these, and **scratch with block-freeing** plus **file
+  import** are implemented for D81 (import/scratch for the others is planned).
+- **G64 / NIB** — raw-GCR images; on open they are **decoded to a D64** (nibtools/VICE
+  GCR pipeline: bit-level sync detection, 5-to-4 decode, `0x08` header + `0x07`
+  data blocks) and then open fully editable in the editor. Verified byte-exact.
+- **T64** — tape-archive reader + viewer (Verified on a synthetic `.t64`).
+- **D2M / D4M / DHD** — CMD container partition tables; the Parts view lists
+  partitions and opens the selected one (emulated 1541/1571/1581 land in the
+  editor, native DNP opens in its viewer).
+- **CP/M 2.2 images + `.LBR`** — best-effort directory catalog (CP/M is
+  DPB-parameterized, so it lists/labels entries and never assumes byte counts).
+
+Core readers: `D71Image`, `D81Image`, `D80D82Image`, `DnpImage`, `G64Image`,
+`NibImage`, `T64Image`, `CpmDisk`, `DiskContainers`, plus the shared
+`CbmImage`/`Gcr`/`DiskFormats`/`CbmCatalog`/`ImageCatalog`/`CbmScratch`/`CbmImport`
+helpers.
+
+**DirMaster-style functions**
+
+- Menu modeled on DirMaster (`Disk, File, Edit, View, Window, Help`) + toolbar
+  with C64 color selectors (Blue / Lt Blue) that recolor the directory.
+- C64-screen directory: PETSCII monospace on the C64 blue, raw
+  `BLOCKS "NAME" TYPE` lines; toggle case; font-size cycling; Show DEL files;
+  save-as; multi-disk windows with a Window menu; unsaved-changes prompt.
+- Viewers: Hex, BASIC (C64 BASIC V2 de-tokenizer), Disassembly (6502).
+- Tools: Find in Disks (across all supported formats), Compare Disks
+  (header/directory/BAM diff), Batch export of all files from a folder.
+- PETSCII font wired to **C64 Pro Mono** from
+  [style64.org C64 TrueType](https://style64.org/c64-truetype) (`Fonts.cs`).
+
+All new format readers were verified by generating synthetic images of each
+format (with a matching GCR encoder for G64/NIB) and byte-comparing the parsed
+results — see the per-phase notes in `D64Editor.App/DirMasterPhases.md`.
+
+## Not yet done (see DirMasterPhases.md)
+
+- File import for D71/D80/D82/DNP; unscratch/re-allocate for those formats.
+- G64/NIB editing beyond D64 conversion; NIB structural viewer detail.
+- Direct MDI multi-document shell (currently multiple independent windows).
+- SEQ/REL/graphics viewers; BAM visual editor polish; emulator/OpenCBM/print
+  integrations; advanced find/compare/batch options.
+
 
 ## A note on fidelity vs. cleanup
 

@@ -15,16 +15,21 @@ public partial class FilePropertiesWindow : Window
 {
     private readonly D64FileEntry _entry;
     private readonly D64Image _image;
+    private readonly Action<bool>? _onClosed; // saved?
 
     public FilePropertiesWindow() : this(new D64Image(), new D64FileEntry { FileName = "" })
     {
     }
 
-    public FilePropertiesWindow(D64Image image, D64FileEntry entry)
+    public FilePropertiesWindow(D64Image image, D64FileEntry entry, Action<bool>? onClosed = null)
     {
         _image = image;
         _entry = entry;
+        _onClosed = onClosed;
         InitializeComponent();
+
+        if (Fonts.PetsciiFontAvailable)
+            FilenameBox.FontFamily = Fonts.Petscii;
 
         FilenameBox.Text = entry.FileName;
         StartTrackBox.Value = entry.StartTrack;
@@ -32,6 +37,7 @@ public partial class FilePropertiesWindow : Window
         SizeBox.Value = entry.SizeInBlocks;
         LockedBox.IsChecked = entry.IsLocked;
         SplatBox.IsChecked = !entry.IsClosed;
+        SelectNextBox.IsChecked = AppSettings.SelectNextFileUponSave;
 
         (entry.FileType switch
         {
@@ -101,16 +107,20 @@ public partial class FilePropertiesWindow : Window
         if (SplatBox.IsChecked != true) raw |= 0x80; // closed bit set unless "splat" is checked
         _entry.RawFileType = raw;
 
+        AppSettings.SelectNextFileUponSave = SelectNextBox.IsChecked == true;
+
         _image.WriteDirectory();
         _image.WriteBam();
         _image.Save();
 
+        _onClosed?.Invoke(true);
         Close();
     }
 
     /// <summary>Ported from mnuDiscardChanges_Click.</summary>
     private void OnDiscardClicked(object? sender, RoutedEventArgs e)
     {
+        _onClosed?.Invoke(false);
         Close();
     }
 }

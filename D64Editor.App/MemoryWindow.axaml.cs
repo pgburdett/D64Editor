@@ -20,16 +20,42 @@ public partial class MemoryWindow : Window
 {
     private readonly List<MemoryCacheEntry> _entries = new();
     private readonly D64Image _image;
+    private readonly Action? _onDiskChanged;
 
     public MemoryWindow() : this(new D64Image())
     {
     }
 
-    public MemoryWindow(D64Image image)
+    public MemoryWindow(D64Image image, Action? onDiskChanged = null)
     {
         _image = image;
+        _onDiskChanged = onDiskChanged;
         InitializeComponent();
         MemoryList.ItemsSource = _entries;
+    }
+
+    public void AddEntry(MemoryCacheEntry entry)
+    {
+        _entries.Add(entry);
+        RefreshList();
+    }
+
+    /// <summary>
+    ///     Ported from frmMain.CopyFilesToMemory: copies a directory entry's data into
+    ///     the memory staging area. Separator-like entries (start 0/0, or track 18/0-1
+    ///     when TreatTrack18FilesAsEmpty is enabled) are added as empty payloads.
+    /// </summary>
+    public void AddFromDiskEntry(D64FileEntry entry, D64Image image)
+    {
+        var isSeparator = entry.StartTrack == 0 && entry.StartSector == 0;
+        if (!isSeparator && AppSettings.TreatTrack18FilesAsEmpty
+            && entry.StartTrack == 18 && entry.StartSector is 0 or 1)
+            isSeparator = true;
+
+        var data = isSeparator ? Array.Empty<byte>() : image.ExportFile(entry);
+        var displayName = entry.FileName; // keep 0xA0-trimmed name; mirrors memoryFilename/display behavior
+        var type = entry.FileType == D64FileType.Unknown ? D64FileType.Prg : entry.FileType;
+        AddEntry(new MemoryCacheEntry { DisplayName = displayName, Data = data, FileType = type });
     }
 
     private async void OnAddClicked(object? sender, RoutedEventArgs e)
@@ -156,7 +182,10 @@ public partial class MemoryWindow : Window
             }
 
         if (copied > 0)
+        {
             _image.Save();
+            _onDiskChanged?.Invoke();
+        }
 
         StatusLabel.Text = tooBig.Count == 0
             ? $"Copied {copied} file(s) into the disk."

@@ -193,9 +193,9 @@ public partial class BlockViewerWindow : Window
 
     private static string ToPrintableChar(byte b)
     {
-        if (Fonts.PetsciiFontAvailable)
-            return ((char)b).ToString(); // the font's own glyph table handles the mapping
-        return b is >= 0x20 and <= 0x7E ? ((char)b).ToString() : ".";
+        return Fonts.PetsciiFontAvailable
+            ? ((char)b).ToString() // the font's own glyph table handles the mapping
+            : b is >= 0x20 and <= 0x7E ? ((char)b).ToString() : ".";
     }
 
     private void CommitByteEdit()

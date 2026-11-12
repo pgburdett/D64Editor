@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:D64Editor.App"
+        x:Class="D64Editor.App.ExtendedImageWindow"
+        Title="Disk Image"
+        Width="620" Height="460">
+
+    <DockPanel Margin="10">
+        <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+            <Button Content="View Hex" Click="OnViewHex" />
+            <Button Content="View BASIC" Click="OnViewBasic" />
+            <Button Content="Edit Properties..." Click="OnEditClicked" />
+            <Button Content="Scratch (free blocks)" Click="OnScratchClicked" />
+            <Button Content="Import File..." Click="OnImportClicked" />
+            <Button Content="Export to PRG..." Click="OnExportClicked" />
+            <TextBlock Name="StatusLabel" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <Border Background="#0000AA" Padding="6">
+            <ListBox Name="EntriesList" Background="Transparent" DoubleTapped="OnViewHex"
+                     FontFamily="{x:Static local:Fonts.Petscii}" FontSize="13" Foreground="#7C7CF0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="local:ExtendedEntryRow">
+                        <TextBlock Text="{Binding Summary}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+    </DockPanel>
+</Window>

@@ -1,0 +1,86 @@
+# DirMaster Parity — Phased Implementation Plan
+
+## Phase 1 — Multi-disk Workspace & Save As
+- [x] Implement Save As... (format selection, path dialog)
+- [x] Implement Close disk + unsaved-changes prompt (dirty tracking)
+- [x] Dirty-state tracking (checksum-based; queried on Close/Exit)
+- [x] Disk filename shown in title
+- [x] Multi-disk: open windows tracked + Window menu lists/activates them; "New Disk Window" / "Open in New Window"
+
+## Phase 2 — Multi-Format Engine
+- [x] `IDiskImage` abstraction; `D64Image` conforms (explicit Entries/CrossLinkWarnings)
+- [x] Format detection (`DiskFormats.FromExtension` / D64 size checks)
+- [x] Open dialog lists DirMaster extensions; non-D64 formats fail gracefully (no crash)
+- [ ] D71 (1571 dual-sided) read/write
+- [ ] D81 (1581 3.5") read/write
+- [ ] D80/D82 (8050/8250) read/write
+- [ ] T64 (tape archive) read/write
+- [ ] G64/NIB (raw track) read/write
+- [ ] DNP/DHD/D2M/D4M (CMD/native) read/write
+- [x] T64 tape archive — read-only reader + viewer (verified with synthetic .t64)
+- [x] D71 double-sided image — read-only reader + viewer (verified with synthetic .d71)
+- [x] D81 image — read-only reader + viewer (BAM both sides, 40/3 root dir; verified with synthetic .d81)
+- [x] G64 image — header + track-offset + speed-zone tables; structural parse (verified with synthetic .g64)
+- [x] G64 → D64 converter (full GCR bitstream decode; verified byte-exact on synthetic .g64); opening a .g64 auto-converts & opens in the editor
+- [x] NIB image — header + track table/density structural parse (verified with synthetic .nib)
+- [x] NIB → D64 converter (reuses the verified GCR decoder; byte-exact on synthetic .nib)
+- [x] DNP (CMD native partition) — reader + viewer (verified with synthetic .dnp)
+- [x] D2M/D4M/DHD CMD containers — partition-table listing + per-partition open (verified with synthetic .d2m)
+- [x] CP/M 2.2 images + .LBR catalogs — best-effort directory reader + viewer (verified with synthetic CP/M dir)
+- [x] Registered formats: .cpm/.img/.dsk/.lbr/.d40/.d67 (+ existing), Open dialog lists them
+- [ ] Full GCR→D64 sector decode for G64; G64→D64 conversion
+- [x] Export-to-PRG for read-only images (D71/D81/D80/D82/T64) via their viewers
+- [x] Scratch with block-freeing for D71/D81 (chain-walk → BAM bits + free-count; verified byte-exact on D71/D81)
+- [x] File import for D81 (allocate free blocks → write chain → update BAM → add entry; verified byte-exact, incl. fixing a double-allocation bug the test caught)
+- [x] D80 (8050, 77 tracks) + D82 (8250, 154 tracks) images — reader + viewer (verified with synthetic .d80/.d82)
+- [ ] NIB/DNP/DHD/D2M/D4M readers
+
+## Phase 3 — Directory Editing Enhancements
+- [x] Rename file (dialog)
+- [x] Toggle case (upper/lower PETSCII)
+- [x] Font size dialog (cycled sizes)
+- [x] Refresh directory view
+- [x] Show deleted files toggle
+- [ ] Drag-and-drop between disk windows and OS
+- [ ] Undo/Redo stack
+
+## Phase 4 — Viewers
+- [x] Hex viewer (read-only dump)
+- [x] BASIC viewer (C64 BASIC V2 de-tokenizer)
+- [x] Disassembly viewer (6502/6510)
+- [ ] SEQ file viewer enhancements
+- [ ] REL file viewer
+- [ ] Graphics viewer (charset/sprite/bitmap)
+- [ ] SEQ file viewer (already partial — enhance)
+- [ ] REL file viewer
+- [ ] Graphics viewer (charset/sprite/bitmap)
+- [ ] GEOS file viewer
+
+## Phase 5 — BAM / Sector / Block Editors
+- [ ] BAM editor (visual block allocation map)
+- [ ] Sector/block editor (already partial — enhance with hex+ASCII)
+- [ ] File chain viewer (already exists — enhance)
+- [ ] Cross-links viewer (already exists — enhance)
+- [ ] Error blocks viewer (already exists — enhance)
+
+## Phase 6 — Search / Compare / Batch
+- [x] Find in Disks (filename search across a folder of images, Datei>…)
+- [x] Multi-format catalog (`ImageCatalog`): d64/d71/d81/d80/d82/dnp + g64/nib (decoded) → Find spans all supported formats; garbage/unsupported skipped
+- [x] Compare Disks (diff header/directory/BAM of two images)
+- [x] Batch processing (export all files from every image in a folder)
+- [ ] Archive extraction (zip/tar of disk sets)
+
+## Phase 7 — GEOS & Advanced
+- [ ] GEOS disk support (VLIR, application data)
+- [ ] GEOS file metadata editing
+- [ ] Print disk directory
+- [ ] Command-line options / scripting
+
+## Phase 8 — Platform Integration
+- [ ] Emulator launch (configure + run)
+- [ ] OpenCBM transfer (Linux: cbmctrl/cbmcopy equivalent)
+- [ ] File associations
+- [ ] Auto-update check
+
+## Current Focus: Phase 1
+Starting with Save As... and multi-disk workspace groundwork.

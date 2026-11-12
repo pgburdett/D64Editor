@@ -5,8 +5,7 @@ using D64Editor.Core;
 namespace D64Editor.App;
 
 /// <summary>
-///     Ported from frmConfig.frm's cmdEnableChanges_Click, minus the separator-line
-///     and Filename Builder-related settings (those belong with that form, not yet ported).
+///     Ported from frmConfig.frm's cmdEnableChanges_Click.
 /// </summary>
 public partial class ConfigWindow : Window
 {
@@ -27,6 +26,9 @@ public partial class ConfigWindow : Window
         DisableCrosslinkCheckBox.IsChecked = AppSettings.DisableCrosslinkCheck;
         SafeCleanBox.IsChecked = AppSettings.SafeClean;
         ConvertToAsciiBox.IsChecked = AppSettings.ConvertToAsciiDefault;
+        WarningsDisabledBox.IsChecked = AppSettings.WarningsDisabled;
+        SeparatorLineBox.Text = AppSettings.SeparatorLineText;
+        TreatTrack18AsEmptyBox.IsChecked = AppSettings.TreatTrack18FilesAsEmpty;
     }
 
     /// <summary>Ported from cmdEnableChanges_Click, including its validation checks.</summary>
@@ -52,6 +54,9 @@ public partial class ConfigWindow : Window
         AppSettings.DisableCrosslinkCheck = DisableCrosslinkCheckBox.IsChecked == true;
         AppSettings.SafeClean = SafeCleanBox.IsChecked == true;
         AppSettings.ConvertToAsciiDefault = ConvertToAsciiBox.IsChecked == true;
+        AppSettings.WarningsDisabled = WarningsDisabledBox.IsChecked == true;
+        AppSettings.SeparatorLineText = SeparatorLineBox.Text ?? "";
+        AppSettings.TreatTrack18FilesAsEmpty = TreatTrack18AsEmptyBox.IsChecked == true;
 
         if (_image is not null)
         {

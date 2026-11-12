@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.CompareDisksWindow"
+        Title="Compare Disks"
+        Width="620" Height="460">
+
+    <DockPanel Margin="10">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto,Auto,*" Margin="0,0,0,8">
+            <TextBlock Grid.Column="0" Text="Left:" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <TextBox Name="LeftBox" Grid.Column="1" />
+            <Button Grid.Column="2" Content="…" Click="OnPickLeft" Margin="0,0,12,0" />
+
+            <TextBlock Grid.Column="3" Text="Right:" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <TextBox Name="RightBox" Grid.Column="4" />
+        </Grid>
+
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+            <Button Grid.Column="0" Content="Browse Right…" Click="OnPickRight" Margin="6,0,0,0" />
+            <Button Grid.Column="2" Content="Compare" Click="OnCompareClicked" HorizontalAlignment="Right" />
+        </Grid>
+
+        <TextBlock Name="VerdictLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,6" />
+
+        <ListBox Name="DiffList" />
+    </DockPanel>
+</Window>

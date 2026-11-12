@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:D64Editor.App"
+        x:Class="D64Editor.App.BatchWindow"
+        Title="Batch Processing"
+        Width="680" Height="480">
+
+    <DockPanel Margin="10">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,6">
+            <TextBlock Grid.Column="0" Text="Source folder:" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <TextBox Name="SourceBox" Grid.Column="1" />
+            <Button Grid.Column="2" Content="…" Click="OnPickSource" Margin="6,0,0,0" />
+        </Grid>
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,6">
+            <TextBlock Grid.Column="0" Text="Output folder:" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <TextBox Name="OutputBox" Grid.Column="1" />
+            <Button Grid.Column="2" Content="…" Click="OnPickOutput" Margin="6,0,0,0" />
+        </Grid>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+            <Button Content="Export All Files" Click="OnRunClicked" />
+            <TextBlock Name="StatusLabel" Margin="12,0,0,0" VerticalAlignment="Center" />
+        </DockPanel>
+
+        <ListBox Name="ResultsList">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="local:BatchResultRow">
+                    <TextBlock Text="{Binding Summary}" FontFamily="Consolas,Monospace" FontSize="12" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</Window>

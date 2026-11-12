@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:D64Editor.App"
+        x:Class="D64Editor.App.HexViewerWindow"
+        Title="Hex Viewer"
+        Width="640" Height="480">
+
+    <DockPanel Margin="10">
+        <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
+
+        <ScrollViewer VerticalScrollBarVisibility="Visible">
+            <TextBox Name="HexBox" IsReadOnly="True" FontFamily="{x:Static local:Fonts.Petscii}"
+                     FontSize="12" AcceptsReturn="True" TextWrapping="NoWrap" BorderThickness="0" />
+        </ScrollViewer>
+    </DockPanel>
+</Window>

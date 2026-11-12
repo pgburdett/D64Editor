@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.EntryEditWindow"
+        Title="Edit Directory Entry"
+        Width="420" Height="360"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <StackPanel Margin="16" Spacing="10">
+        <TextBlock Text="FILENAME:" />
+        <TextBox Name="NameBox" MaxLength="16" />
+
+        <Grid ColumnDefinitions="Auto,8,120">
+            <TextBlock Grid.Column="0" Text="START TRACK:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Name="StartTrackBox" Minimum="1" Maximum="255" ShowButtonSpinner="False" />
+        </Grid>
+        <Grid ColumnDefinitions="Auto,8,120">
+            <TextBlock Grid.Column="0" Text="START SECTOR:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Name="StartSectorBox" Minimum="0" Maximum="255" ShowButtonSpinner="False" />
+        </Grid>
+        <Grid ColumnDefinitions="Auto,8,120">
+            <TextBlock Grid.Column="0" Text="SIZE (BLOCKS):" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Name="SizeBox" Minimum="0" Maximum="65535" ShowButtonSpinner="False" />
+        </Grid>
+
+        <TextBlock Text="FILE TYPE:" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox Name="TypeCombo" Width="110" SelectedIndex="1">
+                <ComboBoxItem Content="DEL" />
+                <ComboBoxItem Content="SEQ" />
+                <ComboBoxItem Content="PRG" />
+                <ComboBoxItem Content="USR" />
+                <ComboBoxItem Content="REL" />
+                <ComboBoxItem Content="CBM" />
+            </ComboBox>
+            <CheckBox Name="ClosedBox" Content="Closed" IsChecked="True" VerticalAlignment="Center" />
+            <CheckBox Name="LockedBox" Content="Locked" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,6,0,0">
+            <Button Content="Save" Click="OnSaveClicked" />
+            <Button Content="Cancel" Click="OnCancelClicked" />
+        </StackPanel>
+    </StackPanel>
+</Window>

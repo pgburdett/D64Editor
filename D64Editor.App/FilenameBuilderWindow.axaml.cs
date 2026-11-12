@@ -100,6 +100,20 @@ public partial class FilenameBuilderWindow : Window
         RefreshSeparatorsList();
     }
 
+    /// <summary>
+    ///     Ported from mnuCopySelectedintoSeparatorBuilder_Click: adds names (e.g.
+    ///     selected directory filenames) to the separator library list.
+    /// </summary>
+    public void AddSeparatorNames(IEnumerable<string> names)
+    {
+        foreach (var name in names)
+        {
+            if (!string.IsNullOrEmpty(name))
+                _separators.Add(name);
+        }
+        RefreshSeparatorsList();
+    }
+
     /// <summary>Ported from mnuSelectAllFiles_Click.</summary>
     private void OnSelectAllClicked(object? sender, RoutedEventArgs e)
     {

@@ -6,115 +6,169 @@
         Width="760" Height="500"
         MinWidth="600" MinHeight="380">
 
-    <DockPanel Margin="10">
+    <DockPanel Margin="0">
 
-        <!-- Mirrors frmMain's menu bar (mnuFile/mnuEdit/mnuView/mnuHelp). Items with no
-             handler wired up yet are disabled rather than silently missing, since those
-             forms/features aren't ported (see README). -->
+        <!-- Menu bar, modeled on DirMaster: Disk, File, Edit, View, Window, Help -->
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="_Load D64 File..." Click="OnOpenClicked" />
-                <MenuItem Header="_Save D64 File" Click="OnSaveClicked" />
-                <MenuItem Header="_Trim File..." Click="OnTrimFileClicked" />
+            <MenuItem Header="_Disk">
+                <MenuItem Header="_New..." Click="OnCreateBlankClicked" />
+                <MenuItem Header="_Open..." Click="OnOpenClicked" />
+                <MenuItem Header="Open in _New Window..." Click="OnNewDiskWindowClicked" />
+                <MenuItem Header="_Save" Click="OnSaveClicked" />
+                <MenuItem Header="Save _As..." Click="OnSaveAsClicked" />
                 <MenuItem Header="_Revert" Click="OnRevertClicked" />
                 <Separator />
-                <MenuItem Header="_Create Blank D64..." Click="OnCreateBlankClicked" />
-                <MenuItem Header="Configuration _Menu" Click="OnConfigClicked" />
+                <MenuItem Header="_Print..." Click="OnNotImplementedClicked" />
+                <MenuItem Header="Show DEL Files" Click="OnShowDelFilesClicked" />
                 <Separator />
-                <MenuItem Header="_Quit" Click="OnQuitClicked" />
+                <MenuItem Header="_Close" Click="OnCloseClicked" />
+                <MenuItem Header="E_xit" Click="OnQuitClicked" />
+            </MenuItem>
+            <MenuItem Header="_File">
+                <MenuItem Header="_Import..." Click="OnImportClicked" />
+                <MenuItem Header="_Export..." Click="OnExportClicked" />
+                <MenuItem Header="Export Directory..." Click="OnExportDirClicked" />
+                <MenuItem Header="Copy Files to _Memory..." Click="OnMemoryClicked" />
+                <Separator />
+                <MenuItem Header="_Properties..." Click="OnFilePropertiesClicked" />
+                <MenuItem Header="Find in Disks..." Click="OnFindInDisksClicked" />
+                <MenuItem Header="Compare Disks..." Click="OnCompareDisksClicked" />
+                <Separator />
+                <MenuItem Header="Batch Processing..." Click="OnBatchClicked" />
+                <MenuItem Header="_Rename" Click="OnRenameClicked" />
+                <MenuItem Header="_Delete" Click="OnScratchClicked" />
+                <MenuItem Header="_Undelete" Click="OnUnscratchClicked" />
+                <Separator />
+                <MenuItem Header="_View File..." Click="OnSeqViewerClicked" />
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="File _Export..." Click="OnExportClicked" />
-                <MenuItem Header="File _Import..." Click="OnImportClicked" />
-                <MenuItem Header="Copy Files to _Memory..." Click="OnMemoryClicked" />
-                <MenuItem Header="Export _DIR to TXT..." Click="OnExportDirClicked" />
+                <MenuItem Header="Select _All" Click="OnSelectAllFilesClicked" />
+                <MenuItem Header="_Unselect All" Click="OnUnselectAllFilesClicked" />
+                <MenuItem Header="_Invert Selection" Click="OnInvertSelectionClicked" />
                 <Separator />
-                <MenuItem Header="Modify File _Properties" Click="OnFilePropertiesClicked" />
-                <MenuItem Header="_Scratch File" Click="OnScratchClicked" />
-                <MenuItem Header="_Unscratch File..." Click="OnUnscratchClicked" />
-                <MenuItem Header="_Wipe File" Click="OnWipeClicked" />
-                <MenuItem Header="_Remove Directory Entry" Click="OnRemoveEntryClicked" />
+                <MenuItem Header="Scratch File" Click="OnScratchClicked" />
+                <MenuItem Header="Unscratch File..." Click="OnUnscratchClicked" />
+                <MenuItem Header="Wipe File" Click="OnWipeClicked" />
+                <MenuItem Header="Remove Directory Entry" Click="OnRemoveEntryClicked" />
+                <MenuItem Header="Move File To The Top" Click="OnMoveFileToTopClicked" />
+                <MenuItem Header="Move File To The Bottom" Click="OnMoveFileToBottomClicked" />
                 <Separator />
-                <MenuItem Header="Edit _BAM..." Click="OnBamEditorClicked" />
-                <MenuItem Header="Block Export... (Sector Dump)" Click="OnSectorDumpClicked" />
-                <MenuItem Header="_Filename Builder..." Click="OnFilenameBuilderClicked" />
+                <MenuItem Header="Edit BAM..." Click="OnBamEditorClicked" />
+                <MenuItem Header="Sector/Block Editor..." Click="OnSectorDumpClicked" />
+                <MenuItem Header="Filename Builder..." Click="OnFilenameBuilderClicked" />
+                <MenuItem Header="Add Separator..." Click="OnAddSeparatorLineClicked" />
+                <MenuItem Header="Copy Selected into Separator Builder..." Click="OnCopySelectedIntoSeparatorBuilderClicked" />
+                <Separator />
+                <MenuItem Header="Trim File..." Click="OnTrimFileClicked" />
+                <MenuItem Header="Options..." Click="OnConfigClicked" />
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="_View File Chain" Click="OnViewFileChainClicked" />
-                <MenuItem Header="_SEQ File Viewer" Click="OnSeqViewerClicked" />
-                <MenuItem Header="View _Error Blocks" Click="OnErrorBlocksClicked" />
-                <MenuItem Header="View _Cross-Links" Click="OnCrossLinksClicked" />
+                <MenuItem Header="Toggle _Case" Click="OnToggleCaseClicked" />
+                <MenuItem Header="Font _Size..." Click="OnFontSizeClicked" />
+                <MenuItem Header="Refresh" Click="OnRefreshClicked" />
+                <Separator />
+                <MenuItem Header="View File Chain" Click="OnViewFileChainClicked" />
+                <MenuItem Header="View SEQ File" Click="OnSeqViewerClicked" />
+                <MenuItem Header="View Error Blocks" Click="OnErrorBlocksClicked" />
+                <MenuItem Header="View Cross-Links" Click="OnCrossLinksClicked" />
+                <Separator />
+                <MenuItem Header="Hex Viewer" Click="OnHexViewerClicked" />
+                <MenuItem Header="BASIC Viewer" Click="OnBasicViewerClicked" />
+                <MenuItem Header="Disassembly Viewer" Click="OnDisassemblyViewerClicked" />
+            </MenuItem>
+            <MenuItem Header="_Window" Name="WindowMenu" SubmenuOpened="OnWindowMenuOpened">
+                <MenuItem Header="_New Disk Window" Click="OnNewDiskWindowClicked" />
+                <Separator />
+                <!-- open-window entries are rebuilt here on open -->
             </MenuItem>
             <MenuItem Header="_Help">
+                <MenuItem Header="Check for Updates..." Click="OnNotImplementedClicked" />
+                <Separator />
                 <MenuItem Header="_Version" Click="OnVersionClicked" />
+                <MenuItem Header="_About" Click="OnAboutClicked" />
             </MenuItem>
         </Menu>
 
-        <!-- Disk name/ID, mirrors frmMain's txtDiskName / txtDiskID -->
-        <Grid DockPanel.Dock="Top" ColumnDefinitions="140,10,60,*,Auto" Margin="0,8,0,10">
+        <!-- Toolbar (DirMaster-style quick actions) + color selectors on the right -->
+        <Border DockPanel.Dock="Top" Margin="6,4,6,6" Padding="4" BorderThickness="0,0,0,1" BorderBrush="#40808080">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                    <Button Content="Open" Click="OnOpenClicked" />
+                    <Button Content="Save" Click="OnSaveClicked" />
+                    <Button Content="New" Click="OnCreateBlankClicked" />
+                    <Separator />
+                    <Button Content="Import" Click="OnImportClicked" />
+                    <Button Content="Export" Click="OnExportClicked" />
+                    <Separator />
+                    <Button Content="BAM" Click="OnBamEditorClicked" />
+                    <Button Content="Config" Click="OnConfigClicked" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                    <ComboBox Name="PrimaryColorCombo" SelectedIndex="0" Width="90"
+                              SelectionChanged="OnColorChanged">
+                        <ComboBoxItem Content="Blue" />
+                        <ComboBoxItem Content="Green" />
+                        <ComboBoxItem Content="Red" />
+                        <ComboBoxItem Content="Purple" />
+                    </ComboBox>
+                    <ComboBox Name="SecondaryColorCombo" SelectedIndex="0" Width="90"
+                              SelectionChanged="OnColorChanged">
+                        <ComboBoxItem Content="Lt Blue" />
+                        <ComboBoxItem Content="Lt Green" />
+                        <ComboBoxItem Content="Lt Red" />
+                        <ComboBoxItem Content="Lt Purple" />
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Disk name/ID and address display-mode toggle -->
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="140,10,60,*,Auto" Margin="8,8,8,10">
             <StackPanel Grid.Column="0" Orientation="Vertical">
                 <TextBlock Text="Disk Name" FontSize="11" Opacity="0.7" />
-                <TextBox Name="DiskNameBox" IsReadOnly="True" />
+                <TextBox Name="DiskNameBox" IsReadOnly="True" Text="" FontSize="11"
+                         FontFamily="{x:Static local:Fonts.Petscii}" />
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Vertical">
                 <TextBlock Text="ID" FontSize="11" Opacity="0.7" />
-                <TextBox Name="DiskIdBox" IsReadOnly="True" />
+                <TextBox Name="DiskIdBox" IsReadOnly="True" Text="" FontSize="11"
+                         FontFamily="{x:Static local:Fonts.Petscii}" />
             </StackPanel>
 
-            <!-- Start/end address display mode -->
             <StackPanel Grid.Column="4" Orientation="Vertical" VerticalAlignment="Bottom">
                 <TextBlock Text="Addresses" FontSize="11" Opacity="0.7" />
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <RadioButton Name="DecimalAddressRadio" GroupName="AddressBase" Content="Decimal" IsChecked="True"
-                                 Checked="OnAddressBaseChanged" />
+                                 IsCheckedChanged="OnAddressBaseChanged" />
                     <RadioButton Name="HexAddressRadio" GroupName="AddressBase" Content="Hex"
-                                 Checked="OnAddressBaseChanged" />
+                                 IsCheckedChanged="OnAddressBaseChanged" />
                 </StackPanel>
             </StackPanel>
         </Grid>
 
-        <!-- Bottom bar: status text, mirrors frmMain's lblFileCount / lblBlocksFree / lblDiskType -->
-        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="20" Margin="0,10,0,0">
+        <!-- Bottom status bar: mirrors frmMain's lblFileCount / lblBlocksFree; "N files" à la DirMaster -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="20" Margin="8,6,8,6">
             <TextBlock Name="FileCountLabel" Text="No disk loaded" />
             <TextBlock Name="BlocksFreeLabel" />
             <TextBlock Name="DiskTypeLabel" Opacity="0.7" />
         </StackPanel>
 
-        <!-- Directory listing, mirrors frmMain's List1 header row + entries, extended with
-             computed START/END address columns (not in the original) and a hex/decimal toggle -->
-        <DockPanel>
-            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,100,90,90,70,70,90,90" Margin="4,0,4,4">
-                <TextBlock Grid.Column="0" Text="FILENAME" FontWeight="Bold" />
-                <TextBlock Grid.Column="1" Text="STARTING TRACK" FontWeight="Bold" TextAlignment="Center"
-                           TextWrapping="Wrap" />
-                <TextBlock Grid.Column="2" Text="STARTING SECTOR" FontWeight="Bold" TextAlignment="Center"
-                           TextWrapping="Wrap" />
-                <TextBlock Grid.Column="3" Text="BLOCKS" FontWeight="Bold" TextAlignment="Center" />
-                <TextBlock Grid.Column="4" Text="TYPE" FontWeight="Bold" TextAlignment="Center" />
-                <TextBlock Grid.Column="5" Text="" />
-                <TextBlock Grid.Column="6" Text="START ADDR" FontWeight="Bold" TextAlignment="Center"
-                           TextWrapping="Wrap" />
-                <TextBlock Grid.Column="7" Text="END ADDR" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" />
-            </Grid>
-
-            <ListBox Name="DirectoryList" FontFamily="monospace" SelectionMode="Multiple">
+        <!-- Directory listing rendered like a C64 screen: PETSCII monospace on the
+             standard C64 blue, one raw directory line per file (block count, quoted
+             PETSCII name, file type). Selection/DoubleTapped behavior preserved. -->
+        <Border Name="DirectoryCanvas" Margin="8,0,8,8" Background="#0000AA" Padding="6">
+            <ListBox Name="DirectoryList" Background="Transparent" FontFamily="{x:Static local:Fonts.Petscii}"
+                     FontSize="14" Foreground="#7797F5" SelectionMode="Multiple" DoubleTapped="OnDirectoryDoubleTapped">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="local:DirectoryRow">
-                        <Grid ColumnDefinitions="*,100,90,90,70,70,90,90">
-                            <TextBlock Grid.Column="0" Text="{Binding FileName, StringFormat='&quot;{0}&quot;'}" />
-                            <TextBlock Grid.Column="1" Text="{Binding StartTrack}" TextAlignment="Center" />
-                            <TextBlock Grid.Column="2" Text="{Binding StartSector}" TextAlignment="Center" />
-                            <TextBlock Grid.Column="3" Text="{Binding SizeInBlocks}" TextAlignment="Center" />
-                            <TextBlock Grid.Column="4" Text="{Binding TypeDisplay}" TextAlignment="Center" />
-                            <TextBlock Grid.Column="5" Text="" />
-                            <TextBlock Grid.Column="6" Text="{Binding StartAddressDisplay}" TextAlignment="Center" />
-                            <TextBlock Grid.Column="7" Text="{Binding EndAddressDisplay}" TextAlignment="Center" />
-                        </Grid>
+                        <TextBlock Text="{Binding C64Line}"
+                                   FontFamily="{x:Static local:Fonts.Petscii}"
+                                   FontSize="14" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-        </DockPanel>
+        </Border>
 
     </DockPanel>
 </Window>

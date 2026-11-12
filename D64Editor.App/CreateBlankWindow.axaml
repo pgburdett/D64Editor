@@ -1,8 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.CreateBlankWindow"
-        Title="Create Blank D64"
-        Width="360" Height="300"
+        Title="Create New D64"
+        Width="380" Height="380"
         CanResize="False">
 
     <StackPanel Margin="16" Spacing="10">
@@ -20,6 +20,12 @@
         </StackPanel>
 
         <CheckBox Name="ErrorInfoBox" Content="Include error-info section" />
+        <CheckBox Name="ProtectT1S0Box" Content="Protect track 1, sector 0" />
+        <CheckBox Name="C128BootBox" Content="C128 auto-boot sector" />
+        <Grid ColumnDefinitions="Auto,8,*">
+            <TextBlock Grid.Column="0" Text="Auto-boot filename:" VerticalAlignment="Center" />
+            <TextBox Grid.Column="2" Name="BootFilenameBox" />
+        </Grid>
 
         <Button Content="Create..." Click="OnCreateClicked" HorizontalAlignment="Right" Margin="0,10,0,0" />
 

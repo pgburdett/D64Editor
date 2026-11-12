@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:D64Editor.App"
+        x:Class="D64Editor.App.CpmViewerWindow"
+        Title="CP/M Disk"
+        Width="560" Height="440">
+
+    <DockPanel Margin="10">
+        <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
+
+        <Border Background="#001100" Padding="6">
+            <ListBox Name="FilesList" Background="Transparent" Foreground="#33FF66"
+                     FontFamily="Consolas,Monospace" FontSize="13">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="local:CpmFileRow">
+                        <TextBlock Text="{Binding Summary}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+    </DockPanel>
+</Window>

@@ -1,0 +1,116 @@
+using System.Text;
+
+namespace D64Editor.Core;
+
+/// <summary>
+///     Read-only reader for DNP files (CMD native partitions: HD, FD-2000/4000, RAMLink),
+///     per the D2M/DNP spec: flat 1:1 sector dump, up to 255 tracks × 256 sectors × 256 bytes.
+///     Root directory header at track 1 sector 1; first root directory block at track 1 sector
+///     $22; standard 32-byte CBM directory entries; BAM bitmaps from track 1 sectors 2-33.
+/// </summary>
+public sealed class DnpImage : ICbmWritable
+{
+    public const long SectorSize = 256;
+    public const int SectorsPerTrack = 256;
+
+    private readonly byte[] _data;
+
+    public string DiskName { get; private set; } = "";
+    public string DiskId { get; private set; } = "";
+    public int LastTrack { get; private set; }
+    public int BlocksFree { get; private set; }
+    public List<CbmDirEntry> Entries { get; } = new();
+
+    private DnpImage(byte[] data, string path) => (_data, Path) = (data, path);
+
+    public static DnpImage? TryLoad(string path)
+    {
+        byte[] bytes;
+        try { bytes = File.ReadAllBytes(path); }
+        catch { return null; }
+        // Minimum valid: 512 sectors (131072 bytes); no signature, so size-guarded.
+        if (bytes.Length < 512 * (int)SectorSize) return null;
+
+        var img = new DnpImage(bytes, path);
+        img.ReadHeader();
+        img.Entries.AddRange(CbmImage.ReadDirectory(img.ReadSector, img.SectorOffset, 1, 0x22));
+        return img;
+    }
+
+    private byte[]? ReadSector(int track, int sector)
+    {
+        if (track < 1 || track > 255 || sector < 0 || sector >= SectorsPerTrack) return null;
+        var off = ((long)(track - 1) * SectorsPerTrack + sector) * SectorSize;
+        if (off + SectorSize > _data.Length) return null;
+        var buf = new byte[SectorSize];
+        Array.Copy(_data, off, buf, 0, (int)SectorSize);
+        return buf;
+    }
+
+    private long SectorOffset(int track, int sector) => ((long)(track - 1) * SectorsPerTrack + sector) * SectorSize;
+
+    private void ReadHeader()
+    {
+        var header = ReadSector(1, 1);
+        if (header is not null)
+        {
+            DiskName = Encoding.Latin1.GetString(header, 0x04, 16).TrimEnd(' ', '\0', (char)0xA0);
+            DiskId = Encoding.Latin1.GetString(header, 0x16, 2).TrimEnd(' ', '\0', (char)0xA0);
+        }
+
+        var bamHeader = ReadSector(1, 2); // start of the BAM sector block
+        if (bamHeader is null) return;
+
+        LastTrack = bamHeader[0x08]; // last available track number
+        if (LastTrack is 0 or > 255) LastTrack = 1;
+
+        // Track bitmaps: file offset 0x220 + (track-1)*32, 256 bits; 1 = free sector.
+        var free = 0;
+        for (var t = 1; t <= LastTrack; t++)
+        {
+            var off = 0x220 + (t - 1) * 32;
+            if (off + 32 > _data.Length) break;
+            for (var i = 0; i < 32; i++)
+            {
+                var b = _data[off + i];
+                for (var bit = 0; bit < 8; bit++)
+                    if (((b >> (7 - bit)) & 1) != 0) free++;
+            }
+        }
+        BlocksFree = free;
+    }
+
+    public string Path { get; }
+
+    /// <summary>The in-memory image bytes (mutations applied here, then persisted via Save).</summary>
+    public byte[] Buffer => _data;
+
+    public List<(int Track, int Sector)> FileSectors(CbmDirEntry entry) =>
+        CbmImage.ChainSectors(ReadSector, entry.StartTrack, entry.StartSector);
+
+    /// <summary>Marks one (track,sector) free in the DNP BAM bitmap (in-memory); 256-bit maps per
+    /// track starting at file offset 0x220. Free counts are derived from bit population.</summary>
+    public void SetSectorFree(int track, int sector)
+    {
+        if (track < 1 || track > 255 || sector >= 256) return;
+        var bitmapStart = 0x220 + (long)(track - 1) * 32;
+        if (bitmapStart + 32 > _data.Length) return;
+        CbmImage.SetBitFree(_data, bitmapStart, 32, sector);
+    }
+
+    public void MarkAllocated(int track, int sector)
+    {
+        if (track < 1 || track > 255 || sector >= 256) return;
+        var bitmapStart = 0x220 + (long)(track - 1) * 32;
+        if (bitmapStart + 32 > _data.Length) return;
+        CbmImage.ClearBit(_data, bitmapStart, 32, sector);
+    }
+
+    public void Save() => File.WriteAllBytes(Path, _data);
+
+    public byte[] Export(CbmDirEntry entry) =>
+        CbmImage.ReadChain(ReadSector, entry.StartTrack, entry.StartSector);
+
+    public (ushort Start, ushort End) AddressRange(CbmDirEntry entry) =>
+        CbmImage.AddressRange(Export(entry));
+}

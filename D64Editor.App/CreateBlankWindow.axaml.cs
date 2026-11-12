@@ -6,11 +6,10 @@ using D64Editor.Core;
 namespace D64Editor.App;
 
 /// <summary>
-///     Ported from frmMainCreateNewD64 + CreateBlankD64. The original's "protect
-///     track 1 sector 0" and C128 auto-boot patch options aren't ported — this
-///     always creates a plain, fully-free disk. onCreated lets the caller (the
-///     main window) load the freshly made disk immediately, matching the
-///     original opening it right after creation.
+///     Ported from frmMainCreateNewD64 + CreateBlankD64. "Protect track 1,
+///     sector 0" and the C128 auto-boot patch are supported. onCreated lets the
+///     caller (the main window) load the freshly made disk immediately, matching
+///     the original opening it right after creation.
 /// </summary>
 public partial class CreateBlankWindow : Window
 {
@@ -43,8 +42,12 @@ public partial class CreateBlankWindow : Window
 
         var trackCount = Track40Radio.IsChecked == true ? D64Image.ExtendedTrackCount : D64Image.StandardTrackCount;
         var errorInfo = ErrorInfoBox.IsChecked == true;
+        var c128Boot = C128BootBox.IsChecked == true;
+        var protectT1S0 = ProtectT1S0Box.IsChecked == true || c128Boot;
 
-        var image = D64Image.CreateBlank(DiskNameBox.Text ?? "", DiskIdBox.Text ?? "00", trackCount, errorInfo);
+        var image = D64Image.CreateBlank(DiskNameBox.Text ?? "", DiskIdBox.Text ?? "00", trackCount, errorInfo, protectT1S0);
+        if (c128Boot)
+            image.ApplyC128AutoBoot(BootFilenameBox.Text ?? "");
         image.Save(path);
 
         _onCreated?.Invoke(D64Image.Load(path));
