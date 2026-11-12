@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Unrelated local data directory (not part of this repo)
+serve-remote-file/
