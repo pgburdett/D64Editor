@@ -46,4 +46,24 @@ public static class CbmScratch
         image.Save();
         return sectors.Count;
     }
+
+    /// <summary>
+    ///     Unscratches a DEL entry: restores it as a closed PRG (default, correctable via
+    /// Properties, matching the original D64 editor's behavior) and re-marks its chain blocks
+    /// allocated in the BAM. Single in-memory pass + flush.
+    /// </summary>
+    public static int Unscratch(ICbmWritable image, CbmDirEntry entry, byte fileType = 0x02 /* PRG */,
+        bool locked = false)
+    {
+        var sectors = image.FileSectors(entry);
+        foreach (var (t, s) in sectors)
+            image.MarkAllocated(t, s);
+
+        var typeByte = (byte)(0x80 | (locked ? 0x40 : 0x00) | fileType);
+        CbmImage.WriteEntryInto(image.Buffer, entry.SlotOffset,
+            entry.FileName, typeByte, entry.StartTrack, entry.StartSector, entry.SizeInBlocks);
+
+        image.Save();
+        return sectors.Count;
+    }
 }

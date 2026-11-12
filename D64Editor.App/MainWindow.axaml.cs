@@ -650,6 +650,17 @@ public partial class MainWindow : Window
         new BasicViewerWindow(entry.FileName, bytes).Show(this);
     }
 
+    /// <summary>DirMaster View &gt; Picture Viewer — renders the selected file as a C64 bitmap.</summary>
+    private void OnPictureViewerClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        var selected = DirectoryList.SelectedItems?.OfType<DirectoryRow>().ToList();
+        if (selected is null || selected.Count != 1) { FileCountLabel.Text = "Select exactly one file to view."; return; }
+
+        var entry = selected[0].Entry;
+        new PictureViewerWindow(entry.FileName, _image.ExportFile(entry)).Show(this);
+    }
+
     /// <summary>DirMaster View &gt; Disassembly Viewer — 6502 disassembly of the selected file.</summary>
     private void OnDisassemblyViewerClicked(object? sender, RoutedEventArgs e)
     {

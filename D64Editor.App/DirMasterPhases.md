@@ -31,7 +31,9 @@
 - [ ] Full GCR→D64 sector decode for G64; G64→D64 conversion
 - [x] Export-to-PRG for read-only images (D71/D81/D80/D82/T64) via their viewers
 - [x] Scratch with block-freeing for D71/D81 (chain-walk → BAM bits + free-count; verified byte-exact on D71/D81)
+- [x] Unscratch (re-allocate) for D71/D81/D80/D82/DNP (generalized via ICbmWritable; verified scratch→unscratch round-trip on D81)
 - [x] File import for D81 (allocate free blocks → write chain → update BAM → add entry; verified byte-exact, incl. fixing a double-allocation bug the test caught)
+- [ ] File import for D71/D80/D82/DNP
 - [x] D80 (8050, 77 tracks) + D82 (8250, 154 tracks) images — reader + viewer (verified with synthetic .d80/.d82)
 - [ ] NIB/DNP/DHD/D2M/D4M readers
 
@@ -50,7 +52,8 @@
 - [x] Disassembly viewer (6502/6510)
 - [ ] SEQ file viewer enhancements
 - [ ] REL file viewer
-- [ ] Graphics viewer (charset/sprite/bitmap)
+- [x] Picture viewer: Koala Painter + Art Studio hi-res (C64 palette pixel decode; decoder verified on a synthetic Koala)
+- [ ] Charset/sprite viewers
 - [ ] SEQ file viewer (already partial — enhance)
 - [ ] REL file viewer
 - [ ] Graphics viewer (charset/sprite/bitmap)

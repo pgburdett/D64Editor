@@ -69,6 +69,12 @@ public partial class ExtendedImageWindow : Window
         System.IO.File.WriteAllBytes(path, _info.Export(entry));
     }
 
+    private void OnViewPicture(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedEntry() is { } entry && _info is not null)
+            new PictureViewerWindow(entry.FileName, _info.Export(entry)).Show(this);
+    }
+
     /// <summary>Edits the selected directory entry and writes back just that 32-byte slot.</summary>
     private void OnEditClicked(object? sender, RoutedEventArgs e)
     {
@@ -95,6 +101,39 @@ public partial class ExtendedImageWindow : Window
                 StatusLabel.Text = "Saved, but re-read failed.";
             }
         }).Show(this);
+    }
+
+    /// <summary>Unscratches the selected DEL entry (restores PRG + re-allocates its blocks).</summary>
+    private void OnUnscratchClicked(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedEntry() is not { } entry)
+        {
+            StatusLabel.Text = "Select an entry to unscratch.";
+            return;
+        }
+        if (_info?.Writable is not { } writable)
+        {
+            StatusLabel.Text = "This image format doesn't support in-place edits.";
+            return;
+        }
+        if (!entry.IsScratched)
+        {
+            StatusLabel.Text = "That entry isn't deleted (DEL).";
+            return;
+        }
+
+        var realloc = CbmScratch.Unscratch(writable, entry);
+        var reloaded = _reload();
+        if (reloaded is { } r)
+        {
+            _info = r;
+            Bind(r);
+            StatusLabel.Text = $"Unscratched \"{entry.FileName}\" as PRG, re-allocated {realloc} block(s).";
+        }
+        else
+        {
+            StatusLabel.Text = "Unscratched, but re-read failed.";
+        }
     }
 
     /// <summary>Imports a host PRG as a file on the image (currently D81; other formats: entry-edit only).</summary>

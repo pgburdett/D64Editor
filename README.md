@@ -278,11 +278,13 @@ results — see the per-phase notes in `D64Editor.App/DirMasterPhases.md`.
 
 ## Not yet done (see DirMasterPhases.md)
 
-- File import for D71/D80/D82/DNP; unscratch/re-allocate for those formats.
-- G64/NIB editing beyond D64 conversion; NIB structural viewer detail.
+- File import for D71/D80/D82/DNP (D81 done); unscratch/re-allocate outside D81.
+- G64/NIB editing beyond D64 conversion; NIB structural viewer fallback.
 - Direct MDI multi-document shell (currently multiple independent windows).
-- SEQ/REL/graphics viewers; BAM visual editor polish; emulator/OpenCBM/print
-  integrations; advanced find/compare/batch options.
+- SEQ/REL viewers; charset/sprite viewers; BAM visual editor polish.
+- Emulator launch, OpenCBM transfer, OS print dialog, file associations, auto-update
+  — these are Windows/OS-integration features; only cross-platform-safe stubs are in place.
+- Advanced find/compare/batch options; CLI arguments.
 
 
 ## A note on fidelity vs. cleanup

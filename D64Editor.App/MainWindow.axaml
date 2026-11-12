@@ -75,6 +75,7 @@
                 <MenuItem Header="Hex Viewer" Click="OnHexViewerClicked" />
                 <MenuItem Header="BASIC Viewer" Click="OnBasicViewerClicked" />
                 <MenuItem Header="Disassembly Viewer" Click="OnDisassemblyViewerClicked" />
+                <MenuItem Header="Picture Viewer (Koala/Art Studio)" Click="OnPictureViewerClicked" />
             </MenuItem>
             <MenuItem Header="_Window" Name="WindowMenu" SubmenuOpened="OnWindowMenuOpened">
                 <MenuItem Header="_New Disk Window" Click="OnNewDiskWindowClicked" />
