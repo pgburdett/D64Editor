@@ -483,3 +483,7 @@ $RECYCLE.BIN/
 
 # Unrelated local data directory (not part of this repo)
 serve-remote-file/
+
+# Local session logs / IDE user settings (not part of the repo)
+session-*.md
+D64Editor.sln.DotSettings.user
