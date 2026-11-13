@@ -9,8 +9,15 @@
         <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
 
         <Border DockPanel.Dock="Bottom" Margin="0,8,0,0">
-            <TextBox Name="RecordBox" IsReadOnly="True" FontFamily="Consolas,Monospace" FontSize="12"
-                     AcceptsReturn="True" MinHeight="120" />
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
+                    <TextBlock Text="Record (hex bytes, space-separated):" VerticalAlignment="Center" />
+                    <Button Content="Write Record" Click="OnWriteRecordClicked" />
+                    <TextBlock Name="EditStatus" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBox Name="RecordBox" FontFamily="Consolas,Monospace" FontSize="12"
+                         AcceptsReturn="True" MinHeight="80" />
+            </StackPanel>
         </Border>
 
         <ListBox Name="RecordList" SelectionChanged="OnRecordSelected">
