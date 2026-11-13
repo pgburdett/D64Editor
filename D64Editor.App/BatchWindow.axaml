@@ -18,7 +18,8 @@
         </Grid>
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
             <Button Content="Export All Files" Click="OnRunClicked" Margin="0,0,8,0" />
-            <Button Content="Validate (report)" Click="OnValidateClicked" />
+            <Button Content="Validate (report)" Click="OnValidateClicked" Margin="0,0,8,0" />
+            <Button Content="Print Directories..." Click="OnPrintDirsClicked" />
             <TextBlock Name="StatusLabel" Margin="12,0,0,0" VerticalAlignment="Center" />
         </DockPanel>
 

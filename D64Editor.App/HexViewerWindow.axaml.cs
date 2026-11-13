@@ -96,7 +96,8 @@ public partial class HexViewerWindow : Window
             sb.Append(' ').Append(chars).AppendLine();
         }
 
-        HexBox.Text = sb.ToString();
+        HexRows.ItemsSource = sb.ToString()
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries);
     }
 
     private char ToChar(byte b)

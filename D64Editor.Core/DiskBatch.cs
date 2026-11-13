@@ -1,4 +1,5 @@
 namespace D64Editor.Core;
+using System.Text;
 
 /// <summary>A result record for a batch operation run over a folder of images.</summary>
 public sealed class BatchItem
@@ -128,4 +129,23 @@ public static class DiskBatch
             .SelectMany(p => Directory.EnumerateFiles(folder, p, SearchOption.TopDirectoryOnly))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(p => p, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Prints every image's directory in the folder as one LOAD"$"-style text (à la 64COPY).</summary>
+    public static string PrintDirectories(string folder)
+    {
+        var sb = new StringBuilder();
+        foreach (var path in DiskSearcherEumerable(folder))
+        {
+            var result = ImageDirectory.Lookup(path);
+            if (result is null) continue;
+
+            // Collection folder + relative disk path (match 64COPY's dashed block).
+            var collection = Path.GetDirectoryName(path) ?? folder;
+            var relPath = Path.GetRelativePath(collection, path);
+            sb.AppendLine(DirectoryFormatter.FormatFileBlock(collection, relPath,
+                result.DiskName, result.DiskId, result.BlocksFree, result.Entries));
+            sb.AppendLine();
+        }
+        return sb.ToString();
+    }
 }

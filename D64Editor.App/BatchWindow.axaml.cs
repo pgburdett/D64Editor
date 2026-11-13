@@ -71,6 +71,33 @@ public partial class BatchWindow : Window
         ResultsList.ItemsSource = rows.Select(r => new BatchResultRow { Summary = r.Summary }).ToList();
         StatusLabel.Text = $"Validated {rows.Count} image(s) in {source}";
     }
+
+    private async void OnPrintDirsClicked(object? sender, RoutedEventArgs e)
+    {
+        var source = SourceBox.Text ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            StatusLabel.Text = "Choose a source folder first.";
+            return;
+        }
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save printed directories",
+            SuggestedFileName = "directories.txt",
+            FileTypeChoices = new[] { new FilePickerFileType("Text Document") { Patterns = new[] { "*.txt" } } }
+        });
+        var path = file?.TryGetLocalPath();
+        if (path is null) return;
+
+        var text = DiskBatch.PrintDirectories(source);
+        await File.WriteAllTextAsync(path, text);
+        StatusLabel.Text = $"Wrote directory listing for {source} to {System.IO.Path.GetFileName(path)}.";
+
+        // Also show it inline.
+        ResultsList.ItemsSource = text.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(l => new BatchResultRow { Summary = l }).ToList();
+    }
 }
 
 public sealed class BatchResultRow

@@ -305,13 +305,10 @@ public partial class DiskDocumentView : UserControl
         var path = file?.TryGetLocalPath();
         if (path is null) return;
 
-        var sb = new StringBuilder();
-        sb.AppendLine($"Disk: \"{_image.DiskName}\"  ID: {_image.DiskId}");
-        sb.AppendLine($"Blocks free: {_image.BlocksFree}").AppendLine();
-        foreach (var row in DirectoryList.ItemsSource?.OfType<DirectoryRow>() ?? Enumerable.Empty<DirectoryRow>())
-            sb.AppendLine($"{row.Entry.SizeInBlocks,5}  \"{row.FileName}\"  {row.Entry.TypeDisplay}");
-        sb.AppendLine().AppendLine(_image.ExportDirectoryListing());
-        await File.WriteAllTextAsync(path, sb.ToString());
+        var entries = _image.Entries.Select(e => new CatEntry(e.FileName, e.SizeInBlocks, e.RawFileType,
+            e.IsScratched, e.IsClosed, e.IsLocked));
+        var text = DirectoryFormatter.Format(_image.DiskName, _image.DiskId, _image.BlocksFree, entries);
+        await File.WriteAllTextAsync(path, text);
         FileCountLabel.Text = $"Directory listing written to {Path.GetFileName(path)} (print from any viewer).";
     }
 
