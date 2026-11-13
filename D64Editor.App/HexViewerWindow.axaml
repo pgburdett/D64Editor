@@ -1,16 +1,32 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="using:D64Editor.App"
         x:Class="D64Editor.App.HexViewerWindow"
         Title="Hex Viewer"
-        Width="640" Height="480">
+        Width="680" Height="500">
 
     <DockPanel Margin="10">
         <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
 
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="16" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Address:" VerticalAlignment="Center" />
+                <RadioButton Name="HexAddressRadio" GroupName="Addr" Content="Hex" IsChecked="True"
+                             IsCheckedChanged="OnAddressBaseChanged" />
+                <RadioButton Name="DecimalAddressRadio" GroupName="Addr" Content="Decimal"
+                             IsCheckedChanged="OnAddressBaseChanged" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Chars:" VerticalAlignment="Center" />
+                <RadioButton Name="PetsciiRadio" GroupName="Chars" Content="PETSCII" IsChecked="True"
+                             IsCheckedChanged="OnCharsChanged" />
+                <RadioButton Name="AsciiRadio" GroupName="Chars" Content="ASCII"
+                             IsCheckedChanged="OnCharsChanged" />
+            </StackPanel>
+        </StackPanel>
+
         <ScrollViewer VerticalScrollBarVisibility="Visible">
-            <TextBox Name="HexBox" IsReadOnly="True" FontFamily="{x:Static local:Fonts.Petscii}"
-                     FontSize="12" AcceptsReturn="True" TextWrapping="NoWrap" BorderThickness="0" />
+            <TextBox Name="HexBox" IsReadOnly="True" FontFamily="Consolas,Monospace"
+                     FontSize="13" AcceptsReturn="True" TextWrapping="NoWrap" BorderThickness="0" />
         </ScrollViewer>
     </DockPanel>
 </Window>

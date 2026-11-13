@@ -217,7 +217,14 @@ public partial class MainWindow : Window
         for (var i = 0; i < DocTabs.Items.Count; i++)
         {
             if (DocTabs.Items[i] is not TabItem tab) continue;
-            var label = tab.Header?.ToString() ?? $"doc {i + 1}";
+
+            // Guarantee a non-empty label; tab.Header may be missing on a fresh tab.
+            var label = tab.Header as string;
+            if (string.IsNullOrWhiteSpace(label))
+                label = (tab.Content as DiskDocumentView)?.HasImage == true
+                    ? $"Document {i + 1}"
+                    : $"Document {i + 1} (empty)";
+
             var item = new MenuItem { Header = label };
             var target = tab;
             item.Click += (_, _) => DocTabs.SelectedItem = target;
