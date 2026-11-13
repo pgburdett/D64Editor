@@ -6,6 +6,15 @@ namespace D64Editor.App;
 
 public class App : Application
 {
+    /// <summary>Image path passed on the command line to open at startup.</summary>
+    public static string? PendingFile { get; set; }
+
+    public static string? StartupFile
+    {
+        get => PendingFile;
+        set => PendingFile = value;
+    }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -16,8 +25,12 @@ public class App : Application
         AppSettings.Load();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow();
+            var main = new MainWindow();
+            desktop.MainWindow = main;
             desktop.Exit += (_, _) => AppSettings.Save();
+
+            if (!string.IsNullOrEmpty(PendingFile))
+                main.OpenDiskFile(PendingFile);
         }
 
         base.OnFrameworkInitializationCompleted();

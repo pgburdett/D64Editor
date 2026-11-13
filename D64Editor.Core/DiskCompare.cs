@@ -7,6 +7,9 @@ public sealed class DiskCompareReport
     public required string RightPath { get; init; }
     public List<string> Lines { get; } = new();
 
+    /// <summary>Up to the first 64 differing block numbers between the two images' BAMs.</summary>
+    public List<int> DifferingBlocks { get; } = new();
+
     public bool Identical => Lines.Count == 0;
 }
 
@@ -57,7 +60,13 @@ public static class DiskCompare
         var count = Math.Min(left.AllocatedBlocks.Length, right.AllocatedBlocks.Length);
         var diffBlocks = 0;
         for (var i = 0; i < count; i++)
-            if (left.AllocatedBlocks[i] != right.AllocatedBlocks[i]) diffBlocks++;
+        {
+            if (left.AllocatedBlocks[i] != right.AllocatedBlocks[i])
+            {
+                diffBlocks++;
+                if (report.DifferingBlocks.Count < 64) report.DifferingBlocks.Add(i);
+            }
+        }
         if (diffBlocks > 0)
             L.Add($"BAM differs on {diffBlocks} block(s)");
         else if (left.AllocatedBlocks.Length != right.AllocatedBlocks.Length)

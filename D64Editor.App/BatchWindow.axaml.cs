@@ -58,6 +58,19 @@ public partial class BatchWindow : Window
 
         StatusLabel.Text = $"Exported {ok} file(s), {fail} failure(s), from {source}";
     }
+    private void OnValidateClicked(object? sender, RoutedEventArgs e)
+    {
+        var source = SourceBox.Text ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            StatusLabel.Text = "Choose a source folder first.";
+            return;
+        }
+
+        var rows = DiskBatch.ValidateFolder(source);
+        ResultsList.ItemsSource = rows.Select(r => new BatchResultRow { Summary = r.Summary }).ToList();
+        StatusLabel.Text = $"Validated {rows.Count} image(s) in {source}";
+    }
 }
 
 public sealed class BatchResultRow

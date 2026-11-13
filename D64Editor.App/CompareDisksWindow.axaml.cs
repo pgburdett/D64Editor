@@ -60,6 +60,10 @@ public partial class CompareDisksWindow : Window
             VerdictLabel.Text = report.Identical
                 ? "Identical"
                 : $"{report.Lines.Count} difference(s)";
+
+            BlocksLabel.Text = report.DifferingBlocks.Count == 0
+                ? ""
+                : "Differing blocks: " + string.Join(", ", report.DifferingBlocks.Take(64));
         }
         catch (Exception ex)
         {

@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -52,6 +53,66 @@ public partial class MainWindow : Window
 
     /// <summary>Loads a disk image by path (used by the partition/container opener).</summary>
     public void OpenDiskFile(string path) => LoadDisk(path);
+
+    /// <summary>Windows → Cascade (diagonal offset over the screen).</summary>
+    private void OnCascadeClicked(object? sender, RoutedEventArgs e)
+    {
+        var screens = Screens;
+        var area = screens?.ScreenFromVisual(this)?.WorkingArea ?? default;
+        var x = 20; var y = 20;
+        foreach (var w in OpenWindows.ToList())
+        {
+            w.WindowStartupLocation = WindowStartupLocation.Manual;
+            w.Position = new PixelPoint(x, y);
+            x += 24; y += 24;
+            if (area.Width > 0 && (x + 400 > area.Width || y + 300 > area.Height)) { x = 20; y = 20; }
+        }
+    }
+
+    /// <summary>Windows → Tile Vertically (side-by-side columns).</summary>
+    private void OnTileVerticalClicked(object? sender, RoutedEventArgs e) => Tile(columns: null, horizontal: false);
+
+    /// <summary>Windows → Tile Horizontally (stacked rows).</summary>
+    private void OnTileHorizontalClicked(object? sender, RoutedEventArgs e) => Tile(columns: null, horizontal: true);
+
+    private void Tile(int? columns, bool horizontal)
+    {
+        var wins = OpenWindows.Where(w => w.IsVisible).ToList();
+        if (wins.Count == 0) return;
+        var area = Screens?.ScreenFromVisual(this)?.WorkingArea ?? default;
+        var width = area.Width > 0 ? area.Width : 1000;
+        var height = area.Height > 0 ? area.Height : 700;
+
+        if (horizontal)
+        {
+            var h = Math.Max(80, height / wins.Count);
+            for (var i = 0; i < wins.Count; i++)
+            {
+                wins[i].WindowStartupLocation = WindowStartupLocation.Manual;
+                wins[i].Position = new PixelPoint(area.X, area.Y + i * h);
+                wins[i].Width = width;
+                wins[i].Height = h;
+            }
+        }
+        else
+        {
+            var w = Math.Max(120, width / wins.Count);
+            for (var i = 0; i < wins.Count; i++)
+            {
+                wins[i].WindowStartupLocation = WindowStartupLocation.Manual;
+                wins[i].Position = new PixelPoint(area.X + i * w, area.Y);
+                wins[i].Width = w;
+                wins[i].Height = height;
+            }
+        }
+    }
+
+    /// <summary>Windows → Close All (prompts to save each dirty disk first).</summary>
+    private void OnCloseAllClicked(object? sender, RoutedEventArgs e)
+    {
+        foreach (var w in OpenWindows.ToList())
+            w.Close();
+    }
 
     /// <summary>Window &gt; New Disk Window — opens another independent disk window.</summary>
     private void OnNewDiskWindowClicked(object? sender, RoutedEventArgs e)
@@ -648,6 +709,42 @@ public partial class MainWindow : Window
         var entry = selected[0].Entry;
         var bytes = _image.ExportFile(entry);
         new BasicViewerWindow(entry.FileName, bytes).Show(this);
+    }
+
+    /// <summary>DirMaster View &gt; REL Viewer — shows the selected REL file's records.</summary>
+    private void OnRelViewerClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        var selected = DirectoryList.SelectedItems?.OfType<DirectoryRow>().ToList();
+        if (selected is null || selected.Count != 1) { FileCountLabel.Text = "Select exactly one file to view."; return; }
+
+        new RelViewerWindow(selected[0].Entry.FileName, _image, selected[0].Entry).Show(this);
+    }
+
+    /// <summary>DirMaster View &gt; Charset Viewer — renders the selected file as a 256-glyph charset grid.</summary>
+    private void OnCharsetViewerClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        var selected = DirectoryList.SelectedItems?.OfType<DirectoryRow>().ToList();
+        if (selected is null || selected.Count != 1) { FileCountLabel.Text = "Select exactly one file to view."; return; }
+
+        var bytes = _image.ExportFile(selected[0].Entry);
+        if (bytes.Length < 2048) { FileCountLabel.Text = "File is too small to be a charset (needs ≥ 2048 bytes)."; return; }
+        var glyphs = bytes.AsSpan(bytes.Length - 2048).ToArray(); // tolerate a 2-byte load-address header
+        new GfxViewerWindow(selected[0].Entry.FileName, GfxDecoder.DecodeCharset(glyphs), "Charset").Show(this);
+    }
+
+    /// <summary>DirMaster View &gt; Sprite Viewer — renders the selected file's first 63 bytes as a hires sprite.</summary>
+    private void OnSpriteViewerClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        var selected = DirectoryList.SelectedItems?.OfType<DirectoryRow>().ToList();
+        if (selected is null || selected.Count != 1) { FileCountLabel.Text = "Select exactly one file to view."; return; }
+
+        var bytes = _image.ExportFile(selected[0].Entry);
+        if (bytes.Length < 63) { FileCountLabel.Text = "File is too small to be a sprite (needs ≥ 63 bytes)."; return; }
+        var sprite = bytes.AsSpan(bytes.Length - 63).ToArray();
+        new GfxViewerWindow(selected[0].Entry.FileName, GfxDecoder.DecodeSprite(sprite), "Sprite").Show(this);
     }
 
     /// <summary>DirMaster View &gt; Picture Viewer — renders the selected file as a C64 bitmap.</summary>

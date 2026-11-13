@@ -84,4 +84,48 @@ public static class DiskBatch
             _ => "cbm",
         };
     }
+
+    /// <summary>A validation row (report-only) for one image: entry count, blocks free, notes.</summary>
+    public sealed class ValidateRow
+    {
+        public required string ImagePath { get; init; }
+        public int Files { get; init; }
+        public string FreeBlocks { get; init; } = "";
+        public string Notes { get; init; } = "";
+
+        public string Summary =>
+            $"{Path.GetFileName(ImagePath),-16} files={Files,-4} free={FreeBlocks,-6} {Notes}";
+    }
+
+    /// <summary>Report-only validation over a folder of images (no writes).</summary>
+    public static List<ValidateRow> ValidateFolder(string folder)
+    {
+        var rows = new List<ValidateRow>();
+        if (!Directory.Exists(folder)) return rows;
+
+        foreach (var path in DiskSearcherEumerable(folder))
+        {
+            var notes = "";
+            string free;
+            var info = CbmCatalog.Open(path);
+            if (info is not null)
+            {
+                free = info.BlocksFree.ToString();
+            }
+            else
+            {
+                var ext = Path.GetExtension(path).ToLowerInvariant();
+                free = ext == ".d64" || ext == ".g64" || ext == ".nib" ? "?" : "-";
+            }
+            var files = ImageCatalog.ReadEntries(path).Count;
+            rows.Add(new ValidateRow { ImagePath = path, Files = files, FreeBlocks = free, Notes = notes });
+        }
+        return rows;
+    }
+
+    private static IEnumerable<string> DiskSearcherEumerable(string folder) =>
+        new[] { "*.d64", "*.d71", "*.d81", "*.d80", "*.d82", "*.dnp", "*.g64", "*.nib" }
+            .SelectMany(p => Directory.EnumerateFiles(folder, p, SearchOption.TopDirectoryOnly))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase);
 }

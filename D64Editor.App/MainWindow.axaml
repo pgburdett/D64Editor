@@ -69,6 +69,7 @@
                 <Separator />
                 <MenuItem Header="View File Chain" Click="OnViewFileChainClicked" />
                 <MenuItem Header="View SEQ File" Click="OnSeqViewerClicked" />
+                <MenuItem Header="View REL File" Click="OnRelViewerClicked" />
                 <MenuItem Header="View Error Blocks" Click="OnErrorBlocksClicked" />
                 <MenuItem Header="View Cross-Links" Click="OnCrossLinksClicked" />
                 <Separator />
@@ -76,9 +77,16 @@
                 <MenuItem Header="BASIC Viewer" Click="OnBasicViewerClicked" />
                 <MenuItem Header="Disassembly Viewer" Click="OnDisassemblyViewerClicked" />
                 <MenuItem Header="Picture Viewer (Koala/Art Studio)" Click="OnPictureViewerClicked" />
+                <MenuItem Header="Charset Viewer" Click="OnCharsetViewerClicked" />
+                <MenuItem Header="Sprite Viewer" Click="OnSpriteViewerClicked" />
             </MenuItem>
             <MenuItem Header="_Window" Name="WindowMenu" SubmenuOpened="OnWindowMenuOpened">
                 <MenuItem Header="_New Disk Window" Click="OnNewDiskWindowClicked" />
+                <Separator />
+                <MenuItem Header="_Cascade" Click="OnCascadeClicked" />
+                <MenuItem Header="Tile _Vertically" Click="OnTileVerticalClicked" />
+                <MenuItem Header="Tile _Horizontally" Click="OnTileHorizontalClicked" />
+                <MenuItem Header="Close _All Windows" Click="OnCloseAllClicked" />
                 <Separator />
                 <!-- open-window entries are rebuilt here on open -->
             </MenuItem>

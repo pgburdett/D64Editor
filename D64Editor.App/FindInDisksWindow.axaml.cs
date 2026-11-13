@@ -40,20 +40,33 @@ public partial class FindInDisksWindow : Window
         var needle = NeedleBox.Text ?? string.Empty;
         if (string.IsNullOrWhiteSpace(folder) || string.IsNullOrWhiteSpace(needle))
         {
-            StatusLabel.Text = "Enter a folder and a filename filter.";
+            StatusLabel.Text = "Enter a folder and a search string.";
             return;
         }
 
         var caseSensitive = CaseSensitiveBox.IsChecked == true;
-        var hits = DiskSearcher.Search(folder, needle, caseSensitive);
 
-        ResultsList.ItemsSource = hits
+        if (SearchContentsBox.IsChecked == true)
+        {
+            var hits = DiskContentSearcher.Search(folder, needle, caseSensitive);
+            ResultsList.ItemsSource = hits
+                .Select(h => new DiskSearchResultRow
+                {
+                    Summary = $"\"{h.FileName}\" contains text @ offset 0x{h.Offset:X}  in  {Path.GetFileName(h.ImagePath)}"
+                })
+                .ToList();
+            StatusLabel.Text = $"{hits.Count} content match(es) in {folder}";
+            return;
+        }
+
+        var nameHits = DiskSearcher.Search(folder, needle, caseSensitive);
+        ResultsList.ItemsSource = nameHits
             .Select(h => new DiskSearchResultRow
             {
                 Summary = $"{h.FileName,-18} [{h.Type}]  in  {Path.GetFileName(h.ImagePath)}"
             })
             .ToList();
 
-        StatusLabel.Text = $"{hits.Count} match(es) in {folder}";
+        StatusLabel.Text = $"{nameHits.Count} name match(es) in {folder}";
     }
 }

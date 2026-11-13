@@ -16,6 +16,7 @@
 
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <CheckBox Name="CaseSensitiveBox" Content="Case sensitive" Margin="0,0,12,0" />
+            <CheckBox Name="SearchContentsBox" Content="Search file contents" Margin="0,0,12,0" />
             <Button Content="Search" Click="OnSearchClicked" />
             <TextBlock Name="StatusLabel" Margin="12,0,0,0" VerticalAlignment="Center" />
         </DockPanel>

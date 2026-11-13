@@ -266,9 +266,16 @@ helpers.
 - C64-screen directory: PETSCII monospace on the C64 blue, raw
   `BLOCKS "NAME" TYPE` lines; toggle case; font-size cycling; Show DEL files;
   save-as; multi-disk windows with a Window menu; unsaved-changes prompt.
-- Viewers: Hex, BASIC (C64 BASIC V2 de-tokenizer), Disassembly (6502).
-- Tools: Find in Disks (across all supported formats), Compare Disks
-  (header/directory/BAM diff), Batch export of all files from a folder.
+- Viewers: Hex, BASIC (C64 BASIC V2 de-tokenizer), Disassembly (6502), plus the
+  picture decoder (Koala Painter/Art Studio hi-res), charset (256-glyph grid),
+  sprite (hires + multicolor), and REL (fixed-length record) viewers.
+- Tools: Find in Disks (name **and** file-contents search), Compare Disks
+  (header/directory/BAM diff + differing-block list), Batch export of a folder's
+  files and Batch Validate (report-only).
+- Window management: the Window menu lists open disks and offers Cascade / Tile
+  Vertically / Tile Horizontally / Close All over the multi-disk windows.
+- CLI: `--help`, `--list <image>` (print a directory), `--convert <g64/nib> <d64>`
+  (headless G64/NIB→D64), and passing an image path opens it in the GUI.
 - PETSCII font wired to **C64 Pro Mono** from
   [style64.org C64 TrueType](https://style64.org/c64-truetype) (`Fonts.cs`).
 
@@ -280,11 +287,11 @@ results — see the per-phase notes in `D64Editor.App/DirMasterPhases.md`.
 
 - File import for D71/D80/D82/DNP (D81 done); unscratch/re-allocate outside D81.
 - G64/NIB editing beyond D64 conversion; NIB structural viewer fallback.
-- Direct MDI multi-document shell (currently multiple independent windows).
-- SEQ/REL viewers; charset/sprite viewers; BAM visual editor polish.
+- True single-window MDI tabs (currently independent windows + a real window manager).
+- Full REL editing (view only); BAM visual editor polish.
 - Emulator launch, OpenCBM transfer, OS print dialog, file associations, auto-update
-  — these are Windows/OS-integration features; only cross-platform-safe stubs are in place.
-- Advanced find/compare/batch options; CLI arguments.
+  — Windows/OS-integration features; not implemented here.
+- Extra CLI verbs/images of G64/NIB → D64 with warnings exported verbosely.
 
 
 ## A note on fidelity vs. cleanup

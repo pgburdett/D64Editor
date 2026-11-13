@@ -6,6 +6,8 @@
 - [x] Dirty-state tracking (checksum-based; queried on Close/Exit)
 - [x] Disk filename shown in title
 - [x] Multi-disk: open windows tracked + Window menu lists/activates them; "New Disk Window" / "Open in New Window"
+- [x] Window management (MDI-style): Cascade / Tile Vertically / Tile Horizontally / Close All over all open disk windows
+- [x] CLI: --convert (G64/NIB→D64 or copy), --list (print directory), --help, and opening an image path launches the GUI on it
 
 ## Phase 2 — Multi-Format Engine
 - [x] `IDiskImage` abstraction; `D64Image` conforms (explicit Entries/CrossLinkWarnings)
@@ -50,10 +52,10 @@
 - [x] Hex viewer (read-only dump)
 - [x] BASIC viewer (C64 BASIC V2 de-tokenizer)
 - [x] Disassembly viewer (6502/6510)
-- [ ] SEQ file viewer enhancements
-- [ ] REL file viewer
+- [x] SEQ file viewer (ported from the original)
+- [x] REL file viewer (side-sector chain walk → fixed-length records; verified record segmentation)
 - [x] Picture viewer: Koala Painter + Art Studio hi-res (C64 palette pixel decode; decoder verified on a synthetic Koala)
-- [ ] Charset/sprite viewers
+- [x] Charset viewer (256-glyph grid) + Sprite viewer (hires + multicolor; both verified on synthetic data)
 - [ ] SEQ file viewer (already partial — enhance)
 - [ ] REL file viewer
 - [ ] Graphics viewer (charset/sprite/bitmap)
@@ -71,6 +73,9 @@
 - [x] Multi-format catalog (`ImageCatalog`): d64/d71/d81/d80/d82/dnp + g64/nib (decoded) → Find spans all supported formats; garbage/unsupported skipped
 - [x] Compare Disks (diff header/directory/BAM of two images)
 - [x] Batch processing (export all files from every image in a folder)
+- [x] Batch Validate (report-only): per-image file count + blocks free
+- [x] Find in Disks: name search + file-contents search (across supported formats)
+- [x] Compare disks: header/directory/BAM diff + differing-block-number list
 - [ ] Archive extraction (zip/tar of disk sets)
 
 ## Phase 7 — GEOS & Advanced
