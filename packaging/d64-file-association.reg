@@ -1,0 +1,54 @@
+Windows Registry Editor Version 5.00
+
+; File associations for D64 Editor (Commodore disk images).
+; Import with:  regedit /s d64-file-association.reg
+; Assumes a shell command that launches the app, e.g. after extracting a release to
+; C:\D64Editor\ . Adjust "Icon" and the open command paths to your install.
+
+[HKEY_CLASSES_ROOT\.d64]
+@="D64Editor.d64"
+
+[HKEY_CLASSES_ROOT\.d71]
+@="D64Editor.d71"
+
+[HKEY_CLASSES_ROOT\.d81]
+@="D64Editor.d81"
+
+[HKEY_CLASSES_ROOT\.g64]
+@="D64Editor.g64"
+
+[HKEY_CLASSES_ROOT\.t64]
+@="D64Editor.t64"
+
+[HKEY_CLASSES_ROOT\D64Editor.d64]
+@="Commodore 1541 Disk Image"
+
+[HKEY_CLASSES_ROOT\D64Editor.d64\shell\open\command]
+@="\"C:\\D64Editor\\D64Editor.App.exe\" \"%1\""
+
+[HKEY_CLASSES_ROOT\D64Editor.d64\DefaultIcon]
+@="\"C:\\D64Editor\\D64Editor.App.exe\",0"
+
+[HKEY_CLASSES_ROOT\D64Editor.d71]
+@="Commodore 1571 Disk Image"
+
+[HKEY_CLASSES_ROOT\D64Editor.d71\shell\open\command]
+@="\"C:\\D64Editor\\D64Editor.App.exe\" \"%1\""
+
+[HKEY_CLASSES_ROOT\D64Editor.d81]
+@="Commodore 1581 Disk Image"
+
+[HKEY_CLASSES_ROOT\D64Editor.d81\shell\open\command]
+@="\"C:\\D64Editor\\D64Editor.App.exe\" \"%1\""
+
+[HKEY_CLASSES_ROOT\D64Editor.g64]
+@="Commodore 1541 Raw GCR Image"
+
+[HKEY_CLASSES_ROOT\D64Editor.g64\shell\open\command]
+@="\"C:\\D64Editor\\D64Editor.App.exe\" \"%1\""
+
+[HKEY_CLASSES_ROOT\D64Editor.t64]
+@="Commodore Tape Archive"
+
+[HKEY_CLASSES_ROOT\D64Editor.t64\shell\open\command]
+@="\"C:\\D64Editor\\D64Editor.App.exe\" \"%1\""

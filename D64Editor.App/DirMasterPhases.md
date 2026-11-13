@@ -85,10 +85,15 @@
 - [ ] Command-line options / scripting
 
 ## Phase 8 — Platform Integration
-- [ ] Emulator launch (configure + run)
-- [ ] OpenCBM transfer (Linux: cbmctrl/cbmcopy equivalent)
-- [ ] File associations
-- [ ] Auto-update check
+- [x] Emulator launch: Run > Run in Emulator (command template + {disk}); Run > Configure Emulators
+- [x] OpenCBM transfer: CBM > OpenCBM Transfer (detects cbmcopy/cbmctrl on PATH; {device}/{disk}/{out} template)
+- [x] File associations: packaging/ (Linux .desktop + MIME install script; Windows .reg)
+- [x] "Check for Updates" reads a version-feed URL (configurable)
+- [x] Printable directory export (Disk > Print Directory…)
+- [ ] Native OS print dialog / built-in updater installer (platform-dependent; intentionally skipped)
+
+## Phase 5 — BAM / Sector / Block Editors
+- [x] BAM editor: colored free/allocated cells + live FREE/ALLOCATED summary + legend
 
 ## Current Focus: Phase 1
 Starting with Save As... and multi-disk workspace groundwork.

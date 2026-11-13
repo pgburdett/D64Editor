@@ -36,7 +36,10 @@
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="20" Margin="0,8,0,0">
             <TextBlock Name="TrackSectorLabel" Text="TRACK: -- SECTOR: --" FontFamily="monospace" />
             <TextBlock Name="BlockOwnerLabel" Text="BLOCKOWNER: " FontFamily="monospace" />
+            <TextBlock Name="SummaryLabel" Text="" FontFamily="monospace" />
         </StackPanel>
+        <TextBlock DockPanel.Dock="Bottom" FontSize="11" Margin="0,4,0,0"
+                   Text="Legend: green = free · red = allocated · click cells in BAM EDIT MODE to toggle" />
 
         <!-- Mirrors optDecimal / optHex -->
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right"

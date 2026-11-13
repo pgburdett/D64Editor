@@ -10,6 +10,11 @@ public partial class AboutWindow : Window
         InitializeComponent();
     }
 
+    public AboutWindow(string extra) : this()
+    {
+        if (ExtraLabel is not null) ExtraLabel.Text = extra;
+    }
+
     private void OnCloseClicked(object? sender, RoutedEventArgs e)
     {
         Close();

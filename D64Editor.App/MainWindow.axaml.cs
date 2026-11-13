@@ -631,6 +631,87 @@ public partial class MainWindow : Window
         new BatchWindow(folder).Show(this);
     }
 
+    /// <summary>DirMaster Disk &gt; Print Directory — writes a printable directory listing (text).</summary>
+    private async void OnPrintDirectoryClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export printable directory listing",
+            SuggestedFileName = Path.GetFileNameWithoutExtension(_image.SourcePath) + "_directory.txt",
+            FileTypeChoices = new[] { new FilePickerFileType("Text Document") { Patterns = new[] { "*.txt" } } }
+        });
+
+        var path = file?.TryGetLocalPath();
+        if (path is null) return;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"Disk: \"{_image.DiskName}\"  ID: {_image.DiskId}");
+        sb.AppendLine($"Blocks free: {_image.BlocksFree}");
+        sb.AppendLine();
+        foreach (var row in DirectoryList.ItemsSource?.OfType<DirectoryRow>() ?? Enumerable.Empty<DirectoryRow>())
+            sb.AppendLine($"{row.Entry.SizeInBlocks,5}  \"{row.FileName}\"  {row.Entry.TypeDisplay}");
+        sb.AppendLine();
+        sb.AppendLine(_image.ExportDirectoryListing());
+
+        await File.WriteAllTextAsync(path, sb.ToString());
+        FileCountLabel.Text = $"Directory listing written to {Path.GetFileName(path)} (print from any viewer).";
+    }
+
+    /// <summary>DirMaster Run &gt; Run in Emulator — launches the configured emulator with the open disk.</summary>
+    private void OnRunInEmulatorClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+
+        var template = AppSettings.EmulatorCommand;
+        var disk = Path.GetFullPath(_image.SourcePath);
+        var cmd = template.Replace("{disk}", disk);
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("bash", $"-c \"{cmd}\"")
+            { UseShellExecute = false });
+            FileCountLabel.Text = $"Launched: {cmd}";
+        }
+        catch (Exception ex)
+        {
+            FileCountLabel.Text = $"Could not launch emulator ({ex.Message}) — set the command in Run > Configure Emulators.";
+        }
+    }
+
+    /// <summary>DirMaster Run &gt; Configure Emulators — sets the emulator command template.</summary>
+    private void OnConfigureEmulatorsClicked(object? sender, RoutedEventArgs e) =>
+        new ConfigureEmulatorWindow().Show(this);
+
+    /// <summary>DirMaster CBM &gt; OpenCBM Transfer — drives cbmcopy/cbmctrl if installed.</summary>
+    private void OnOpenCbmClicked(object? sender, RoutedEventArgs e) =>
+        new OpenCbmWindow(_image?.SourcePath).Show(this);
+
+    /// <summary>DirMaster Help &gt; Check for Updates — queries the configured version feed.</summary>
+    private async void OnCheckForUpdatesClicked(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var http = new HttpClient();
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("D64Editor");
+            http.Timeout = TimeSpan.FromSeconds(15);
+            var json = await http.GetStringAsync(AppSettings.UpdateFeedUrl);
+
+            // GitHub releases/latest JSON: pull "tag_name":"x.y.z".
+            var tag = System.Text.RegularExpressions.Regex.Match(json, "\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
+            var latest = tag.Success ? tag.Groups[1].Value : "(unknown)";
+            var version = GetType().Assembly.GetName().Version?.ToString() ?? "?";
+
+            FileCountLabel.Text = $"Update check: latest = {latest} · this build = {version}";
+            new AboutWindow($"Latest release: {latest}\nThis build: {version}\n{AppSettings.UpdateFeedUrl}").Show(this);
+        }
+        catch (Exception ex)
+        {
+            FileCountLabel.Text = $"Update check failed: {ex.Message}";
+        }
+    }
+
     /// <summary>DirMaster Disk &gt; Show DEL Files — toggles inclusion of scratched entries.</summary>
     private void OnShowDelFilesClicked(object? sender, RoutedEventArgs e)
     {

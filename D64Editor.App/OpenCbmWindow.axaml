@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.OpenCbmWindow"
+        Title="OpenCBM Transfer"
+        Width="520" Height="320"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <StackPanel Margin="16" Spacing="10">
+        <TextBlock Name="DetectLabel" TextWrapping="Wrap" />
+
+        <TextBlock Text="OpenCBM tool (cbmcopy / cbmctrl):" />
+        <TextBox Name="ToolBox" />
+
+        <Grid ColumnDefinitions="Auto,8,120">
+            <TextBlock Grid.Column="0" Text="IEC device #:" VerticalAlignment="Center" />
+            <NumericUpDown Grid.Column="2" Name="DeviceBox" Minimum="4" Maximum="30" Value="8" ShowButtonSpinner="False" />
+        </Grid>
+
+        <TextBlock Text="Action:" />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <RadioButton Name="PullRadio" GroupName="dir" Content="Pull disk → D64" IsChecked="True" />
+            <RadioButton Name="PushRadio" GroupName="dir" Content="Push D64 → disk" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Run Transfer" Click="OnRunClicked" />
+            <Button Content="Close" Click="OnCloseClicked" />
+        </StackPanel>
+
+        <TextBlock Name="StatusLabel" TextWrapping="Wrap" MinHeight="40" />
+    </StackPanel>
+</Window>

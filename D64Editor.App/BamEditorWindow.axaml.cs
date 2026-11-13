@@ -103,8 +103,38 @@ public partial class BamEditorWindow : Window
                 Grid.SetColumn(cell, track);
                 Grid.SetRow(cell, sector + 1);
                 GridPanel.Children.Add(cell);
+
+                // Initial coloring + "*" from the current allocation state.
+                var allocated = _image.AllocatedBlocks.Length > block && _image.AllocatedBlocks[block];
+                text.Text = allocated ? "*" : "";
+                cell.Background = allocated ? AllocatedBrush : FreeBrush;
             }
         }
+
+        UpdateSummary();
+    }
+
+    private static readonly Avalonia.Media.ISolidColorBrush FreeBrush =
+        new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0x2E, 0x6B, 0x2E));
+    private static readonly Avalonia.Media.ISolidColorBrush AllocatedBrush =
+        new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0x8B, 0x2E, 0x2E));
+
+    /// <summary>Refreshes a cell's "*"+color and the live free/allocated summary.</summary>
+    private void RefreshCell(int block)
+    {
+        if (block < 0 || block >= _cells.Length) return;
+        var allocated = _image.AllocatedBlocks[block];
+        _cells[block].Text = allocated ? "*" : "";
+        if (_cells[block].Tag is Border b) b.Background = allocated ? AllocatedBrush : FreeBrush;
+        UpdateSummary();
+    }
+
+    private void UpdateSummary()
+    {
+        var free = 0;
+        for (var i = 0; i < _image.TotalBlocks; i++)
+            if (i >= _image.AllocatedBlocks.Length || !_image.AllocatedBlocks[i]) free++;
+        SummaryLabel.Text = $"FREE: {free}   ALLOCATED: {_image.TotalBlocks - free}";
     }
 
     private void AddHeaderCell(string text, int col, int row)
@@ -197,7 +227,7 @@ public partial class BamEditorWindow : Window
                 return;
             default:
                 _image.AllocatedBlocks[block] = !_image.AllocatedBlocks[block];
-                _cells[block].Text = _image.AllocatedBlocks[block] ? "*" : "";
+                RefreshCell(block);
                 return;
         }
     }
@@ -235,7 +265,7 @@ public partial class BamEditorWindow : Window
         for (var i = 0; i < _image.TotalBlocks; i++)
         {
             _image.AllocatedBlocks[i] = true;
-            _cells[i].Text = "*";
+            RefreshCell(i);
         }
     }
 
@@ -246,7 +276,7 @@ public partial class BamEditorWindow : Window
         {
             var protectedBlock = i == 357 || i == 358;
             _image.AllocatedBlocks[i] = protectedBlock;
-            _cells[i].Text = protectedBlock ? "*" : "";
+            RefreshCell(i);
         }
     }
 

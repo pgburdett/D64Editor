@@ -287,11 +287,22 @@ results — see the per-phase notes in `D64Editor.App/DirMasterPhases.md`.
 
 - File import for D71/D80/D82/DNP (D81 done); unscratch/re-allocate outside D81.
 - G64/NIB editing beyond D64 conversion; NIB structural viewer fallback.
-- True single-window MDI tabs (currently independent windows + a real window manager).
-- Full REL editing (view only); BAM visual editor polish.
-- Emulator launch, OpenCBM transfer, OS print dialog, file associations, auto-update
-  — Windows/OS-integration features; not implemented here.
-- Extra CLI verbs/images of G64/NIB → D64 with warnings exported verbosely.
+- True single-window tabbed MDI host (currently independent windows + a real
+  window manager — a full content refactor, deferred as high-risk).
+- Full REL *editing* (create/resize/write records) — REL is currently view-only.
+- Native OS print dialog and a built-in updater installer (platform-dependent).
+  "Print Directory…" writes a printable listing; "Check for Updates" only reads a
+  version-feed URL.
+- Emulator/OpenCBM need the emulator or OpenCBM + hardware installed to act.
+
+## OS integration (packaging/)
+
+- Emulator: `Run > Configure Emulators…` (command template with `{disk}`), then
+  `Run in Emulator…`. Default `x64sc -autostart "{disk}"`.
+- OpenCBM: `CBM > OpenCBM Transfer…` detects `cbmcopy`/`cbmctrl` on `PATH` and
+  runs a command with `{device}/{disk}/{out}` substituted.
+- File associations: `packaging/install-associations.sh <exe>` (Linux `.desktop` +
+  MIME, per-user) and `packaging/d64-file-association.reg` (Windows).
 
 
 ## A note on fidelity vs. cleanup

@@ -34,6 +34,12 @@ public static class AppSettings
     public static bool SelectNextFileUponSave { get; set; }
 
     public static string LastDirectoryPath { get; set; } = "";
+    /// <summary>Emulator command template; "{disk}" is replaced with the image path. e.g. "x64sc -autostart {disk}".</summary>
+    public static string EmulatorCommand { get; set; } = "x64sc -autostart \"{disk}\"";
+    /// <summary>OpenCBM copy tool path (cbmcopy / cbmctrl); auto-detected if blank.</summary>
+    public static string OpenCbmTool { get; set; } = "";
+    /// <summary>URL for the "Check for Updates" version feed.</summary>
+    public static string UpdateFeedUrl { get; set; } = "https://api.github.com/repos/pgburdett/D64Editor/releases/latest";
 
     public static void Load()
     {
@@ -58,6 +64,9 @@ public static class AppSettings
                     case "TreatTrack18FilesAsEmpty": TreatTrack18FilesAsEmpty = val == "1"; break;
                     case "SelectNextFileUponSave": SelectNextFileUponSave = val == "1"; break;
                     case "LastDirectoryPath": LastDirectoryPath = val; break;
+                    case "EmulatorCommand": EmulatorCommand = val; break;
+                    case "OpenCbmTool": OpenCbmTool = val; break;
+                    case "UpdateFeedUrl": UpdateFeedUrl = val; break;
                 }
             }
         }
@@ -84,6 +93,9 @@ public static class AppSettings
                 "TreatTrack18FilesAsEmpty=" + (TreatTrack18FilesAsEmpty ? "1" : "0"),
                 "SelectNextFileUponSave=" + (SelectNextFileUponSave ? "1" : "0"),
                 "LastDirectoryPath=" + LastDirectoryPath,
+                "EmulatorCommand=" + EmulatorCommand,
+                "OpenCbmTool=" + OpenCbmTool,
+                "UpdateFeedUrl=" + UpdateFeedUrl,
             };
             File.WriteAllLines(ConfigPath, lines);
         }

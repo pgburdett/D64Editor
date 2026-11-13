@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=D64 Editor
+Comment=Commodore 1541/1571/1581 disk editor
+Exec=d64editor %f
+Icon=d64editor
+Terminal=false
+Categories=Utility;FileTools;
+MimeType=application/x-d64;application/x-d71;application/x-d81;application/x-d80;application/x-d82;application/x-dnp;application/x-g64;application/x-t64;application/x-lbr;
+NoDisplay=false

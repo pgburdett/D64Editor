@@ -18,7 +18,7 @@
                 <MenuItem Header="Save _As..." Click="OnSaveAsClicked" />
                 <MenuItem Header="_Revert" Click="OnRevertClicked" />
                 <Separator />
-                <MenuItem Header="_Print..." Click="OnNotImplementedClicked" />
+                <MenuItem Header="_Print Directory..." Click="OnPrintDirectoryClicked" />
                 <MenuItem Header="Show DEL Files" Click="OnShowDelFilesClicked" />
                 <Separator />
                 <MenuItem Header="_Close" Click="OnCloseClicked" />
@@ -90,8 +90,15 @@
                 <Separator />
                 <!-- open-window entries are rebuilt here on open -->
             </MenuItem>
+            <MenuItem Header="_Run">
+                <MenuItem Header="Run in _Emulator..." Click="OnRunInEmulatorClicked" />
+                <MenuItem Header="Configure _Emulators..." Click="OnConfigureEmulatorsClicked" />
+            </MenuItem>
+            <MenuItem Header="C_BM">
+                <MenuItem Header="_OpenCBM Transfer..." Click="OnOpenCbmClicked" />
+            </MenuItem>
             <MenuItem Header="_Help">
-                <MenuItem Header="Check for Updates..." Click="OnNotImplementedClicked" />
+                <MenuItem Header="Check for Updates..." Click="OnCheckForUpdatesClicked" />
                 <Separator />
                 <MenuItem Header="_Version" Click="OnVersionClicked" />
                 <MenuItem Header="_About" Click="OnAboutClicked" />
