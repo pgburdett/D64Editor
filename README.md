@@ -287,9 +287,11 @@ results — see the per-phase notes in `D64Editor.App/DirMasterPhases.md`.
 
 - File import for D71/D80/D82/DNP (D81 done); unscratch/re-allocate outside D81.
 - G64/NIB editing beyond D64 conversion; NIB structural viewer fallback.
-- True single-window tabbed MDI host (currently independent windows + a real
-  window manager — a full content refactor, deferred as high-risk).
-- Full REL *editing* (create/resize/write records) — REL is currently view-only.
+- True single-window tabbed MDI host: DONE — `DiskDocumentView` is the per-disk editor;
+  `MainWindow` is a menu/toolbar + `TabControl` shell; Window menu lists open documents.
+  (Fresh code — please smoke-test open/close/scratch/import/tabs.)
+- Full REL *editing*: record content is editable in place (DONE); REL create/grow and resize
+  are still to do (need side/data-sector allocation).
 - Native OS print dialog and a built-in updater installer (platform-dependent).
   "Print Directory…" writes a printable listing; "Check for Updates" only reads a
   version-feed URL.

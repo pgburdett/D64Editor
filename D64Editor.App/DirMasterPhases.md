@@ -6,7 +6,7 @@
 - [x] Dirty-state tracking (checksum-based; queried on Close/Exit)
 - [x] Disk filename shown in title
 - [x] Multi-disk: open windows tracked + Window menu lists/activates them; "New Disk Window" / "Open in New Window"
-- [x] Window management (MDI-style): Cascade / Tile Vertically / Tile Horizontally / Close All over all open disk windows
+- [x] True single-window tabbed MDI host: DiskDocumentView (per-disk editor) hosted in a TabControl; shell menus/toolbar act on the active document; Window menu lists tabs
 - [x] CLI: --convert (G64/NIB→D64 or copy), --list (print directory), --help, and opening an image path launches the GUI on it
 
 ## Phase 2 — Multi-Format Engine

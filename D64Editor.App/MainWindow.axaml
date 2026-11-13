@@ -1,107 +1,101 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="using:D64Editor.App"
         x:Class="D64Editor.App.MainWindow"
         Title="D64 Editor"
-        Width="760" Height="500"
-        MinWidth="600" MinHeight="380">
+        Width="820" Height="560"
+        MinWidth="640" MinHeight="420">
 
-    <DockPanel Margin="0">
+    <DockPanel>
 
-        <!-- Menu bar, modeled on DirMaster: Disk, File, Edit, View, Window, Help -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Disk">
-                <MenuItem Header="_New..." Click="OnCreateBlankClicked" />
-                <MenuItem Header="_Open..." Click="OnOpenClicked" />
-                <MenuItem Header="Open in _New Window..." Click="OnNewDiskWindowClicked" />
-                <MenuItem Header="_Save" Click="OnSaveClicked" />
-                <MenuItem Header="Save _As..." Click="OnSaveAsClicked" />
-                <MenuItem Header="_Revert" Click="OnRevertClicked" />
+                <MenuItem Header="_New..." Click="OnNewBlank" />
+                <MenuItem Header="_Open..." Click="OnOpen" />
+                <MenuItem Header="Open in Ne_w Tab" Click="OnOpenNewTab" />
+                <MenuItem Header="New _Tab" Click="OnNewTab" />
+                <MenuItem Header="_Save" Click="OnSave" />
+                <MenuItem Header="Save _As..." Click="OnSaveAs" />
+                <MenuItem Header="_Revert" Click="OnRevert" />
                 <Separator />
-                <MenuItem Header="_Print Directory..." Click="OnPrintDirectoryClicked" />
-                <MenuItem Header="Show DEL Files" Click="OnShowDelFilesClicked" />
+                <MenuItem Header="_Print Directory..." Click="OnPrint" />
+                <MenuItem Header="Show DEL Files" Click="OnShowDel" />
                 <Separator />
-                <MenuItem Header="_Close" Click="OnCloseClicked" />
                 <MenuItem Header="E_xit" Click="OnQuitClicked" />
             </MenuItem>
             <MenuItem Header="_File">
-                <MenuItem Header="_Import..." Click="OnImportClicked" />
-                <MenuItem Header="_Export..." Click="OnExportClicked" />
-                <MenuItem Header="Export Directory..." Click="OnExportDirClicked" />
-                <MenuItem Header="Copy Files to _Memory..." Click="OnMemoryClicked" />
+                <MenuItem Header="_Import..." Click="OnImport" />
+                <MenuItem Header="_Export..." Click="OnExport" />
+                <MenuItem Header="Export Directory..." Click="OnExportDir" />
+                <MenuItem Header="Copy Files to _Memory..." Click="OnMemory" />
                 <Separator />
-                <MenuItem Header="_Properties..." Click="OnFilePropertiesClicked" />
+                <MenuItem Header="_Properties..." Click="OnProperties" />
+                <MenuItem Header="_Rename" Click="OnRename" />
+                <MenuItem Header="_Delete" Click="OnScratch" />
+                <MenuItem Header="_Undelete" Click="OnUnscratch" />
+                <Separator />
                 <MenuItem Header="Find in Disks..." Click="OnFindInDisksClicked" />
                 <MenuItem Header="Compare Disks..." Click="OnCompareDisksClicked" />
-                <Separator />
                 <MenuItem Header="Batch Processing..." Click="OnBatchClicked" />
-                <MenuItem Header="_Rename" Click="OnRenameClicked" />
-                <MenuItem Header="_Delete" Click="OnScratchClicked" />
-                <MenuItem Header="_Undelete" Click="OnUnscratchClicked" />
                 <Separator />
-                <MenuItem Header="_View File..." Click="OnSeqViewerClicked" />
+                <MenuItem Header="_View File..." Click="OnViewSeq" />
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="Select _All" Click="OnSelectAllFilesClicked" />
-                <MenuItem Header="_Unselect All" Click="OnUnselectAllFilesClicked" />
-                <MenuItem Header="_Invert Selection" Click="OnInvertSelectionClicked" />
+                <MenuItem Header="Select _All" Click="OnSelectAll" />
+                <MenuItem Header="_Unselect All" Click="OnUnselectAll" />
+                <MenuItem Header="_Invert Selection" Click="OnInvertSelection" />
                 <Separator />
-                <MenuItem Header="Scratch File" Click="OnScratchClicked" />
-                <MenuItem Header="Unscratch File..." Click="OnUnscratchClicked" />
-                <MenuItem Header="Wipe File" Click="OnWipeClicked" />
-                <MenuItem Header="Remove Directory Entry" Click="OnRemoveEntryClicked" />
-                <MenuItem Header="Move File To The Top" Click="OnMoveFileToTopClicked" />
-                <MenuItem Header="Move File To The Bottom" Click="OnMoveFileToBottomClicked" />
+                <MenuItem Header="Scratch File" Click="OnScratch" />
+                <MenuItem Header="Unscratch File..." Click="OnUnscratch" />
+                <MenuItem Header="Wipe File" Click="OnWipe" />
+                <MenuItem Header="Remove Directory Entry" Click="OnRemoveEntry" />
+                <MenuItem Header="Move File To The Top" Click="OnMoveTop" />
+                <MenuItem Header="Move File To The Bottom" Click="OnMoveBottom" />
                 <Separator />
-                <MenuItem Header="Edit BAM..." Click="OnBamEditorClicked" />
-                <MenuItem Header="Sector/Block Editor..." Click="OnSectorDumpClicked" />
-                <MenuItem Header="Filename Builder..." Click="OnFilenameBuilderClicked" />
-                <MenuItem Header="Add Separator..." Click="OnAddSeparatorLineClicked" />
-                <MenuItem Header="Copy Selected into Separator Builder..." Click="OnCopySelectedIntoSeparatorBuilderClicked" />
+                <MenuItem Header="Edit BAM..." Click="OnBam" />
+                <MenuItem Header="Sector/Block Editor..." Click="OnSectorEditor" />
+                <MenuItem Header="Filename Builder..." Click="OnFilenameBuilder" />
+                <MenuItem Header="Add Separator..." Click="OnAddSeparator" />
+                <MenuItem Header="Copy Selected into Separator Builder..." Click="OnCopyIntoSeparator" />
                 <Separator />
-                <MenuItem Header="Trim File..." Click="OnTrimFileClicked" />
-                <MenuItem Header="Options..." Click="OnConfigClicked" />
+                <MenuItem Header="Trim File..." Click="OnTrimFile" />
+                <MenuItem Header="Options..." Click="OnConfig" />
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="Toggle _Case" Click="OnToggleCaseClicked" />
-                <MenuItem Header="Font _Size..." Click="OnFontSizeClicked" />
-                <MenuItem Header="Refresh" Click="OnRefreshClicked" />
+                <MenuItem Header="Toggle _Case" Click="OnToggleCase" />
+                <MenuItem Header="Font _Size..." Click="OnFontSize" />
+                <MenuItem Header="Refresh" Click="OnRefresh" />
                 <Separator />
-                <MenuItem Header="View File Chain" Click="OnViewFileChainClicked" />
-                <MenuItem Header="View SEQ File" Click="OnSeqViewerClicked" />
-                <MenuItem Header="View REL File" Click="OnRelViewerClicked" />
-                <MenuItem Header="View Error Blocks" Click="OnErrorBlocksClicked" />
-                <MenuItem Header="View Cross-Links" Click="OnCrossLinksClicked" />
+                <MenuItem Header="View File Chain" Click="OnViewFileChain" />
+                <MenuItem Header="View SEQ File" Click="OnViewSeq" />
+                <MenuItem Header="View REL File" Click="OnViewRel" />
+                <MenuItem Header="View Error Blocks" Click="OnErrorBlocks" />
+                <MenuItem Header="View Cross-Links" Click="OnCrossLinks" />
                 <Separator />
-                <MenuItem Header="Hex Viewer" Click="OnHexViewerClicked" />
-                <MenuItem Header="BASIC Viewer" Click="OnBasicViewerClicked" />
-                <MenuItem Header="Disassembly Viewer" Click="OnDisassemblyViewerClicked" />
-                <MenuItem Header="Picture Viewer (Koala/Art Studio)" Click="OnPictureViewerClicked" />
-                <MenuItem Header="Charset Viewer" Click="OnCharsetViewerClicked" />
-                <MenuItem Header="Sprite Viewer" Click="OnSpriteViewerClicked" />
-            </MenuItem>
-            <MenuItem Header="_Window" Name="WindowMenu" SubmenuOpened="OnWindowMenuOpened">
-                <MenuItem Header="_New Disk Window" Click="OnNewDiskWindowClicked" />
-                <Separator />
-                <MenuItem Header="_Cascade" Click="OnCascadeClicked" />
-                <MenuItem Header="Tile _Vertically" Click="OnTileVerticalClicked" />
-                <MenuItem Header="Tile _Horizontally" Click="OnTileHorizontalClicked" />
-                <MenuItem Header="Close _All Windows" Click="OnCloseAllClicked" />
-                <Separator />
-                <!-- open-window entries are rebuilt here on open -->
+                <MenuItem Header="Hex Viewer" Click="OnHexViewer" />
+                <MenuItem Header="BASIC Viewer" Click="OnBasicViewer" />
+                <MenuItem Header="Disassembly Viewer" Click="OnDisasmViewer" />
+                <MenuItem Header="Picture Viewer (Koala/Art Studio)" Click="OnPictureViewer" />
+                <MenuItem Header="Charset Viewer" Click="OnCharsetViewer" />
+                <MenuItem Header="Sprite Viewer" Click="OnSpriteViewer" />
             </MenuItem>
             <MenuItem Header="_Run">
-                <MenuItem Header="Run in _Emulator..." Click="OnRunInEmulatorClicked" />
-                <MenuItem Header="Configure _Emulators..." Click="OnConfigureEmulatorsClicked" />
+                <MenuItem Header="Run in _Emulator..." Click="OnRunEmulator" />
+                <MenuItem Header="Configure _Emulators..." Click="OnConfigureEmulators" />
             </MenuItem>
             <MenuItem Header="C_BM">
-                <MenuItem Header="_OpenCBM Transfer..." Click="OnOpenCbmClicked" />
+                <MenuItem Header="_OpenCBM Transfer..." Click="OnOpenCbm" />
+            </MenuItem>
+            <MenuItem Header="_Window" Name="WindowMenu" SubmenuOpened="OnWindowMenuOpened">
+                <MenuItem Header="New _Tab" Click="OnNewTab" />
+                <MenuItem Header="Close Tab" Click="OnCloseTab" />
+                <Separator />
+                <!-- open documents (tabs) are rebuilt here on open -->
             </MenuItem>
             <MenuItem Header="_Help">
-                <MenuItem Header="Check for Updates..." Click="OnCheckForUpdatesClicked" />
+                <MenuItem Header="Check for Updates..." Click="OnCheckForUpdates" />
                 <Separator />
-                <MenuItem Header="_Version" Click="OnVersionClicked" />
-                <MenuItem Header="_About" Click="OnAboutClicked" />
+                <MenuItem Header="_Version" Click="OnVersion" />
+                <MenuItem Header="_About" Click="OnAbout" />
             </MenuItem>
         </Menu>
 
@@ -109,26 +103,24 @@
         <Border DockPanel.Dock="Top" Margin="6,4,6,6" Padding="4" BorderThickness="0,0,0,1" BorderBrush="#40808080">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
-                    <Button Content="Open" Click="OnOpenClicked" />
-                    <Button Content="Save" Click="OnSaveClicked" />
-                    <Button Content="New" Click="OnCreateBlankClicked" />
+                    <Button Content="Open" Click="OnOpen" />
+                    <Button Content="Save" Click="OnSave" />
+                    <Button Content="New" Click="OnNewBlank" />
                     <Separator />
-                    <Button Content="Import" Click="OnImportClicked" />
-                    <Button Content="Export" Click="OnExportClicked" />
+                    <Button Content="Import" Click="OnImport" />
+                    <Button Content="Export" Click="OnExport" />
                     <Separator />
-                    <Button Content="BAM" Click="OnBamEditorClicked" />
-                    <Button Content="Config" Click="OnConfigClicked" />
+                    <Button Content="BAM" Click="OnBam" />
+                    <Button Content="Config" Click="OnConfig" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
-                    <ComboBox Name="PrimaryColorCombo" SelectedIndex="0" Width="90"
-                              SelectionChanged="OnColorChanged">
+                    <ComboBox Name="PrimaryColorCombo" SelectedIndex="0" Width="90" SelectionChanged="OnColorChanged">
                         <ComboBoxItem Content="Blue" />
                         <ComboBoxItem Content="Green" />
                         <ComboBoxItem Content="Red" />
                         <ComboBoxItem Content="Purple" />
                     </ComboBox>
-                    <ComboBox Name="SecondaryColorCombo" SelectedIndex="0" Width="90"
-                              SelectionChanged="OnColorChanged">
+                    <ComboBox Name="SecondaryColorCombo" SelectedIndex="0" Width="90" SelectionChanged="OnColorChanged">
                         <ComboBoxItem Content="Lt Blue" />
                         <ComboBoxItem Content="Lt Green" />
                         <ComboBoxItem Content="Lt Red" />
@@ -138,53 +130,8 @@
             </Grid>
         </Border>
 
-        <!-- Disk name/ID and address display-mode toggle -->
-        <Grid DockPanel.Dock="Top" ColumnDefinitions="140,10,60,*,Auto" Margin="8,8,8,10">
-            <StackPanel Grid.Column="0" Orientation="Vertical">
-                <TextBlock Text="Disk Name" FontSize="11" Opacity="0.7" />
-                <TextBox Name="DiskNameBox" IsReadOnly="True" Text="" FontSize="11"
-                         FontFamily="{x:Static local:Fonts.Petscii}" />
-            </StackPanel>
-
-            <StackPanel Grid.Column="2" Orientation="Vertical">
-                <TextBlock Text="ID" FontSize="11" Opacity="0.7" />
-                <TextBox Name="DiskIdBox" IsReadOnly="True" Text="" FontSize="11"
-                         FontFamily="{x:Static local:Fonts.Petscii}" />
-            </StackPanel>
-
-            <StackPanel Grid.Column="4" Orientation="Vertical" VerticalAlignment="Bottom">
-                <TextBlock Text="Addresses" FontSize="11" Opacity="0.7" />
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <RadioButton Name="DecimalAddressRadio" GroupName="AddressBase" Content="Decimal" IsChecked="True"
-                                 IsCheckedChanged="OnAddressBaseChanged" />
-                    <RadioButton Name="HexAddressRadio" GroupName="AddressBase" Content="Hex"
-                                 IsCheckedChanged="OnAddressBaseChanged" />
-                </StackPanel>
-            </StackPanel>
-        </Grid>
-
-        <!-- Bottom status bar: mirrors frmMain's lblFileCount / lblBlocksFree; "N files" à la DirMaster -->
-        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="20" Margin="8,6,8,6">
-            <TextBlock Name="FileCountLabel" Text="No disk loaded" />
-            <TextBlock Name="BlocksFreeLabel" />
-            <TextBlock Name="DiskTypeLabel" Opacity="0.7" />
-        </StackPanel>
-
-        <!-- Directory listing rendered like a C64 screen: PETSCII monospace on the
-             standard C64 blue, one raw directory line per file (block count, quoted
-             PETSCII name, file type). Selection/DoubleTapped behavior preserved. -->
-        <Border Name="DirectoryCanvas" Margin="8,0,8,8" Background="#0000AA" Padding="6">
-            <ListBox Name="DirectoryList" Background="Transparent" FontFamily="{x:Static local:Fonts.Petscii}"
-                     FontSize="14" Foreground="#7797F5" SelectionMode="Multiple" DoubleTapped="OnDirectoryDoubleTapped">
-                <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="local:DirectoryRow">
-                        <TextBlock Text="{Binding C64Line}"
-                                   FontFamily="{x:Static local:Fonts.Petscii}"
-                                   FontSize="14" />
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </Border>
+        <!-- Tabbed document workspace (single-window MDI) -->
+        <TabControl Name="DocTabs" Margin="6" />
 
     </DockPanel>
 </Window>
