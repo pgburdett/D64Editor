@@ -15,7 +15,12 @@ build in `D64Editor.App`).
 ## Emulator / OpenCBM (from inside the app)
 
 - **Run → Configure Emulators…** sets a command template; **Run in Emulator…**
-  substitutes `{disk}` with the open image and launches it (default `x64sc -autostart "{disk}"`).
+  launches it. `{disk}` = autostart target, `{image}` = disk path for mounting.
+  By default it mounts drive 8 and autostarts (e.g. `x64sc -8 "{image}" -autostart "{disk}"`;
+  `-8 <image>` is injected when needed). No selection → autostart the disk/`*`
+  (first file); one selected file → autostart `disk:NAME` (normalized); a
+  **$0801 BASIC** program adds `-autostartprgmode 1` (LOAD ,8,1 style) when
+  absent. Paths are shell-quoted safely.
 - **CBM → OpenCBM Transfer…** detects `cbmcopy`/`cbmctrl` on `PATH` (say "not
   found" otherwise) and runs your command with `{device}/{disk}/{out}` substituted.
   These need the emulator or OpenCBM installed and a real drive to do anything.

@@ -76,16 +76,15 @@ original, despite the file name — kept that caption here too): a 16x16 hex
 grid plus a toggleable ASCII column, click a byte (or arrow-key/Tab through
 them) and type its new hex value, Wipe Block, Save Changes to Block,
 Previous/Next block navigation (◄ ►, matching the original's arrow buttons),
-C128 auto-boot sector detection. No CBM64 font is available in this
-environment, so the ASCII column shows printable ASCII (or ".") rather than
-true PETSCII glyphs — same limitation as the original's own "ASCII" display
-mode, just without the "PETASCII" mode's custom bitmap font as an alternative.
+C128 auto-boot sector detection. The ASCII column renders with the C64 PETSCII
+font/glyph mapping and follows the centralized **View → PETSCII Lower/Upper
+Case** charset toggle.
 
 `SeqViewerWindow` ports `frmFileViewer` ("SEQ File Viewer"): shows a SEQ
-file's text content, with 40/80 Column (window width only, matching the
-original) and ASCII/PETASCII toggles. PETASCII mode here is Latin-1 raw
-bytes rather than true C64 glyphs, for the same font-availability reason as
-the Block Editor's ASCII column. Printing isn't ported.
+file's text content, with 40/80 Column and ASCII/PETSCII toggles. PETSCII mode
+is ROM-bitmap rendered (C64 character ROM / quote-control handling) and follows
+the centralized charset toggle; ASCII mode shows converted text. "Save to Text"
+exports the appropriate form. Printing isn't ported.
 
 `SectorDumpWindow` ports `frmSectorDump`: pick a track/sector, dump that
 block's 256 raw bytes to a file. The original's Hex/Decimal display toggle
@@ -141,22 +140,26 @@ folder now instead of the original's hard-coded Windows install directory.
 Together these show the pattern (event handler → calls into `D64Image` →
 updates controls) that all fourteen forms follow.
 
-## Using a real PETSCII/CBM64 font
+## PETSCII display (font and ROM rendering)
 
-The Block Editor's ASCII column and the SEQ Viewer's PETASCII mode fall back
-to plain ASCII/Latin-1 without a real C64 font. The Filename Builder's
-character grid falls back to decimal byte codes instead, since a Latin-1
-guess at 256 arbitrary values would mostly be wrong rather than
-approximately right. To wire a real font in:
+The app ships with **C64 Pro Mono** (style64.org C64 TrueType, bundled in
+`D64Editor.App/Assets/Fonts/`, wired in `Fonts.cs`) and a bundled VICE C64
+character ROM (`Assets/chargen.bin`) for exact ROM-bitmap rendering.
 
-1. Drop the font file into `D64Editor.App/Assets/Fonts/` (any name, `.ttf` or `.otf`).
-2. Open `D64Editor.App/Fonts.cs` and update `FileName` and `FamilyName` to match
-   (FamilyName has to be the font's actual internal family name, not just the
-   filename — a font viewer or `fc-scan yourfont.ttf | grep family` will show it).
-3. Flip `PetsciiFontAvailable` to `true`.
+- **ROM-bitmap rendering** (`PetsciiScreen`/`PetsciiView`, Pepto palette): used
+  for the directory (per-row, with selection preserved), SEQ (PETSCII mode), and
+  BASIC listings, with correct C64 graphics/control/quote-mode behavior.
+- **Font/PUA rendering:** hex/other PETSCII text uses the C64 font with
+  screen-code→PUA glyph mapping (`Petscii.cs`) so the charset is accurate.
+- **Central charset:** **View → PETSCII Lower/Upper Case** toggles
+  Upper/Graphics (set 1) ↔ Lower/Upper (set 2), persisted and applied across
+  PETSCII-displaying views.
 
-Once that's done, both windows switch to using the font directly instead of
-their ASCII/Latin-1 approximations.
+To use a different PETSCII font, drop it in `Assets/Fonts/`, update `FileName`
+and `FamilyName` in `Fonts.cs` (the internal family name, e.g. `fc-scan <font> |
+grep family`), and ensure `PetsciiFontAvailable` is set. `chargen.bin` is the
+4×1K screen-code-indexed ROM image (set1/set2, normal+reverse) used by the
+bitmap renderer.
 
 ## Drag-and-drop and container import
 
