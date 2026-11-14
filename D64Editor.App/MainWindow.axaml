@@ -61,7 +61,8 @@
                 <MenuItem Header="Options..." Click="OnConfig" />
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="Toggle _Case" Click="OnToggleCase" />
+                <MenuItem Name="LowerUpperMenuItem" Header="PETSCII Lower/Upper Case" Click="OnTogglePetsciiCase" />
+                <MenuItem Header="Toggle Name _Case" Click="OnToggleCase" />
                 <MenuItem Header="Font _Size..." Click="OnFontSize" />
                 <MenuItem Header="Refresh" Click="OnRefresh" />
                 <Separator />

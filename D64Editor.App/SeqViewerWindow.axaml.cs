@@ -1,18 +1,10 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using D64Editor.Core;
 
 namespace D64Editor.App;
 
-/// <summary>
-///     Ported from frmFileViewer.frm (the window chrome) and ViewSeqFile in
-///     frmMain.frm (the actual chain-walk + PETSCII-to-text conversion). Print
-///     (mnuPrint_Click) isn't ported — no obvious modern equivalent worth adding
-///     for a retro disk editor. 40/80 Column only changes window width here,
-///     same as the original; it doesn't reflow the text differently.
-/// </summary>
 public partial class SeqViewerWindow : Window
 {
     private readonly D64FileEntry _entry;
@@ -34,31 +26,40 @@ public partial class SeqViewerWindow : Window
 
         AsciiRadio.IsChecked = AppSettings.ConvertToAsciiDefault;
         PetasciiRadio.IsChecked = !AppSettings.ConvertToAsciiDefault;
+        PetsciiDisplay.Changed += Refresh;
         Refresh();
     }
 
-    /// <summary>Ported from opt40_Click/opt80_Click: just resizes the window.</summary>
     private void OnColumnsChanged(object? sender, RoutedEventArgs e)
     {
-        Width = Col80Radio.IsChecked == true ? 720 : 420;
+        Width = Col80Radio.IsChecked == true ? 860 : 520;
+        if (PetsciiContent is not null)
+            PetsciiContent.Columns = Col80Radio.IsChecked == true ? 80 : 40;
     }
 
-    /// <summary>Ported from OptASCII_Click/OptPETASCII_Click + reloadSEQfile.</summary>
-    private void OnCharModeChanged(object? sender, RoutedEventArgs e)
-    {
-        Refresh();
-    }
+    private void OnCharModeChanged(object? sender, RoutedEventArgs e) => Refresh();
 
     private void Refresh()
     {
+        if (PetsciiContent is null || AsciiBox is null) return;
         var asciiMode = AsciiRadio.IsChecked == true;
-        ContentBox.Text = PetsciiConverter.ToText(_rawBytes, asciiMode);
-        ContentBox.FontFamily = !asciiMode && Fonts.PetsciiFontAvailable
-            ? Fonts.Petscii
-            : FontFamily.Parse("monospace");
+        if (asciiMode)
+        {
+            PetsciiContent.IsVisible = false;
+            AsciiBox.IsVisible = true;
+            AsciiBox.Text = PetsciiConverter.ToText(_rawBytes, asciiMode: true);
+        }
+        else
+        {
+            AsciiBox.IsVisible = false;
+            PetsciiContent.IsVisible = true;
+            PetsciiContent.Columns = Col80Radio?.IsChecked == true ? 80 : 40;
+            PetsciiContent.Lower = PetsciiDisplay.LowerCase;
+            PetsciiContent.Quotes = false;
+            PetsciiContent.Data = _rawBytes;
+        }
     }
 
-    /// <summary>Ported from mnuSaveToText_Click.</summary>
     private async void OnSaveToTextClicked(object? sender, RoutedEventArgs e)
     {
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
@@ -74,6 +75,10 @@ public partial class SeqViewerWindow : Window
         var path = file?.TryGetLocalPath();
         if (path is null) return;
 
-        await File.WriteAllTextAsync(path, ContentBox.Text ?? "");
+        var asciiMode = AsciiRadio.IsChecked == true;
+        var text = asciiMode
+            ? (AsciiBox.Text ?? "")
+            : Petscii.ToText(_rawBytes, lower: PetsciiDisplay.LowerCase, Petscii.Ctl.Tags);
+        await File.WriteAllTextAsync(path, text);
     }
 }

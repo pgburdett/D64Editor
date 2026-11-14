@@ -18,8 +18,28 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        PetsciiDisplay.LowerCase = AppSettings.PetsciiLowerCase;
+        UpdatePetsciiMenu();
+        PetsciiDisplay.Changed += OnPetsciiDisplayChanged;
         NewTab(); // start with one empty document so the UI is never empty
     }
+
+    private void OnPetsciiDisplayChanged()
+    {
+        AppSettings.PetsciiLowerCase = PetsciiDisplay.LowerCase;
+        UpdatePetsciiMenu();
+    }
+
+    private void UpdatePetsciiMenu()
+    {
+        if (LowerUpperMenuItem is not null)
+            LowerUpperMenuItem.Header = PetsciiDisplay.LowerCase
+                ? "PETSCII Lower/Upper Case (on)"
+                : "PETSCII Lower/Upper Case (off)";
+    }
+
+    private void OnTogglePetsciiCase(object? s, RoutedEventArgs e) =>
+        PetsciiDisplay.LowerCase = !PetsciiDisplay.LowerCase;
 
     /// <summary>Opens a disk image in a tab (used by App startup / container partitions).</summary>
     public void OpenDiskFile(string path)

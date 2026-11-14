@@ -9,7 +9,7 @@ namespace D64Editor.App;
 public sealed class ExtendedEntryRow
 {
     public required CbmDirEntry Entry { get; init; }
-    public string Summary => $"{Entry.SizeInBlocks,5} \"{Entry.FileName}\" {Entry.TypeDisplay}";
+    public string Summary => PetsciiDisplay.ToPuaString($"{Entry.SizeInBlocks,5} \"{Entry.FileName}\" {Entry.TypeDisplay}");
 }
 
 /// <summary>Read-only + entry-editing directory viewer for D71/D81/D80/D82/DNP (C64-screen styled).</summary>
@@ -21,6 +21,7 @@ public partial class ExtendedImageWindow : Window
     public ExtendedImageWindow()
     {
         InitializeComponent();
+        PetsciiDisplay.Changed += RefreshDisplay;
     }
 
     public ExtendedImageWindow(CbmImageInfo info) : this()
@@ -28,6 +29,11 @@ public partial class ExtendedImageWindow : Window
         _info = info;
         _reload = () => CbmCatalog.Open(info.Path);
         Bind(info);
+    }
+
+    private void RefreshDisplay()
+    {
+        if (_info is not null) Bind(_info);
     }
 
     private void Bind(CbmImageInfo info)

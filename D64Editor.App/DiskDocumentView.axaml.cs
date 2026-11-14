@@ -35,6 +35,17 @@ public partial class DiskDocumentView : UserControl
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        PetsciiDisplay.Changed += OnPetsciiDisplayChanged;
+    }
+
+    private void OnPetsciiDisplayChanged()
+    {
+        if (_image is not null) PopulateFrom(_image);
+        else
+        {
+            DiskNameBox.Text = PetsciiDisplay.ToPuaString(DiskNameBox.Text);
+            DiskIdBox.Text = PetsciiDisplay.ToPuaString(DiskIdBox.Text);
+        }
     }
 
     public D64Image? Image => _image;
@@ -605,11 +616,77 @@ public partial class DiskDocumentView : UserControl
     public void RunInEmulator()
     {
         if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
-        var cmd = AppSettings.EmulatorCommand.Replace("{disk}", Path.GetFullPath(_image.SourcePath));
+
+        var diskPath = Path.GetFullPath(_image.SourcePath);
+        var selected = SelectedEntries();
+
+        // No file selected -> autostart the disk (VICE: LOAD"*",8,1 / run first).
+        // One file selected -> autostart that file ("image:NAME"). If it loads at $0801
+        // (BASIC), request LOAD ,8,1-style behavior via -autostartprgmode 1 when available.
+        string target = diskPath;
+        string note = "disk (*, first file)";
+        if (selected.Count == 1)
+        {
+            var entry = selected[0];
+            // Use a normalized ASCII/PETSCII filename for the emulator's :name selector.
+            var emuName = DirectoryFormatter.PetsciiToAscii(entry.FileName);
+            if (string.IsNullOrWhiteSpace(emuName)) emuName = entry.FileName;
+            target = diskPath + ":" + emuName;
+            note = $"\"{emuName}\"";
+            try
+            {
+                var data = _image.ExportFile(entry);
+                if (data.Length >= 2)
+                {
+                    var loadAddr = data[0] | (data[1] << 8);
+                    if (loadAddr == 0x0801)
+                        note += " (BASIC @ $0801, LOAD ,8,1)";
+                }
+            }
+            catch { /* best-effort */ }
+        }
+
+        var quotedTarget = "'" + target.Replace("'", "'\\''") + "'";
+        var quotedImage = "'" + diskPath.Replace("'", "'\\''") + "'";
+        var template = AppSettings.EmulatorCommand ?? string.Empty;
+
+        // {image} = plain disk path (for mounting, e.g. -8 {image}); {disk} = autostart target
+        // (disk, or disk:name when a file is selected). Back-compat: {disk} alone still works.
+        var cmd = template;
+        var hasImagePlaceholder = template.Contains("{image}", StringComparison.Ordinal)
+                                  || template.Contains("{img}", StringComparison.Ordinal);
+        cmd = cmd.Replace("\"{image}\"", quotedImage).Replace("'{image}'", quotedImage).Replace("{image}", quotedImage);
+        cmd = cmd.Replace("\"{img}\"", quotedImage).Replace("'{img}'", quotedImage).Replace("{img}", quotedImage);
+        cmd = cmd.Replace("\"{disk}\"", quotedTarget).Replace("'{disk}'", quotedTarget).Replace("{disk}", quotedTarget);
+
+        // Ensure the disk is mounted on drive 8 for VICE-style emulators when the template
+        // doesn't handle it explicitly (helps "run *" / selected-file autostart find the disk).
+        if (!hasImagePlaceholder && !cmd.Contains("-8 ", StringComparison.Ordinal) && !cmd.Contains("-drive8", StringComparison.Ordinal))
+            cmd = cmd.Replace("-autostart", $"-8 {quotedImage} -autostart", StringComparison.Ordinal);
+
+        // For a selected BASIC program ($0801), prefer LOAD ,8,1-style autostart in VICE.
+        if (selected.Count == 1)
+        {
+            try
+            {
+                var data = _image.ExportFile(selected[0]);
+                var loadAddr = data.Length >= 2 ? (data[0] | (data[1] << 8)) : -1;
+                if (loadAddr == 0x0801 && !cmd.Contains("-autostartprgmode", StringComparison.Ordinal))
+                    cmd += " -autostartprgmode 1";
+            }
+            catch { }
+        }
+
         try
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("bash", $"-c \"{cmd}\"") { UseShellExecute = false });
-            FileCountLabel.Text = $"Launched: {cmd}";
+            var psi = new System.Diagnostics.ProcessStartInfo("sh")
+            {
+                UseShellExecute = false
+            };
+            psi.ArgumentList.Add("-c");
+            psi.ArgumentList.Add(cmd);
+            System.Diagnostics.Process.Start(psi);
+            FileCountLabel.Text = $"Launched emulator: {note}";
         }
         catch (Exception ex) { FileCountLabel.Text = $"Could not launch emulator ({ex.Message}) — set the command in Run > Configure Emulators."; }
     }
@@ -709,8 +786,8 @@ public partial class DiskDocumentView : UserControl
 
     private void PopulateFrom(D64Image image)
     {
-        DiskNameBox.Text = image.DiskName;
-        DiskIdBox.Text = image.DiskId;
+        DiskNameBox.Text = PetsciiDisplay.ToPuaString(image.DiskName);
+        DiskIdBox.Text = PetsciiDisplay.ToPuaString(image.DiskId);
         BlocksFreeLabel.Text = $"{image.BlocksFree} BLOCKS FREE.";
         DiskTypeLabel.Text = image.HasErrorInfo
             ? $"{image.TrackCount} TRACK D64 FILE + ERROR INFO"

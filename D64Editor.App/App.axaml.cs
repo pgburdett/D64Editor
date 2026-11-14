@@ -23,6 +23,7 @@ public class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         AppSettings.Load();
+        TryLoadChargen();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var main = new MainWindow();
@@ -34,5 +35,18 @@ public class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void TryLoadChargen()
+    {
+        try
+        {
+            using var s = Avalonia.Platform.AssetLoader.Open(new Uri("avares://D64Editor.App/Assets/chargen.bin"));
+            PetsciiBitmap.LoadChargen(s);
+        }
+        catch
+        {
+            // Chargen not available — ROM-bitmap views fall back gracefully.
+        }
     }
 }

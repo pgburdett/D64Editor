@@ -1,32 +1,30 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:D64Editor.App"
         x:Class="D64Editor.App.HexViewerWindow"
         Title="Hex Viewer"
-        Width="680" Height="500">
-
+        Width="760" Height="520">
     <DockPanel Margin="10">
         <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="16" Margin="0,0,0,8">
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="Address:" VerticalAlignment="Center" />
-                <RadioButton Name="HexAddressRadio" GroupName="Addr" Content="Hex" IsChecked="True"
-                             IsCheckedChanged="OnAddressBaseChanged" />
-                <RadioButton Name="DecimalAddressRadio" GroupName="Addr" Content="Decimal"
-                             IsCheckedChanged="OnAddressBaseChanged" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="Chars:" VerticalAlignment="Center" />
-                <RadioButton Name="PetsciiRadio" GroupName="Chars" Content="PETSCII" IsChecked="True"
-                             IsCheckedChanged="OnCharsChanged" />
-                <RadioButton Name="AsciiRadio" GroupName="Chars" Content="ASCII"
-                             IsCheckedChanged="OnCharsChanged" />
-            </StackPanel>
+            <TextBlock Text="Chars:" VerticalAlignment="Center" />
+            <RadioButton Name="PetsciiRadio" GroupName="Chars" Content="PETSCII" IsChecked="True"
+                         IsCheckedChanged="OnCharsChanged" />
+            <RadioButton Name="AsciiRadio" GroupName="Chars" Content="ASCII"
+                         IsCheckedChanged="OnCharsChanged" />
+            <TextBlock Text="(charset: View → PETSCII Lower/Upper Case)" Opacity="0.7" VerticalAlignment="Center" />
         </StackPanel>
 
-        <ListBox Name="HexRows" Background="Transparent" FontFamily="monospace" FontSize="13"
+        <ListBox Name="HexRows" Background="Transparent" FontSize="14"
                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
                  ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListBox.Styles>
+                <Style Selector="ListBoxItem">
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="MinHeight" Value="0"/>
+                </Style>
+            </ListBox.Styles>
             <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="x:String">
                     <TextBlock Text="{Binding}" TextWrapping="NoWrap" />

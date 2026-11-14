@@ -14,9 +14,12 @@ public sealed class DiskSearchResultRow
 /// <summary>DirMaster-style cross-image filename search over a folder of disk images.</summary>
 public partial class FindInDisksWindow : Window
 {
+    private List<string> _rawResults = new();
+
     public FindInDisksWindow()
     {
         InitializeComponent();
+        PetsciiDisplay.Changed += ApplyResults;
     }
 
     public FindInDisksWindow(string folder) : this()
@@ -49,24 +52,25 @@ public partial class FindInDisksWindow : Window
         if (SearchContentsBox.IsChecked == true)
         {
             var hits = DiskContentSearcher.Search(folder, needle, caseSensitive);
-            ResultsList.ItemsSource = hits
-                .Select(h => new DiskSearchResultRow
-                {
-                    Summary = $"\"{h.FileName}\" contains text @ offset 0x{h.Offset:X}  in  {Path.GetFileName(h.ImagePath)}"
-                })
+            _rawResults = hits
+                .Select(h => $"\"{h.FileName}\" contains text @ offset 0x{h.Offset:X}  in  {Path.GetFileName(h.ImagePath)}")
                 .ToList();
             StatusLabel.Text = $"{hits.Count} content match(es) in {folder}";
+            ApplyResults();
             return;
         }
 
         var nameHits = DiskSearcher.Search(folder, needle, caseSensitive);
-        ResultsList.ItemsSource = nameHits
-            .Select(h => new DiskSearchResultRow
-            {
-                Summary = $"{h.FileName,-18} [{h.Type}]  in  {Path.GetFileName(h.ImagePath)}"
-            })
+        _rawResults = nameHits
+            .Select(h => $"{h.FileName,-18} [{h.Type}]  in  {Path.GetFileName(h.ImagePath)}")
             .ToList();
 
         StatusLabel.Text = $"{nameHits.Count} name match(es) in {folder}";
+        ApplyResults();
     }
+
+    private void ApplyResults() =>
+        ResultsList.ItemsSource = _rawResults
+            .Select(s => new DiskSearchResultRow { Summary = PetsciiDisplay.ToPuaString(s) })
+            .ToList();
 }

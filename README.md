@@ -253,21 +253,31 @@ helpers.
 
 - Menu modeled on DirMaster (`Disk, File, Edit, View, Window, Help`) + toolbar
   with C64 color selectors (Blue / Lt Blue) that recolor the directory.
-- C64-screen directory: PETSCII monospace on the C64 blue, raw
-  `BLOCKS "NAME" TYPE` lines; toggle case; font-size cycling; Show DEL files;
-  save-as; multi-disk windows with a Window menu; unsaved-changes prompt.
+- C64-screen directory: ROM-bitmap rendered (VICE C64 character ROM via
+  `PetsciiScreen`/`PetsciiView`, Pepto palette) with per-row selection preserved;
+  PETSCII monospace font fallback also wired. Toggle name case, font-size cycling,
+  Show DEL files, save-as, multi-disk/tabbed workspace, unsaved-changes prompt.
+- Centralized **View → PETSCII Lower/Upper Case** toggle (Upper/Graphics set 1 vs
+  Lower/Upper set 2), persisted and applied across PETSCII-displaying views
+  (directory, hex, SEQ, BASIC, disassembly, block/sector ASCII, T64/extended/Find).
 - Viewers: Hex, BASIC (C64 BASIC V2 de-tokenizer), Disassembly (6502), plus the
   picture decoder (Koala Painter/Art Studio hi-res), charset (256-glyph grid),
   sprite (hires + multicolor), and REL (fixed-length record) viewers.
+  - **Hex viewer:** fixed-column dump per row — `AAAA <16 two-digit bytes> <PETSCII>`
+    (4-hex memory address, space, 16 bytes, space, PETSCII chars), base from the
+    file’s 2-byte load address (low,high) when present, C64/ROM glyph rendering,
+    PETSCII/ASCII char toggle, and it follows the global charset.
+  - **SEQ/BASIC:** ROM-bitmap PETSCII rendering (SEQ respects quote/control mode;
+    BASIC listing rendered in quote mode).
 - Tools: Find in Disks (name **and** file-contents search), Compare Disks
   (header/directory/BAM diff + differing-block list), Batch export of a folder's
   files and Batch Validate (report-only).
-- Window management: the Window menu lists open disks and offers Cascade / Tile
-  Vertically / Tile Horizontally / Close All over the multi-disk windows.
+- Window management: the Window menu lists open documents/tabs (tabbed MDI shell).
 - CLI: `--help`, `--list <image>` (print a directory), `--convert <g64/nib> <d64>`
   (headless G64/NIB→D64), and passing an image path opens it in the GUI.
-- PETSCII font wired to **C64 Pro Mono** from
-  [style64.org C64 TrueType](https://style64.org/c64-truetype) (`Fonts.cs`).
+- PETSCII: **C64 Pro Mono** (style64.org C64 TrueType, `Fonts.cs`) + PUA/screen-code
+  mapping (`Petscii.cs`) and a bundled VICE `chargen.bin` for exact ROM-bitmap
+  rendering. Central charset toggle (upper/graphics ↔ lower/upper).
 
 All new format readers were verified by generating synthetic images of each
 format (with a matching GCR encoder for G64/NIB) and byte-comparing the parsed
@@ -289,8 +299,12 @@ results — see the per-phase notes in `D64Editor.App/DirMasterPhases.md`.
 
 ## OS integration (packaging/)
 
-- Emulator: `Run > Configure Emulators…` (command template with `{disk}`), then
-  `Run in Emulator…`. Default `x64sc -autostart "{disk}"`.
+- Emulator: `Run > Configure Emulators…` (command template), then `Run in Emulator…`.
+  `{disk}` = autostart target, `{image}` = disk path for mounting. Default mounts
+  drive 8 and autostarts (`x64sc -8 "{image}" -autostart "{disk}"` behavior; auto-
+  injects `-8 <image>` when needed). No selection → autostart disk/`*` (first file);
+  one selected file → autostart `disk:NAME` (normalized); **$0801 BASIC** adds
+  `-autostartprgmode 1` (LOAD ,8,1 style) when absent. Paths are shell-quoted safely.
 - OpenCBM: `CBM > OpenCBM Transfer…` detects `cbmcopy`/`cbmctrl` on `PATH` and
   runs a command with `{device}/{disk}/{out}` substituted.
 - File associations: `packaging/install-associations.sh <exe>` (Linux `.desktop` +

@@ -49,16 +49,16 @@
 - [ ] Undo/Redo stack
 
 ## Phase 4 — Viewers
-- [x] Hex viewer (read-only dump)
-- [x] BASIC viewer (C64 BASIC V2 de-tokenizer)
+- [x] Hex viewer (read-only dump) — fixed-column `ADDR <16 bytes> <PETSCII>` rows, load-address base (lo,hi) when present, C64/ROM glyph char column, PETSCII/ASCII toggle
+- [x] BASIC viewer (C64 BASIC V2 de-tokenizer) — ROM-bitmap rendered (quote mode)
 - [x] Disassembly viewer (6502/6510)
-- [x] SEQ file viewer (ported from the original)
+- [x] SEQ file viewer (ported from the original) — ROM-bitmap PETSCII mode (control/quote handling) + ASCII text mode
 - [x] REL file viewer (side-sector chain walk → fixed-length records; verified record segmentation)
 - [x] Picture viewer: Koala Painter + Art Studio hi-res (C64 palette pixel decode; decoder verified on a synthetic Koala)
 - [x] Charset viewer (256-glyph grid) + Sprite viewer (hires + multicolor; both verified on synthetic data)
-- [ ] SEQ file viewer (already partial — enhance)
-- [ ] REL file viewer
-- [ ] Graphics viewer (charset/sprite/bitmap)
+- [x] ROM-bitmap PETSCII renderer: VICE `chargen.bin` + `PetsciiScreen`/`PetsciiView` (Pepto palette); directory rows and SEQ/BASIC viewers rendered via it
+- [x] Centralized View → PETSCII Lower/Upper Case (upper/graphics ↔ lower/upper), persisted and wired across PETSCII-displaying views
+- [ ] Graphics viewer (charset/sprite/bitmap) — enhance
 - [ ] GEOS file viewer
 
 ## Phase 5 — BAM / Sector / Block Editors
@@ -85,7 +85,7 @@
 - [ ] Command-line options / scripting
 
 ## Phase 8 — Platform Integration
-- [x] Emulator launch: Run > Run in Emulator (command template + {disk}); Run > Configure Emulators
+- [x] Emulator launch: Run > Run in Emulator (command template {disk}/{image}); Run > Configure Emulators; mounts drive 8, autostarts disk (*) or selected file (disk:NAME), $0801 BASIC → -autostartprgmode 1 (LOAD ,8,1); safe shell quoting
 - [x] OpenCBM transfer: CBM > OpenCBM Transfer (detects cbmcopy/cbmctrl on PATH; {device}/{disk}/{out} template)
 - [x] File associations: packaging/ (Linux .desktop + MIME install script; Windows .reg)
 - [x] "Check for Updates" reads a version-feed URL (configurable)

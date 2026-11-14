@@ -2,15 +2,17 @@ using System.Globalization;
 using System.Text;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using D64Editor.Core;
 
 namespace D64Editor.App;
 
 /// <summary>
-///     DirMaster View > Hex Viewer: a fixed-column hex dump (16 bytes/row) with a left-hand
-///     memory-address column (hex or decimal), a consistent-width hex area so the address never
-///     shifts with the number of values or the trailing character column, and a readable
-///     PETSCII/ASCII character column. If the file begins with a plausible load address, that's
-///     used as the address base and the two address bytes are skipped.
+///     Hex viewer: one row per 16 bytes —
+///       &lt;4-hex memory address&gt; &lt;space&gt; &lt;16 two-digit hex bytes&gt; &lt;space&gt; &lt;PETSCII for those bytes&gt;
+///     If the file begins with a 2-byte load address (low, high — typical PRG/USR/REL), that
+///     address is the base of the left column and the two load-address bytes are skipped.
+///     The PETSCII column renders through C64 Pro Mono's PUA glyphs so the character ROM
+///     shapes/graphics show correctly.
 /// </summary>
 public partial class HexViewerWindow : Window
 {
@@ -21,95 +23,89 @@ public partial class HexViewerWindow : Window
     public HexViewerWindow()
     {
         InitializeComponent();
+        HexRows.FontFamily = Fonts.Petscii;
+        PetsciiDisplay.Changed += Render;
     }
 
     public HexViewerWindow(string fileName, byte[] bytes) : this()
     {
         Title = $"Hex Viewer — {fileName}";
 
-        // Treat a leading 2-byte load address as the memory base (typical for PRG/USR/REL).
         _base = 0;
         _dataStart = 0;
-        if (bytes.Length >= 2 && (bytes[1] != 0x00 || bytes[0] != 0x00))
+        if (bytes.Length >= 4)
         {
-            var baseAddr = bytes[0] | (bytes[1] << 8);
-            if (baseAddr is >= 0x0001 and <= 0xFFFF && bytes.Length > 2)
+            var load = bytes[0] | (bytes[1] << 8);
+            if (load is >= 0x0001 and <= 0xFFFF)
             {
-                _base = baseAddr;
+                _base = load;
                 _dataStart = 2;
             }
         }
         _bytes = bytes;
 
-        var shown = bytes.Length - _dataStart;
-        var baseNote = _dataStart == 2 ? $"  load ${_base:X4}" : "";
+        var shown = Math.Max(0, bytes.Length - _dataStart);
+        var baseNote = _dataStart == 2 ? $", load ${_base:X4}" : "";
         TitleLabel.Text = $"{fileName} — {shown} byte(s){baseNote}";
-
         Render();
     }
-
-    private bool HexAddr => HexAddressRadio.IsChecked == true;
-    private bool PetsciiChars => PetsciiRadio.IsChecked == true;
 
     private void OnAddressBaseChanged(object? sender, RoutedEventArgs e) => Render();
     private void OnCharsChanged(object? sender, RoutedEventArgs e) => Render();
 
     private void Render()
     {
-        var sb = new StringBuilder();
-
-        // Header: fixed-width address column (so it never shifts), 16 hex slots, then chars.
-        sb.Append(HexAddr ? "ADDR  " : "ADDR   ");
-        for (var i = 0; i < 16; i++) sb.Append(i.ToString("X2", CultureInfo.InvariantCulture)).Append(' ');
-        sb.Append(' ').Append(PetsciiChars ? "PETASCII" : "ASCII").AppendLine();
-
+        if (_bytes is null) return;
+        var rows = new List<string>();
         var dataLen = _bytes.Length - _dataStart;
-        var addrWidth = HexAddr ? 4 : 5;
+        if (dataLen <= 0)
+        {
+            HexRows.ItemsSource = rows;
+            return;
+        }
 
         for (var row = 0; row * 16 < dataLen; row++)
         {
-            var addr = _base + row * 16;
+            var addr = (_base + row * 16) & 0xFFFF;
+            var sb = new StringBuilder();
 
-            // Fixed-width address column.
-            sb.Append(HexAddr
-                ? addr.ToString("X4", CultureInfo.InvariantCulture)
-                : addr.ToString(CultureInfo.InvariantCulture).PadLeft(addrWidth));
-            if (HexAddr) sb.Append("  "); else sb.Append(' ').Append(' ');
+            // 4-digit hex memory address + space
+            sb.Append(addr.ToString("X4", CultureInfo.InvariantCulture)).Append(' ');
 
-            var chars = new StringBuilder();
+            // 16 two-digit bytes, space-separated (last slot padded on a short final row)
+            var chars = new StringBuilder(16);
             for (var i = 0; i < 16; i++)
             {
                 var idx = _dataStart + row * 16 + i;
                 if (idx < _bytes.Length)
                 {
                     var b = _bytes[idx];
-                    sb.Append(b.ToString("X2", CultureInfo.InvariantCulture)).Append(' ');
-                    chars.Append(ToChar(b));
+                    sb.Append(b.ToString("X2", CultureInfo.InvariantCulture));
+                    chars.Append(PetsciiGlyph(b));
                 }
                 else
                 {
-                    sb.Append("   ");
-                    chars.Append(' ');
+                    sb.Append("  ");
                 }
+                sb.Append(' ');
             }
 
-            sb.Append(' ').Append(chars).AppendLine();
+            // space + PETSCII for those bytes
+            sb.Append(' ').Append(chars);
+            rows.Add(sb.ToString());
         }
 
-        HexRows.ItemsSource = sb.ToString()
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        HexRows.ItemsSource = rows;
     }
 
-    private char ToChar(byte b)
+    private string PetsciiGlyph(byte b)
     {
-        if (PetsciiChars)
-        {
-            // PETSCII printable: space/punct+digits 0x20-0x3F, shifted A-Z 0xC1-0xDA, and
-            // lower/upper ASCII 0x41-0x7A; anything else renders as a placeholder dot.
-            if (b is >= 0x20 and <= 0x7E) return (char)b;
-            if (b is >= 0xC1 and <= 0xDA) return (char)(b - 0xC1 + 'A'); // PETSCII -> A-Z
-            return '.';
-        }
-        return b is >= 0x20 and <= 0x7E ? (char)b : '.';
+        // Use the C64 Pro Mono PUA mapping (screen-code indexed) so the PETSCII
+        // graphics/control-display glyphs render exactly as on a C64.
+        // Charset follows the centralized View → PETSCII Lower/Upper Case setting.
+        // ASCII toggle shows printable fallback.
+        if (AsciiRadio?.IsChecked == true)
+            return b is >= 0x20 and <= 0x7E ? ((char)b).ToString() : ".";
+        return Petscii.Glyph(b, lower: PetsciiDisplay.LowerCase);
     }
 }

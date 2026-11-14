@@ -45,7 +45,14 @@ public partial class BlockViewerWindow : Window
         InitializeComponent();
         BuildGrid();
         BuildAsciiPanel();
+        PetsciiDisplay.Changed += RefreshAscii;
         LoadBlock(startBlock);
+    }
+
+    private void RefreshAscii()
+    {
+        for (var i = 0; i < 256; i++)
+            _asciiCells[i].Text = ToPrintableChar(_buffer[i]);
     }
 
     private void BuildGrid()
@@ -194,7 +201,7 @@ public partial class BlockViewerWindow : Window
     private static string ToPrintableChar(byte b)
     {
         return Fonts.PetsciiFontAvailable
-            ? ((char)b).ToString() // the font's own glyph table handles the mapping
+            ? Petscii.Glyph(b, lower: PetsciiDisplay.LowerCase) // follow centralized charset
             : b is >= 0x20 and <= 0x7E ? ((char)b).ToString() : ".";
     }
 

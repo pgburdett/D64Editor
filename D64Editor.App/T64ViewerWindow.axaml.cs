@@ -8,7 +8,7 @@ namespace D64Editor.App;
 public sealed class T64EntryRow
 {
     public required T64Entry Entry { get; init; }
-    public string Summary => $"{Entry.FileName,-18} ${Entry.StartAddress:X4}-${Entry.EndAddress:X4}  ({Entry.Length} bytes)";
+    public string Summary => PetsciiDisplay.ToPuaString($"{Entry.FileName,-18} ${Entry.StartAddress:X4}-${Entry.EndAddress:X4}  ({Entry.Length} bytes)");
 }
 
 /// <summary>Read-only viewer for a T64 tape archive's contained files.</summary>
@@ -19,6 +19,7 @@ public partial class T64ViewerWindow : Window
     public T64ViewerWindow()
     {
         InitializeComponent();
+        PetsciiDisplay.Changed += RefreshList;
     }
 
     public T64ViewerWindow(T64Image image, string path) : this()
@@ -26,7 +27,16 @@ public partial class T64ViewerWindow : Window
         _image = image;
         Title = $"T64 — {System.IO.Path.GetFileName(path)}";
         TitleLabel.Text = $"{image.Description} — v{image.MajorVersion}.{image.MinorVersion} — {image.Entries.Count} file(s)";
-        EntriesList.ItemsSource = image.Entries.Select(e => new T64EntryRow { Entry = e }).ToList();
+        RefreshList();
+    }
+
+    private void RefreshList()
+    {
+        if (_image is null) return;
+        var sel = SelectedEntry();
+        EntriesList.ItemsSource = _image.Entries.Select(e => new T64EntryRow { Entry = e }).ToList();
+        if (sel is not null)
+            EntriesList.SelectedItem = (EntriesList.ItemsSource as IEnumerable<T64EntryRow>)?.FirstOrDefault(r => ReferenceEquals(r.Entry, sel) || r.Entry.FileName == sel.FileName);
     }
 
     private T64Entry? SelectedEntry() =>

@@ -7,9 +7,9 @@
         WindowStartupLocation="CenterOwner">
 
     <StackPanel Margin="16" Spacing="10">
-        <TextBlock Text="Emulator command (use {disk} for the image path):" />
+        <TextBlock Text="Emulator command ({disk}=autostart target, {image}=disk path for mounting):" />
         <TextBox Name="CommandBox" />
-        <TextBlock Text="Example: x64sc -autostart &quot;{disk}&quot;  ·  ccs64 &quot;{disk}&quot;" FontSize="11" Opacity="0.7" />
+        <TextBlock Text="Example: x64sc -8 &quot;{image}&quot; -autostart &quot;{disk}&quot;  (default mounts drive 8 automatically)" FontSize="11" Opacity="0.7" TextWrapping="Wrap" />
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
             <Button Content="Save" Click="OnSaveClicked" />
             <Button Content="Cancel" Click="OnCancelClicked" />

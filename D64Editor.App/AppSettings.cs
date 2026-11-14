@@ -40,6 +40,8 @@ public static class AppSettings
     public static string OpenCbmTool { get; set; } = "";
     /// <summary>URL for the "Check for Updates" version feed.</summary>
     public static string UpdateFeedUrl { get; set; } = "https://api.github.com/repos/pgburdett/D64Editor/releases/latest";
+    /// <summary>Central PETSCII charset: true = lower/upper (set 2), false = upper/graphics (set 1).</summary>
+    public static bool PetsciiLowerCase { get; set; }
 
     public static void Load()
     {
@@ -67,6 +69,7 @@ public static class AppSettings
                     case "EmulatorCommand": EmulatorCommand = val; break;
                     case "OpenCbmTool": OpenCbmTool = val; break;
                     case "UpdateFeedUrl": UpdateFeedUrl = val; break;
+                    case "PetsciiLowerCase": PetsciiLowerCase = val == "1"; break;
                 }
             }
         }
@@ -96,6 +99,7 @@ public static class AppSettings
                 "EmulatorCommand=" + EmulatorCommand,
                 "OpenCbmTool=" + OpenCbmTool,
                 "UpdateFeedUrl=" + UpdateFeedUrl,
+                "PetsciiLowerCase=" + (PetsciiLowerCase ? "1" : "0"),
             };
             File.WriteAllLines(ConfigPath, lines);
         }

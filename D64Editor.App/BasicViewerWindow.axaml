@@ -3,17 +3,14 @@
         xmlns:local="using:D64Editor.App"
         x:Class="D64Editor.App.BasicViewerWindow"
         Title="BASIC Viewer"
-        Width="640" Height="480">
+        Width="680" Height="520">
 
     <DockPanel Margin="10">
         <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
 
-        <Border Background="#0000AA" Padding="6">
-            <ScrollViewer VerticalScrollBarVisibility="Visible">
-                <TextBox Name="ListingBox" IsReadOnly="True" BorderThickness="0" Background="Transparent"
-                         Foreground="#7C7CF0" FontFamily="{x:Static local:Fonts.Petscii}"
-                         FontSize="14" AcceptsReturn="True" TextWrapping="NoWrap" />
-            </ScrollViewer>
-        </Border>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <local:PetsciiView Name="ListingView" Columns="40" Scale="2"
+                               Quotes="True" Paper="6" Ink="14" Frame="14" />
+        </ScrollViewer>
     </DockPanel>
 </Window>
