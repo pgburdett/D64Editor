@@ -12,7 +12,7 @@ public sealed class BatchItem
 }
 
 /// <summary>
-///     Batch processing over a folder of disk images (DirMaster Tools &gt; Batch).
+///     Batch processing over a folder of disk images (other disk editors Tools &gt; Batch).
 ///     Current operation: export every file from every image into an output folder, named
 ///     "&lt;disk&gt;_&lt;file&gt;.&lt;type&gt;". Unparsable images are recorded as failures,
 ///     never aborting the run.

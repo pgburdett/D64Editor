@@ -112,7 +112,7 @@ public class D64Image : IDiskImage
     IReadOnlyList<D64FileEntry> IDiskImage.Entries => Entries;
     IReadOnlyList<string> IDiskImage.CrossLinkWarnings => CrossLinkWarnings;
 
-    // Dirty-state tracking (DirMaster shows a '*' and prompts on unsaved changes).
+    // Dirty-state tracking (Other disk editors show a '*' and prompts on unsaved changes).
     // Implemented as a checksum of the track-data region captured on Load/Save: any
     // in-memory mutation changes the checksum without touching every mutating method.
     private long _snapshot;

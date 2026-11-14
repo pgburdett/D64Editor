@@ -6,7 +6,7 @@ namespace D64Editor.Core;
 public readonly record struct CatEntry(string Name, int Blocks, byte FileTypeByte,
     bool Scratched, bool Closed, bool Locked);
 
-/// <summary>Formats CBM directories in the classic 1541 LOAD"$" style (à la 64COPY/DirMaster batches).</summary>
+/// <summary>Formats CBM directories in the classic 1541 LOAD"$" style (à la 64COPY and other disk editors).</summary>
 public static class DirectoryFormatter
 {
     /// <summary>Maps PETSCII filename bytes to printable ASCII (C64 uses 0xC1-0xDA for A-Z).</summary>

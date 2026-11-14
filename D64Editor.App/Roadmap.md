@@ -1,4 +1,7 @@
-# DirMaster Parity — Phased Implementation Plan
+# Feature Roadmap — Phased Implementation Plan
+
+Roadmap for adding multi-format support and features comparable to other C64/CBM
+disk editors, implemented incrementally.
 
 ## Phase 1 — Multi-disk Workspace & Save As
 - [x] Implement Save As... (format selection, path dialog)
@@ -12,7 +15,7 @@
 ## Phase 2 — Multi-Format Engine
 - [x] `IDiskImage` abstraction; `D64Image` conforms (explicit Entries/CrossLinkWarnings)
 - [x] Format detection (`DiskFormats.FromExtension` / D64 size checks)
-- [x] Open dialog lists DirMaster extensions; non-D64 formats fail gracefully (no crash)
+- [x] Open dialog lists common disk-image extensions; unsupported formats fail gracefully (no crash)
 - [ ] D71 (1571 dual-sided) read/write
 - [ ] D81 (1581 3.5") read/write
 - [ ] D80/D82 (8050/8250) read/write

@@ -6,7 +6,7 @@ using D64Editor.Core;
 
 namespace D64Editor.App;
 
-/// <summary>DirMaster Tools &gt; Batch — run an operation over a folder of disk images.</summary>
+/// <summary>other disk editors Tools &gt; Batch — run an operation over a folder of disk images.</summary>
 public partial class BatchWindow : Window
 {
     public BatchWindow()

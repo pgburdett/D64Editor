@@ -57,7 +57,7 @@ public partial class ExtendedImageWindow : Window
             new BasicViewerWindow(entry.FileName, _info.Export(entry)).Show(this);
     }
 
-    /// <summary>Exports the selected entry's bytes to a host PRG file (DirMaster Export).</summary>
+    /// <summary>Exports the selected entry's bytes to a host PRG file (Export).</summary>
     private async void OnExportClicked(object? sender, RoutedEventArgs e)
     {
         if (SelectedEntry() is not { } entry || _info is null) return;

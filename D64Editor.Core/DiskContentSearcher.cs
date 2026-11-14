@@ -9,7 +9,7 @@ public sealed class ContentHit
 }
 
 /// <summary>
-///     Searches the *contents* of files across a folder of disk images (DirMaster "find in
+///     Searches the *contents* of files across a folder of disk images ("find in
 ///     disks", content mode) — complements DiskSearcher, which matches entry names. Bytes of
 ///     the needle are matched case-insensitively as ASCII text by default.
 /// </summary>

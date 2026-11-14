@@ -5,7 +5,7 @@ using D64Editor.Core;
 
 namespace D64Editor.App;
 
-/// <summary>DirMaster Tools &gt; Compare — diff two disk images (header/directory/BAM).</summary>
+/// <summary>other disk editors Tools &gt; Compare — diff two disk images (header/directory/BAM).</summary>
 public partial class CompareDisksWindow : Window
 {
     public CompareDisksWindow()

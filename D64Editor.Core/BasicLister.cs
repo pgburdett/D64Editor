@@ -4,7 +4,7 @@ namespace D64Editor.Core;
 
 /// <summary>
 ///     De-tokenizes Commodore BASIC V2 (C64/KERNAL) tokenized program bytes into a
-///     human-readable listing, à la DirMaster's BASIC viewer. Handles the standard
+///     human-readable listing, à la other disk editors' BASIC viewers. Handles the standard
 ///     C64 keyword table (tokens 0x80-0xCB) plus the common multi-byte C128 tokens
 ///     (0xFE/0xFF prefix) as best-effort.
 /// </summary>

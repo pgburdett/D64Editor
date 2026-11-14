@@ -4,7 +4,7 @@ namespace D64Editor.Core;
 
 /// <summary>
 ///     PETSCII (Commodore's 8-bit character set) display conversion — the piece the original
-///     VB6 project did with a custom bitmap font, and the piece DirMaster does with the
+///     VB6 project did with a custom bitmap font, and the approach used by other disk editors with the
 ///     Style64 C64 TrueType font. With <see cref="UsePua"/> on (we bundle
 ///     C64 Pro Mono) every byte maps to the real C64 glyph — including reverse video —
 ///     via the font's private-use ranges, indexed by C64 *screen code*:

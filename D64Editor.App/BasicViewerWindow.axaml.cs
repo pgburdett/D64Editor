@@ -3,7 +3,7 @@ using D64Editor.Core;
 
 namespace D64Editor.App;
 
-/// <summary>DirMaster View &gt; BASIC Viewer — de-tokenized BASIC listing, ROM-bitmap rendered.</summary>
+/// <summary>other disk editors View &gt; BASIC Viewer — de-tokenized BASIC listing, ROM-bitmap rendered.</summary>
 public partial class BasicViewerWindow : Window
 {
     private byte[] _listingBytes = Array.Empty<byte>();

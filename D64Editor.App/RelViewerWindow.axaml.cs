@@ -12,7 +12,7 @@ public sealed class RelRecordRow
     public string Summary => $"REC #{Index + 1}: {Data.Length} bytes";
 }
 
-/// <summary>DirMaster-style REL viewer: lists fixed-length records (side-sector chain walk).</summary>
+/// <summary>REL file viewer: lists fixed-length records (side-sector chain walk).</summary>
 public partial class RelViewerWindow : Window
 {
     private readonly List<RelRecordRow> _records = new();

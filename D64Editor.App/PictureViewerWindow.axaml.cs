@@ -5,7 +5,7 @@ using D64Editor.Core;
 
 namespace D64Editor.App;
 
-/// <summary>DirMaster-style picture viewer: renders a C64 hi-res bitmap (Koala/Art Studio).</summary>
+/// <summary>C64 picture viewer: renders a C64 hi-res bitmap (Koala/Art Studio).</summary>
 public partial class PictureViewerWindow : Window
 {
     public PictureViewerWindow()

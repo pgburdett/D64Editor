@@ -11,7 +11,7 @@ public sealed class DiskSearchResultRow
     public required string Summary { get; init; }
 }
 
-/// <summary>DirMaster-style cross-image filename search over a folder of disk images.</summary>
+/// <summary>Cross-image filename search over a folder of disk images.</summary>
 public partial class FindInDisksWindow : Window
 {
     private List<string> _rawResults = new();

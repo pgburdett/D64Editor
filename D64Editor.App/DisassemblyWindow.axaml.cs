@@ -3,7 +3,7 @@ using D64Editor.Core;
 
 namespace D64Editor.App;
 
-/// <summary>DirMaster View &gt; Disassembly Viewer — 6502 disassembly, C64 screen style.</summary>
+/// <summary>other disk editors View &gt; Disassembly Viewer — 6502 disassembly, C64 screen style.</summary>
 public partial class DisassemblyWindow : Window
 {
     private string _rawListing = string.Empty;

@@ -1,6 +1,6 @@
 namespace D64Editor.Core;
 
-/// <summary>Disk-image formats DirMaster understands; this port currently fully implements only D64.</summary>
+/// <summary>Disk-image formats supported by this port; this port currently fully implements only D64.</summary>
 public enum DiskFormat
 {
     Unknown = 0,

@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 namespace D64Editor.Core;
 
 /// <summary>
-///     Decodes the common C64 hi-res bitmap formats (à la DirMaster's picture viewer):
+///     Decodes the common C64 hi-res bitmap formats (à la picture viewers in other disk editors):
 ///     Koala Painter (.koa: 8000 bitmap + 1000 screen + 1000 color + 1 bg, load $6000) and
 ///     Art Studio / plain bitmap (load $2000: 8000 bitmap + 1000 screen colours + 1000
 ///     reserved). Output is a 320×200 ARGB byte array using the standard C64 palette.

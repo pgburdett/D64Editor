@@ -4,7 +4,7 @@ namespace D64Editor.Core;
 
 /// <summary>
 ///     Minimal 6502/6510 disassembler for the documented opcode set (no illegal NMOS
-///     opcodes), à la DirMaster's disassembly viewer. Bytes are annotated with a running
+///     opcodes), à la other disk editors' disassembly viewers. Bytes are annotated with a running
 ///     PC so branch targets can be recognized; unrecognized opcodes render as ".byte".
 /// </summary>
 public static class Disassembler

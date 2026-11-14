@@ -9,7 +9,7 @@ public sealed class DiskSearchHit
 }
 
 /// <summary>
-///     Filename search across any supported disk images, à la DirMaster Tools &gt; Find in Disks.
+///     Filename search across any supported disk images, like other disk editors Tools &gt; Find in Disks.
 ///     Recognizes all formats this build understands; malformed ones are skipped. G64/NIB are
 ///     decoded on the fly (reusing the verified GCR pipeline).
 /// </summary>

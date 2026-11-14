@@ -1,7 +1,7 @@
 namespace D64Editor.Core;
 
 /// <summary>
-///     Minimal format-agnostic disk-image contract (DirMaster supports many image
+///     Minimal format-agnostic disk-image contract (disk editors often support many image
 ///     types; this port currently only fully implements the D64 engine, but this
 ///     abstraction is the seam the other formats slot into). <see cref="D64Image"/>
 ///     implements it today.

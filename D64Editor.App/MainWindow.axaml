@@ -100,7 +100,7 @@
             </MenuItem>
         </Menu>
 
-        <!-- Toolbar (DirMaster-style quick actions) + color selectors on the right -->
+        <!-- Toolbar (Quick actions) + color selectors on the right -->
         <Border DockPanel.Dock="Top" Margin="6,4,6,6" Padding="4" BorderThickness="0,0,0,1" BorderBrush="#40808080">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">

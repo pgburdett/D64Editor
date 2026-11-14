@@ -3,7 +3,7 @@ using D64Editor.Core;
 namespace D64Editor.App;
 
 /// <summary>
-///     Minimal command-line interface for the port (headless), à la DirMaster's CLI:
+///     Minimal command-line interface for the port (headless), à la other disk editors' command-line tools:
 ///     <c>--convert &lt;in&gt; &lt;out&gt;</c> (G64/NIB → D64 via the verified GCR decoder),
 ///     <c>--list &lt;image&gt;</c> (print the directory), and <c>--help</c>. Returns true when a
 ///     CLI verb was handled (so the GUI isn't started); otherwise false to launch the GUI.

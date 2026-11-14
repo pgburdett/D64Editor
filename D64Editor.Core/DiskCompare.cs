@@ -1,6 +1,6 @@
 namespace D64Editor.Core;
 
-/// <summary>Result of comparing two disk images (DirMaster Tools &gt; Compare).</summary>
+/// <summary>Result of comparing two disk images (other disk editors Tools &gt; Compare).</summary>
 public sealed class DiskCompareReport
 {
     public required string LeftPath { get; init; }

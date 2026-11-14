@@ -3,7 +3,7 @@ using System.Text;
 namespace D64Editor.Core;
 
 /// <summary>
-///     Commodore REL fixed-length file model (à la DirMaster REL editing): a side-sector chain
+///     Commodore REL fixed-length file model (à la REL editing in other disk editors): a side-sector chain
 ///     indexes the data sectors, each holding <c>Floor(payloadUsed/recordLength)</c> records.
 ///     Supports reading records and rewriting record content in place (record size fixed; the
 ///     last data sector's LSU bounds used bytes). Creating/growing REL files (allocating new

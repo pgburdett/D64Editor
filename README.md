@@ -220,11 +220,11 @@ selected, matching the original.
   the memory staging window (in addition to adding files from disk inside the
   memory window).
 
-## Multi-format engine + DirMaster-style features (added)
+## Multi-format engine and disk-editor features (added)
 
 Beyond the VB6 D64 port, this build now carries a format-agnostic layer and a
-growing set of DirMaster-style functions. The current port scope / status is
-tracked in `D64Editor.App/DirMasterPhases.md`.
+growing set of features comparable to other C64/CBM disk editors. The current port scope / status is
+tracked in `D64Editor.App/Roadmap.md`.
 
 **Disk image formats**
 
@@ -249,9 +249,9 @@ Core readers: `D71Image`, `D81Image`, `D80D82Image`, `DnpImage`, `G64Image`,
 `CbmImage`/`Gcr`/`DiskFormats`/`CbmCatalog`/`ImageCatalog`/`CbmScratch`/`CbmImport`
 helpers.
 
-**DirMaster-style functions**
+**Disk-editor features**
 
-- Menu modeled on DirMaster (`Disk, File, Edit, View, Window, Help`) + toolbar
+- Menu (`Disk, File, Edit, View, Window, Help`) + toolbar
   with C64 color selectors (Blue / Lt Blue) that recolor the directory.
 - C64-screen directory: ROM-bitmap rendered (VICE C64 character ROM via
   `PetsciiScreen`/`PetsciiView`, Pepto palette) with per-row selection preserved;
@@ -281,9 +281,9 @@ helpers.
 
 All new format readers were verified by generating synthetic images of each
 format (with a matching GCR encoder for G64/NIB) and byte-comparing the parsed
-results — see the per-phase notes in `D64Editor.App/DirMasterPhases.md`.
+results — see the per-phase notes in `D64Editor.App/Roadmap.md`.
 
-## Not yet done (see DirMasterPhases.md)
+## Not yet done (see Roadmap.md)
 
 - File import for D71/D80/D82/DNP (D81 done); unscratch/re-allocate outside D81.
 - G64/NIB editing beyond D64 conversion; NIB structural viewer fallback.

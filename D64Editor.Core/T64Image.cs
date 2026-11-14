@@ -13,7 +13,7 @@ public sealed class T64Entry
 }
 
 /// <summary>
-///     Read-only reader for the T64 (Commodore tape archive) format, à la DirMaster's
+///     Read-only reader for the T64 (Commodore tape archive) format, à la other disk editors'
 ///     support for .t64 containers. Parses the 64-byte header and 32-byte directory
 ///     records, exposing the contained files (typically PRG data with a 2-byte load
 ///     address). Best-effort: the format has minor vendor variants, so unknown entries

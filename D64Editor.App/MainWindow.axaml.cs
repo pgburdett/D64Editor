@@ -9,7 +9,7 @@ using D64Editor.Core;
 namespace D64Editor.App;
 
 /// <summary>
-///     Single-window tabbed MDI shell (à la DirMaster's workspace). Hosts many
+///     Single-window tabbed MDI shell (à la a multi-document disk-editor workspace). Hosts many
 ///     <see cref="DiskDocumentView"/> documents in a <c>TabControl</c>; menus/toolbar act on the
 ///     active document. Window/tab management lives here; all disk logic lives in the document.
 /// </summary>

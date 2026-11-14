@@ -3,7 +3,7 @@ using Avalonia.Interactivity;
 
 namespace D64Editor.App;
 
-/// <summary>DirMaster File &gt; Rename — a small modal prompt returning the new name via callback.</summary>
+/// <summary>other disk editors File &gt; Rename — a small modal prompt returning the new name via callback.</summary>
 public partial class RenameWindow : Window
 {
     private readonly Action<string> _onRenamed;

@@ -3,7 +3,7 @@ using System.Text;
 namespace D64Editor.Core;
 
 /// <summary>
-///     Best-effort REL-file reader for Commodore disks (à la DirMaster's REL viewer).
+///     Best-effort REL-file reader for Commodore disks (à la other disk editors' REL viewers).
 ///     REL files store fixed-length records: a side-sector chain indexes the data-sector
 ///     chain, and each data sector holds 254 bytes of record data (last sector may pad).
 ///     Walks the side sectors → data sectors and reassembles the records.

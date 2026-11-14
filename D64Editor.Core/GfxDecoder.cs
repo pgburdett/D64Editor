@@ -1,7 +1,7 @@
 namespace D64Editor.Core;
 
 /// <summary>
-///     Decoders for the remaining C64 graphic objects (à la DirMaster's viewers):
+///     Decoders for the remaining C64 graphic objects (à la viewers in other disk editors):
 ///     a 2 KiB character set (256 glyphs × 64 bits) and a 63-byte hires sprite.
 ///     Output is a BGRA byte buffer built with the shared C64 palette helpers.
 /// </summary>
