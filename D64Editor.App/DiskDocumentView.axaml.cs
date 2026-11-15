@@ -156,6 +156,29 @@ public partial class DiskDocumentView : UserControl
                 return;
             }
 
+            // Some .d64-sized images (e.g. C128 CP/M system disks) contain a CP/M filesystem
+            // rather than a 1541 CBM directory. Detect and present as CP/M when appropriate.
+            try
+            {
+                if (DiskFormats.IsD64Size(length))
+                {
+                    var head = new byte[4];
+                    using (var fs = File.OpenRead(path)) fs.ReadExactly(head, 0, 4);
+                    var cpmBoot = head[0] == (byte)'C' && head[1] == (byte)'B' && head[2] == (byte)'M';
+                    if (cpmBoot)
+                    {
+                        var cpmFiles = CpmDisk.Read(path);
+                        if (cpmFiles.Count > 0)
+                        {
+                            FileCountLabel.Text = $"CP/M disk image: {Path.GetFileName(path)}";
+                            ShowDialog(new CpmViewerWindow("CP/M (D64)", cpmFiles, path));
+                            return;
+                        }
+                    }
+                }
+            }
+            catch { /* fall through to D64 load */ }
+
             _image = D64Image.Load(path);
             _image.Interleave = AppSettings.Interleave;
             _image.PreferredStartTrack = AppSettings.StartingTrack;

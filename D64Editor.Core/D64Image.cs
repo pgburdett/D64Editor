@@ -438,6 +438,9 @@ public class D64Image : IDiskImage
         // (sectors 1-18); this loop bound mirrors the original's "For t = 1 To 18".
         for (var t = 1; t <= 18; t++)
         {
+            if (track < 1 || track > TrackCount || sector < 0 || sector >= SectorsPerTrack(track))
+                break;
+
             var sectorOffset = SectorFileOffset(track, sector);
             _directoryBlocks.Add(TrackSectorToBlock(track, sector));
 
@@ -457,7 +460,10 @@ public class D64Image : IDiskImage
                     Entries.Add(entry);
             }
 
-            if (nextTrack == 0 || nextSector == 0)
+            // Track 18 directory sectors chain within track 18; stop on terminator or invalid link.
+            if (nextTrack == 0)
+                break;
+            if (nextTrack != 18 || nextSector >= SectorsPerTrack(18))
                 break;
 
             track = nextTrack;
@@ -575,6 +581,8 @@ public class D64Image : IDiskImage
             // Original caps this at 256 steps per file as a corruption safety net.
             for (var step = 0; step < 256 && track != 0; step++)
             {
+                if (track < 1 || track > TrackCount || sector < 0 || sector >= SectorsPerTrack(track))
+                    break;
                 var block = TrackSectorToBlock(track, sector);
                 if (block >= 0 && block < TotalBlocks)
                 {
@@ -602,7 +610,8 @@ public class D64Image : IDiskImage
         // BAM/directory blocks override any file ownership on track 18.
         owners[TrackSectorToBlock(18, 0)] = "<BAM BLOCK>";
         foreach (var block in _directoryBlocks)
-            owners[block] = "<DIR BLOCK>";
+            if (block >= 0 && block < owners.Length)
+                owners[block] = "<DIR BLOCK>";
 
         BlockOwners = owners;
         CrossLinkWarnings = crossLinks;
@@ -778,6 +787,7 @@ public class D64Image : IDiskImage
         // 700-step cap matches the original's "For p = 1 To 700" corruption safety net.
         for (var step = 0; step < 700 && track != 0; step++)
         {
+            if (track < 1 || track > TrackCount || sector < 0 || sector >= SectorsPerTrack(track)) break;
             var block = TrackSectorToBlock(track, sector);
             var blockOffset = block * SectorSize;
             int nextTrack = _data[blockOffset];
@@ -892,7 +902,7 @@ public class D64Image : IDiskImage
 
         for (var step = 0; step < 700 && track != 0; step++)
         {
-            if (track < 1 || track > TrackCount) break; // matches ViewFileChain's track/sector sanity checks
+            if (track < 1 || track > TrackCount || sector < 0 || sector >= SectorsPerTrack(track)) break;
             var block = TrackSectorToBlock(track, sector);
             chain.Add((track, sector, block));
 
