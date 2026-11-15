@@ -695,12 +695,26 @@ public partial class DiskDocumentView : UserControl
         var cmd = template;
         var hasImagePlaceholder = template.Contains("{image}", StringComparison.Ordinal)
                                   || template.Contains("{img}", StringComparison.Ordinal);
-        cmd = cmd.Replace("\"{image}\"", quotedImage).Replace("'{image}'", quotedImage).Replace("{image}", quotedImage);
-        cmd = cmd.Replace("\"{img}\"", quotedImage).Replace("'{img}'", quotedImage).Replace("{img}", quotedImage);
-        cmd = cmd.Replace("\"{disk}\"", quotedTarget).Replace("'{disk}'", quotedTarget).Replace("{disk}", quotedTarget);
-        cmd = cmd.Replace("\"{appdir}\"", quotedAppDir).Replace("'{appdir}'", quotedAppDir).Replace("{appdir}", quotedAppDir);
-        cmd = cmd.Replace("\"{app}\"", quotedAppDir).Replace("'{app}'", quotedAppDir).Replace("{app}", quotedAppDir);
-        cmd = cmd.Replace("\"{cwd}\"", quotedCwd).Replace("'{cwd}'", quotedCwd).Replace("{cwd}", quotedCwd);
+
+        static string DqEscape(string v) => v.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("$", "\\$").Replace("`", "\\`");
+        static string Substitute(string text, string placeholder, string raw, string singleQuoted)
+        {
+            text = text.Replace("\"{" + placeholder + "}\"", singleQuoted)
+                       .Replace("'{" + placeholder + "}'", singleQuoted);
+            // Placeholder inside an existing double-quoted template arg, e.g. "{appdir}/file" -> keep outer quotes.
+            text = text.Replace("\"{" + placeholder + "}", "\"" + DqEscape(raw));
+            text = text.Replace("'{" + placeholder + "}", "'" + raw.Replace("'", "'\\''"));
+            // Remaining/unquoted placeholder -> shell-safe single-quoted value.
+            text = text.Replace("{" + placeholder + "}", singleQuoted);
+            return text;
+        }
+
+        cmd = Substitute(cmd, "image", diskPath, quotedImage);
+        cmd = Substitute(cmd, "img", diskPath, quotedImage);
+        cmd = Substitute(cmd, "disk", target, quotedTarget);
+        cmd = Substitute(cmd, "appdir", appDir, quotedAppDir);
+        cmd = Substitute(cmd, "app", appDir, quotedAppDir);
+        cmd = Substitute(cmd, "cwd", cwd, quotedCwd);
 
         // Ensure the disk is mounted on drive 8 for VICE-style emulators when the template
         // doesn't handle it explicitly (helps "run *" / selected-file autostart find the disk).
