@@ -75,10 +75,10 @@ public static class CpmDisk
             var name = Encoding.ASCII.GetString(data, off + 1, 8).TrimEnd(' ');
             var ext = Encoding.ASCII.GetString(data, off + 9, 3).TrimEnd(' ');
 
-            // Record count: bytes 13-14 (RC low, high). Cap to a sane range to avoid
-            // counting the reserved/ allocation-map bytes as a record count.
-            var rc = data[off + 13] + (data[off + 14] << 8);
-            if (rc > 128) rc = 0; // per-extent max in CP/M 2.2 is 128 records
+            // Record count: byte 15 (RC) is the number of 128-byte records in this extent (0-128).
+            // (CP/M 2.2 directory entry: 0=user, 1-8=name, 9-11=ext, 12=EX, 13=S1, 14=S2, 15=RC)
+            var rc = (int)data[off + 15];
+            if (rc > 128) rc = 128;
 
             // Require either a record count or a partially-filled allocation map,
             // so stray zeroed directories don't produce phantom files.
