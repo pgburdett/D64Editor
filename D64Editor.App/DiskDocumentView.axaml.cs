@@ -873,7 +873,7 @@ public partial class DiskDocumentView : UserControl
         FileCountLabel.Text = $"D64 contains {entries.Count} {filesWord} ({BuildTypeBreakdown(image)})";
     }
 
-    private static string FormatAddress(ushort address, bool hex) => hex ? $"${address:X4}" : address.ToString();
+    private static string FormatAddress(ushort address, bool hex) => hex ? $"${address:X4}" : address.ToString("D5");
 
     private static string BuildTypeBreakdown(D64Image image)
     {
