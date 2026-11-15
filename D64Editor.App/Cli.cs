@@ -34,6 +34,12 @@ internal static class Cli
             case "-v" or "--validate":
                 return Validate(args);
 
+            case "--cpm-extract":
+                return CpmExtract(args);
+
+            case "--cpm-copy":
+                return CpmCopy(args);
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -332,6 +338,73 @@ internal static class Cli
         return true;
     }
 
+    private static bool CpmExtract(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --cpm-extract <image> <outdir>   (DPB-aware C128 CP/M extract, best-effort for .d64/.d71/.d81)");
+            return true;
+        }
+        var path = args[1];
+        var outDir = args[2];
+        if (!File.Exists(path)) { Console.Error.WriteLine($"Image not found: {path}"); return true; }
+        Directory.CreateDirectory(outDir);
+        try
+        {
+            var img = File.ReadAllBytes(path);
+            var fmt = DiskFormats.FromExtension(path);
+            if (fmt != DiskFormat.D71 && fmt != DiskFormat.D81) fmt = DiskFormat.D64;
+            var files = C128Cpm.ExtractFiles(img, fmt);
+            var n = 0;
+            foreach (var f in files.Where(x => !x.Deleted))
+            {
+                var baseName = string.IsNullOrEmpty(f.Extension) ? f.Name : $"{f.Name}.{f.Extension}";
+                var safe = SanitizeFileName(baseName);
+                var outPath = UniquePath(outDir, safe);
+                File.WriteAllBytes(outPath, f.Data);
+                n++;
+            }
+            Console.WriteLine($"Extracted {n} CP/M file(s) to {outDir} (format mapping: {fmt}).");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"CP/M extract failed: {ex.Message}"); }
+        return true;
+    }
+
+    private static bool CpmCopy(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --cpm-copy <template> <out> [--all | --files NAME.EXT,NAME2.EXT,...]");
+            Console.Error.WriteLine("  Uses the template image's boot/system/layout (C128 CP/M) and keeps all files (--all)");
+            Console.Error.WriteLine("  or only the listed files (directory extents for others marked unused).");
+            return true;
+        }
+        var template = args[1];
+        var outPath = args[2];
+        if (!File.Exists(template)) { Console.Error.WriteLine($"Template not found: {template}"); return true; }
+
+        var copyAll = true;
+        List<string>? names = null;
+        for (var i = 3; i < args.Length; i++)
+        {
+            if (args[i] == "--all") { copyAll = true; names = null; }
+            else if (args[i] == "--files" && i + 1 < args.Length)
+            {
+                copyAll = false;
+                names = args[++i].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+            }
+        }
+
+        try
+        {
+            C128Cpm.CreateFromTemplate(template, outPath, names, copyAll);
+            Console.WriteLine($"Created {outPath} from template {template} ({(copyAll ? "all files" : $"subset: {string.Join(", ", names ?? new())}")}).");
+            Console.WriteLine("Note: template-based (preserves boot/system/layout). For real-floppy use, write the image with OpenCBM (e.g. d64copy for .d64).");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"CP/M copy failed: {ex.Message}"); }
+        return true;
+    }
+
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
@@ -340,6 +413,8 @@ internal static class Cli
         Console.WriteLine("  --export <image> <dir> Export files from D64/T64/D71/D81/D80/D82/DNP to a directory");
         Console.WriteLine("  --info <image>         Show image/format information");
         Console.WriteLine("  --validate <image>     Validate/report cross-links and basic issues (D64)");
+        Console.WriteLine("  --cpm-extract <img> <dir>  Extract CP/M files (best-effort DPB-aware, .d64/.d71/.d81)");
+        Console.WriteLine("  --cpm-copy <tmpl> <out> [--all|--files A,B]  Create CP/M image from template (keep all or subset)");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");

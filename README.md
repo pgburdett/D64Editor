@@ -246,6 +246,10 @@ tracked in `D64Editor.App/Roadmap.md`.
   editor, native DNP opens in its viewer).
 - **CP/M 2.2 images + `.LBR`** — best-effort directory catalog (CP/M is
   DPB-parameterized, so it lists/labels entries and never assumes byte counts).
+- **C128 CP/M (`.d64/.d71/.d81`)** — best-effort, DPB-aware file extraction and
+  template-based image create/copy (all files or subset) via CLI, suitable for
+  writing with OpenCBM (`--cpm-extract`, `--cpm-copy`). Relies on a compatible
+  bootable template for the target format/layout.
 
 Core readers: `D71Image`, `D81Image`, `D80D82Image`, `DnpImage`, `G64Image`,
 `NibImage`, `T64Image`, `CpmDisk`, `DiskContainers`, plus the shared
@@ -278,7 +282,8 @@ helpers.
 - Window management: the Window menu lists open documents/tabs (tabbed MDI shell).
 - CLI: `--help`, `--list`, `--info`, `--validate` (D64 cross-links/error-block summary),
   `--export <image> <dir>` (D64/T64/D71/D81/D80/D82/DNP), `--convert <g64/nib> <d64>`
-  (headless G64/NIB→D64), and passing an image path opens it in the GUI.
+  (headless G64/NIB→D64), `--cpm-extract <image> <dir>` / `--cpm-copy <tmpl> <out> [--all|--files A,B]`
+  (C128 CP/M, best-effort/template-based), and passing an image path opens it in the GUI.
 - PETSCII: **C64 Pro Mono** (style64.org C64 TrueType, `Fonts.cs`) + PUA/screen-code
   mapping (`Petscii.cs`) and a bundled VICE `chargen.bin` for exact ROM-bitmap
   rendering. Central charset toggle (upper/graphics ↔ lower/upper).

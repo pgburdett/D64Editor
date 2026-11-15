@@ -24,6 +24,7 @@ disk editors, implemented incrementally.
 - [x] G64 — structural parse + GCR bitstream decode → D64 conversion (byte-exact on synthetic .g64); opening auto-converts for editing
 - [x] NIB — structural parse + decode → D64 conversion (byte-exact on synthetic .nib); opening auto-converts for editing
 - [x] CP/M 2.2 images + .LBR catalogs — best-effort directory reader + viewer
+- [x] C128 CP/M (.d64/.d71/.d81) — DPB-aware extraction and template-based create/copy (all/subset) via CLI (best-effort; `.d71/.d81` mappings need validation against real images)
 - [x] Export-to-PRG for read-only CBM-layout views (D71/D81/D80/D82/T64)
 - [x] Scratch with block-freeing (CBM layouts): D71/D81/D80/D82/DNP (chain-walk → BAM update, single flush)
 - [x] Unscratch/re-allocate (CBM layouts): D71/D81/D80/D82/DNP via `ICbmWritable`/`CbmScratch`
