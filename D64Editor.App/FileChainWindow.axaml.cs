@@ -26,8 +26,8 @@ public partial class FileChainWindow : Window
                 var sector = image.ReadBlock(c.Block);
                 var nextT = sector.Length > 0 ? sector[0] : 0;
                 var nextS = sector.Length > 1 ? sector[1] : 0;
-                var link = nextT == 0 ? $"end (bytes used: {Math.Max(0, nextS - 1)})" : $"next {nextT},{nextS}";
-                return $"{i + 1,4}.  block #{c.Block,-4}  T{c.Track,2}/S{c.Sector,-2}  -> {link}";
+                var link = nextT == 0 ? $"end (bytes used: {Math.Max(0, nextS - 1)})" : $"next {nextT:D2},{nextS:D2}";
+                return $"{i + 1,4}.  block #{c.Block:D3}  T{c.Track:D2}/S{c.Sector:D2}  -> {link}";
             })
             .ToList();
     }

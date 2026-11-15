@@ -10,6 +10,6 @@
              ordered list of track/sector/block instead of a colored grid overlay, since the
              information's the same either way and this avoids duplicating the BAM grid UI
              just to highlight a handful of cells in it. -->
-        <ListBox Name="ChainList" FontFamily="monospace" />
+        <ListBox Name="ChainList" FontFamily="monospace" FontSize="14" />
     </DockPanel>
 </Window>
