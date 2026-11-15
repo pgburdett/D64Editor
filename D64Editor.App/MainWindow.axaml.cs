@@ -165,6 +165,7 @@ public partial class MainWindow : Window
     private void OnPictureViewer(object? s, RoutedEventArgs e) => Active?.ViewPicture();
     private void OnCharsetViewer(object? s, RoutedEventArgs e) => Active?.ViewCharset();
     private void OnSpriteViewer(object? s, RoutedEventArgs e) => Active?.ViewSprite();
+    private void OnGeosInfo(object? s, RoutedEventArgs e) => Active?.ViewGeosInfo();
     private void OnRunEmulator(object? s, RoutedEventArgs e) => Active?.RunInEmulator();
     private void OnVersion(object? s, RoutedEventArgs e) => Active?.ShowVersion();
 

@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.GeosInfoWindow"
+        Title="GEOS File Info"
+        Width="700" Height="420">
+    <DockPanel Margin="10">
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+            <TextBlock Name="TitleLabel" FontWeight="Bold" />
+            <TextBlock Name="MetaLabel" TextWrapping="Wrap" FontFamily="monospace" />
+        </StackPanel>
+        <Border BorderThickness="1" BorderBrush="#555" Padding="6">
+            <ScrollViewer>
+                <TextBlock Name="DetailText" FontFamily="monospace" TextWrapping="NoWrap" />
+            </ScrollViewer>
+        </Border>
+    </DockPanel>
+</Window>

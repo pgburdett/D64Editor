@@ -49,17 +49,17 @@ disk editors, implemented incrementally.
 - [x] REL viewer (side-sector chain → fixed-length records; record-content edit in place)
 - [x] Picture viewer (Koala/Art Studio hi-res)
 - [x] Charset + Sprite viewers
+- [x] GEOS file info viewer (metadata + info-block dump, best-effort)
 - [x] ROM-bitmap PETSCII renderer (`chargen.bin`, `PetsciiScreen`/`PetsciiView`)
 - [x] Centralized PETSCII Lower/Upper Case toggle, persisted across PETSCII-displaying views
-- [ ] Graphics viewer enhancements
-- [ ] GEOS file viewer
+- [ ] Graphics viewer enhancements (further)
 
 ## Phase 5 — BAM / Sector / Block Editors
 - [x] BAM editor (visual block allocation map): colored free/allocated cells, live FREE/ALLOCATED summary, legend, toggle/view-block/error modes
-- [x] Sector/block editor (hex + ASCII, navigation/edit — partial/ported; enhance further)
-- [x] File chain viewer (exists; enhance)
-- [x] Cross-links viewer (exists; enhance)
-- [x] Error blocks viewer (exists; enhance)
+- [x] Sector/block viewer (enhanced): in-window hex+ASCII sector dump with track/sector/block navigation, link/owner info, and dump-to-file
+- [x] File chain viewer (enhanced): per-block next T/S links and last-sector used-byte count
+- [x] Cross-links viewer (enhanced): recompute, claimed-block summary, parsed block navigation/open in block viewer
+- [x] Error blocks list viewer (enhanced): list/edit/open blocks with non-default error codes (images with error info)
 
 ## Phase 6 — Search / Compare / Batch
 - [x] Find in Disks — filename and file-contents search across supported formats (`ImageCatalog`)
@@ -70,7 +70,7 @@ disk editors, implemented incrementally.
 ## Phase 7 — GEOS & Advanced
 - [ ] GEOS disk support (VLIR, application data)
 - [ ] GEOS file metadata editing
-- [x] CLI: headless `--list`, `--convert` (G64/NIB→D64), `--export <image> <dir>` (D64/D71/D81/D80/D82/DNP), `--help`
+- [x] CLI: headless `--list`, `--info`, `--validate`, `--convert` (G64/NIB→D64), `--export <image> <dir>` (D64/T64/D71/D81/D80/D82/DNP), `--help`
 - [ ] Expanded CLI/scripting (further automation/options)
 
 ## Phase 8 — Platform Integration
@@ -84,5 +84,6 @@ disk editors, implemented incrementally.
 ## Current Focus
 - REL create/grow/resize (side/data-sector allocation, side-sector rebuild)
 - G64/NIB native editing and structural viewing
-- Drag-and-drop (windows/OS) and Undo/Redo
+- Drag-and-drop between disk windows/tabs (broader) and Undo/Redo
+- Further viewer/editor/CLI polish (graphics enhancements, deeper GEOS/VLIR support, more scripting)
 - Roadmap/docs kept in sync with implemented behavior; smoke-test tabbed MDI flows

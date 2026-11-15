@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.ErrorBlocksWindow"
+        Title="Error Blocks"
+        Width="720" Height="420">
+    <DockPanel Margin="10">
+        <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+            <TextBlock Name="SummaryLabel" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Edit Error Code…" Click="OnEditClicked" />
+                <Button Content="Open in Block Viewer" Click="OnOpenBlockClicked" />
+                <Button Content="Refresh" Click="OnRefreshClicked" />
+            </StackPanel>
+            <TextBlock Text="Lists blocks whose error code is not 'No Error' (for images with an error-info section)." Opacity="0.7" FontSize="12" />
+        </StackPanel>
+        <ListBox Name="ErrorList" FontFamily="monospace" DoubleTapped="OnDoubleTapped">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</Window>

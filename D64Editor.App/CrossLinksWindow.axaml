@@ -1,12 +1,18 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.CrossLinksWindow"
-        Title="CrossLinked Files"
-        Width="480" Height="320">
+        Title="Cross-Links / Block Ownership"
+        Width="720" Height="420">
 
     <DockPanel Margin="10">
-        <TextBlock DockPanel.Dock="Top" Name="SummaryLabel" Margin="0,0,0,8" />
-        <!-- Mirrors frmCrossLinks' List1, populated by getBlockOwners' crosslink detection -->
-        <ListBox Name="WarningsList" FontFamily="monospace" />
+        <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+            <TextBlock Name="SummaryLabel" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Recompute" Click="OnRecomputeClicked" />
+                <Button Content="Open Block in Viewer…" Click="OnOpenBlockClicked" />
+            </StackPanel>
+            <TextBlock Text="Double-click a warning to open the referenced block (if parsed)." Opacity="0.7" FontSize="12" />
+        </StackPanel>
+        <ListBox Name="WarningsList" FontFamily="monospace" DoubleTapped="OnWarningDoubleTapped" />
     </DockPanel>
 </Window>

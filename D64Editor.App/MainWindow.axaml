@@ -78,6 +78,7 @@
                 <MenuItem Header="Picture Viewer (Koala/Art Studio)" Click="OnPictureViewer" />
                 <MenuItem Header="Charset Viewer" Click="OnCharsetViewer" />
                 <MenuItem Header="Sprite Viewer" Click="OnSpriteViewer" />
+                <MenuItem Header="GEOS File Info..." Click="OnGeosInfo" />
             </MenuItem>
             <MenuItem Header="_Run">
                 <MenuItem Header="Run in _Emulator..." Click="OnRunEmulator" />

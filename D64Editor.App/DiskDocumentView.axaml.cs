@@ -491,7 +491,7 @@ public partial class DiskDocumentView : UserControl
     {
         if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
         if (!_image.HasErrorInfo) { FileCountLabel.Text = "This disk has no error-info section (needs to be a 175531-byte image)."; return; }
-        ShowDialog(new BamEditorWindow(_image, true));
+        ShowDialog(new ErrorBlocksWindow(_image));
     }
     public void CrossLinks() { if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; } ShowDialog(new CrossLinksWindow(_image)); }
     public void SectorEditor() { if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; } ShowDialog(new SectorDumpWindow(_image)); }
@@ -617,6 +617,13 @@ public partial class DiskDocumentView : UserControl
         if (bytes.Length < 63) { FileCountLabel.Text = "File is too small to be a sprite (needs ≥ 63 bytes)."; return; }
         var sprite = bytes.AsSpan(bytes.Length - 63).ToArray();
         ShowDialog(new GfxViewerWindow(one.FileName, GfxDecoder.DecodeSprite(sprite), "Sprite"));
+    }
+
+    public void ViewGeosInfo()
+    {
+        var one = OneSelected();
+        if (one is null) return;
+        ShowDialog(new GeosInfoWindow(_image!, one));
     }
 
     public void RunInEmulator()

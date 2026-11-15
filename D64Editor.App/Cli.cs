@@ -28,6 +28,12 @@ internal static class Cli
             case "-e" or "--export":
                 return Export(args);
 
+            case "-i" or "--info":
+                return Info(args);
+
+            case "-v" or "--validate":
+                return Validate(args);
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -223,12 +229,117 @@ internal static class Cli
         return path;
     }
 
+    private static bool Info(string[] args)
+    {
+        if (args.Length < 2) { Console.Error.WriteLine("Usage: D64Editor --info <image>"); return true; }
+        var path = args[1];
+        if (!File.Exists(path)) { Console.Error.WriteLine($"Image not found: {path}"); return true; }
+
+        var fi = new FileInfo(path);
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        var format = DiskFormats.FromExtension(path);
+        Console.WriteLine($"Path:   {path}");
+        Console.WriteLine($"Size:   {fi.Length} bytes");
+        Console.WriteLine($"Format: {format} ({ext})");
+
+        var cbm = CbmCatalog.Open(path);
+        if (cbm is not null)
+        {
+            Console.WriteLine($"Label:  {cbm.Label}");
+            Console.WriteLine($"Name:   \"{cbm.DiskName}\"  ID: \"{cbm.DiskId}\"");
+            Console.WriteLine($"Files:  {cbm.Entries.Count}");
+            Console.WriteLine($"Free:   {cbm.BlocksFree} blocks");
+            return true;
+        }
+
+        var t64 = T64Image.TryLoad(path);
+        if (t64 is not null)
+        {
+            Console.WriteLine($"Desc:   \"{t64.Description}\"");
+            Console.WriteLine($"Files:  {t64.Entries.Count}");
+            return true;
+        }
+
+        if (ext == ".d64" || DiskFormats.IsD64Size(fi.Length))
+        {
+            try
+            {
+                var img = D64Image.Load(path);
+                Console.WriteLine($"Tracks: {img.TrackCount}  Blocks: {img.TotalBlocks}  ErrorInfo: {img.HasErrorInfo}");
+                Console.WriteLine($"Name:   \"{img.DiskName}\"  ID: \"{img.DiskId}\"");
+                Console.WriteLine($"Files:  {img.Entries.Count}");
+                Console.WriteLine($"Free:   {img.BlocksFree} blocks");
+            }
+            catch (Exception ex) { Console.WriteLine($"D64 parse failed: {ex.Message}"); }
+            return true;
+        }
+
+        var entries = ImageCatalog.ReadEntries(path);
+        if (entries.Count > 0) Console.WriteLine($"Entries: {entries.Count}");
+        return true;
+    }
+
+    private static bool Validate(string[] args)
+    {
+        if (args.Length < 2) { Console.Error.WriteLine("Usage: D64Editor --validate <image>"); return true; }
+        var path = args[1];
+        if (!File.Exists(path)) { Console.Error.WriteLine($"Image not found: {path}"); return true; }
+
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        var issues = 0;
+
+        if (ext == ".d64" || DiskFormats.IsD64Size(new FileInfo(path).Length))
+        {
+            try
+            {
+                var img = D64Image.Load(path);
+                img.ComputeBlockOwners();
+                Console.WriteLine($"D64 \"{img.DiskName}\" — {img.Entries.Count} files, {img.BlocksFree} blocks free, tracks {img.TrackCount}");
+                if (img.CrossLinkWarnings.Count == 0)
+                    Console.WriteLine("Cross-links: none");
+                else
+                {
+                    Console.WriteLine($"Cross-links: {img.CrossLinkWarnings.Count}");
+                    foreach (var w in img.CrossLinkWarnings) { Console.WriteLine("  - " + w); issues++; }
+                }
+                if (img.HasErrorInfo)
+                {
+                    var errCount = 0;
+                    for (var b = 0; b < img.TotalBlocks && b < img.ErrorInfo.Length; b++)
+                        if (D64ErrorCodes.For(img.ErrorInfo[b]).Code != 1) errCount++;
+                    Console.WriteLine($"Error blocks: {errCount}");
+                    issues += errCount > 0 ? 0 : 0; // informational
+                }
+                else Console.WriteLine("Error info: not present");
+            }
+            catch (Exception ex) { Console.WriteLine($"Validation failed: {ex.Message}"); issues++; }
+        }
+        else
+        {
+            var cbm = CbmCatalog.Open(path);
+            if (cbm is not null)
+                Console.WriteLine($"{cbm.Label} \"{cbm.DiskName}\" — {cbm.Entries.Count} files, {cbm.BlocksFree} blocks free (structure readable).");
+            else
+            {
+                var entries = ImageCatalog.ReadEntries(path);
+                Console.WriteLine(entries.Count > 0
+                    ? $"Readable ({entries.Count} entries/catalog items)."
+                    : "No readable directory/catalog entries found.");
+            }
+        }
+
+        Console.WriteLine(issues == 0 ? "Result: OK" : $"Result: {issues} issue(s) reported.");
+        return true;
+    }
+
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
         Console.WriteLine("  --convert <in> <out>   Convert G64/NIB to D64 (or copy a native image)");
         Console.WriteLine("  --list <image>         Print an image's directory");
         Console.WriteLine("  --export <image> <dir> Export files from D64/T64/D71/D81/D80/D82/DNP to a directory");
+        Console.WriteLine("  --info <image>         Show image/format information");
+        Console.WriteLine("  --validate <image>     Validate/report cross-links and basic issues (D64)");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");
