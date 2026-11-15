@@ -36,7 +36,7 @@ public class DirectoryRow
             quoted = quoted.PadRight(18);
             var type = Entry.IsScratched ? "DEL" : Entry.TypeDisplay;
             // START/END address (radix-aware) appended after the C64 directory columns.
-            return $"{SizeInBlocks,4} {quoted}{type,-4} {StartAddressDisplay,6} {EndAddressDisplay,6}";
+            return $"{SizeInBlocks,4} {quoted}{type,-4} {StartAddressDisplay,5} {EndAddressDisplay,5}";
         }
     }
 
