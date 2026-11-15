@@ -662,16 +662,22 @@ public partial class DiskDocumentView : UserControl
 
         var quotedTarget = "'" + target.Replace("'", "'\\''") + "'";
         var quotedImage = "'" + diskPath.Replace("'", "'\\''") + "'";
+        var appDir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var cwd = Environment.CurrentDirectory;
+        var quotedAppDir = "'" + appDir.Replace("'", "'\\''") + "'";
+        var quotedCwd = "'" + cwd.Replace("'", "'\\''") + "'";
         var template = AppSettings.EmulatorCommand ?? string.Empty;
 
-        // {image} = plain disk path (for mounting, e.g. -8 {image}); {disk} = autostart target
-        // (disk, or disk:name when a file is selected). Back-compat: {disk} alone still works.
+        // {image} = disk path, {disk} = autostart target, {appdir}/{app} = app folder, {cwd} = working directory.
         var cmd = template;
         var hasImagePlaceholder = template.Contains("{image}", StringComparison.Ordinal)
                                   || template.Contains("{img}", StringComparison.Ordinal);
         cmd = cmd.Replace("\"{image}\"", quotedImage).Replace("'{image}'", quotedImage).Replace("{image}", quotedImage);
         cmd = cmd.Replace("\"{img}\"", quotedImage).Replace("'{img}'", quotedImage).Replace("{img}", quotedImage);
         cmd = cmd.Replace("\"{disk}\"", quotedTarget).Replace("'{disk}'", quotedTarget).Replace("{disk}", quotedTarget);
+        cmd = cmd.Replace("\"{appdir}\"", quotedAppDir).Replace("'{appdir}'", quotedAppDir).Replace("{appdir}", quotedAppDir);
+        cmd = cmd.Replace("\"{app}\"", quotedAppDir).Replace("'{app}'", quotedAppDir).Replace("{app}", quotedAppDir);
+        cmd = cmd.Replace("\"{cwd}\"", quotedCwd).Replace("'{cwd}'", quotedCwd).Replace("{cwd}", quotedCwd);
 
         // Ensure the disk is mounted on drive 8 for VICE-style emulators when the template
         // doesn't handle it explicitly (helps "run *" / selected-file autostart find the disk).

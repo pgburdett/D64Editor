@@ -16,13 +16,15 @@
             <TextBlock Text="Emulator command template (saved and reused for Run in Emulator):" FontWeight="Bold" />
             <TextBox Name="CommandBox" AcceptsReturn="False" />
             <TextBlock TextWrapping="Wrap" FontSize="12" Opacity="0.85">
-                <Run Text="Placeholders: " /><Run Text="{}{disk}" FontFamily="monospace" /><Run Text=" = autostart target (disk, or disk:NAME when a file is selected), " />
-                <Run Text="{}{image}" FontFamily="monospace" /><Run Text=" = disk image path (for mounting). " />
-                <Run Text="Add any extra VICE/x128 options you want to keep (cartridges, fast-load, video/sid settings, etc.)." />
+                <Run Text="Placeholders: " /><Run Text="{}{disk}" FontFamily="monospace" /><Run Text=" = autostart target, " />
+                <Run Text="{}{image}" FontFamily="monospace" /><Run Text=" = disk image path, " />
+                <Run Text="{}{appdir}" FontFamily="monospace" /><Run Text=" = app folder (where D64Editor runs), " />
+                <Run Text="{}{cwd}" FontFamily="monospace" /><Run Text=" = current working directory. " />
+                <Run Text="Add any extra VICE/x128 options you want to keep (cartridges, fast-load, etc.)." />
             </TextBlock>
             <Border BorderThickness="1" BorderBrush="#555" Padding="8">
                 <TextBlock TextWrapping="Wrap" FontSize="12" FontFamily="monospace"
-                           Text="Examples:&#10;  x64sc -8 &quot;{image}&quot; -autostart &quot;{disk}&quot;&#10;  x64sc -cartcrt /path/to/fastload.crt -8 &quot;{image}&quot; -autostart &quot;{disk}&quot;&#10;  x128 -8 &quot;{image}&quot; -autostart &quot;{disk}&quot;&#10;  x64sc -virtualdev -drive8type 1541 -8 &quot;{image}&quot; -autostart &quot;{disk}&quot;" />
+                           Text="Examples:&#10;  x64sc -8 &quot;{image}&quot; -autostart &quot;{disk}&quot;&#10;  x64sc -cartcrt &quot;{appdir}/fastload.crt&quot; -8 &quot;{image}&quot; -autostart &quot;{disk}&quot;&#10;  x64sc -cartcrt &quot;{cwd}/fastload.crt&quot; -8 &quot;{image}&quot; -autostart &quot;{disk}&quot;&#10;  x128 -8 &quot;{image}&quot; -autostart &quot;{disk}&quot;" />
             </Border>
             <TextBlock Text="Tip: the saved command is persisted in app settings, so cartridges/fast-load flags stay configured."
                        FontSize="12" Opacity="0.75" TextWrapping="Wrap" />
