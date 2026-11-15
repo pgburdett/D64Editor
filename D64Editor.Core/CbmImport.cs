@@ -3,16 +3,16 @@ using System.Text;
 namespace D64Editor.Core;
 
 /// <summary>
-///     File import for D81 images: allocates free blocks from the BAM, writes the t/s chain,
-///     marks blocks allocated, and appends a directory entry — all in one in-memory pass and a
-///     single file flush. This is the D81 counterpart of scratch, completing the edit loop.
+///     File import for CBM-layout images (D71/D81/D80/D82/DNP): allocates free blocks from the BAM,
+///     writes the t/s chain, marks blocks allocated, and appends a directory entry — all in one
+///     in-memory pass and a single file flush.
 /// </summary>
 public static class CbmImport
 {
     public record struct ImportResult(string Name, int Blocks, int StartTrack, int StartSector);
 
-    /// <summary>Imports host PRG bytes (2-byte load address + data) as a file on the D81 image.</summary>
-    public static ImportResult Import(D81Image image, byte[] programBytes, string hostFileName,
+    /// <summary>Imports host PRG bytes (2-byte load address + data) as a file on the image.</summary>
+    public static ImportResult Import(ICbmWritable image, byte[] programBytes, string hostFileName,
         byte fileTypeNibble = 0x02, // 2 = PRG
         bool locked = false)
     {

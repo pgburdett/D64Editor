@@ -106,6 +106,65 @@ public sealed class DnpImage : ICbmWritable
         CbmImage.ClearBit(_data, bitmapStart, 32, sector);
     }
 
+    private bool IsSectorFree(int track, int sector)
+    {
+        if (track < 1 || track > 255 || sector < 0 || sector >= SectorsPerTrack) return false;
+        var bitmapStart = 0x220 + (long)(track - 1) * 32;
+        if (bitmapStart + 32 > _data.Length) return false;
+        var byteIndex = sector / 8;
+        var bit = 7 - (sector % 8);
+        return (_data[bitmapStart + byteIndex] & (1 << bit)) != 0;
+    }
+
+    /// <summary>Allocates the next free sector (track 1..LastTrack), or (0,0) if full.</summary>
+    public (int Track, int Sector) AllocateSector()
+    {
+        var last = LastTrack > 0 ? LastTrack : (int)((_data.LongLength / SectorSize) / SectorsPerTrack);
+        if (last > 255) last = 255;
+        for (var t = 1; t <= last; t++)
+            for (var s = 0; s < SectorsPerTrack; s++)
+                if (IsSectorFree(t, s)) return (t, s);
+        return (0, 0);
+    }
+
+    /// <summary>Writes payload + link bytes into a sector (in-memory).</summary>
+    public void WriteSectorData(int track, int sector, int nextTrack, int nextSector, byte[] payloadBytes)
+    {
+        var off = SectorOffset(track, sector);
+        _data[off] = (byte)nextTrack;
+        _data[off + 1] = (byte)nextSector;
+        Array.Copy(payloadBytes, 0, _data, off + 2, Math.Min(payloadBytes.Length, 254));
+    }
+
+    /// <summary>Finds a blank directory slot and returns its file offset, or null if full.</summary>
+    public long? FindFreeEntrySlot()
+    {
+        (int T, int S) ts = (1, 0x22);
+        var guard = 0;
+        while (ts.T != 0 && guard++ < 512)
+        {
+            var baseOff = SectorOffset(ts.T, ts.S);
+            for (var i = 0; i < 8; i++)
+            {
+                var slot = baseOff + i * 32;
+                var type = _data[slot + 2];
+                var nameAllPad = true;
+                for (var k = 0; k < 16; k++)
+                {
+                    var c = _data[slot + 5 + k];
+                    if (c is not (0 or 0xA0)) { nameAllPad = false; break; }
+                }
+                if (type == 0 && _data[slot + 3] == 0 && _data[slot + 4] == 0 &&
+                    nameAllPad && _data[slot + 30] == 0 && _data[slot + 31] == 0)
+                    return slot;
+            }
+            var nextT = _data[baseOff];
+            var nextS = _data[baseOff + 1];
+            ts = (nextT, nextS);
+        }
+        return null;
+    }
+
     public void Save() => File.WriteAllBytes(Path, _data);
 
     public byte[] Export(CbmDirEntry entry) =>

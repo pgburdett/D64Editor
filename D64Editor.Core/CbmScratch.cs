@@ -1,6 +1,6 @@
 namespace D64Editor.Core;
 
-/// <summary>A CBM-layout image that supports in-place scratch (free chain blocks + mark the entry DEL).</summary>
+/// <summary>A CBM-layout image that supports in-place scratch and file import (BAM + directory edits).</summary>
 public interface ICbmWritable
 {
     string Path { get; }
@@ -14,8 +14,17 @@ public interface ICbmWritable
     /// <summary>Marks one (track,sector) free in the image's BAM (in-memory; call Save to persist).</summary>
     void SetSectorFree(int track, int sector);
 
-    /// <summary>Marks one (track,sector) allocated in the image's BAM (in-memory) — used by import.</summary>
+    /// <summary>Marks one (track,sector) allocated in the image's BAM (in-memory).</summary>
     void MarkAllocated(int track, int sector);
+
+    /// <summary>Allocates and returns the next free sector, or (0,0) if the disk is full (does not mark it).</summary>
+    (int Track, int Sector) AllocateSector();
+
+    /// <summary>Writes link bytes and payload into a 256-byte sector (in-memory).</summary>
+    void WriteSectorData(int track, int sector, int nextTrack, int nextSector, byte[] payloadBytes);
+
+    /// <summary>Returns the file offset of a blank directory slot, or null if the directory is full.</summary>
+    long? FindFreeEntrySlot();
 
     /// <summary>Writes the modified image back to <see cref="Path"/>.</summary>
     void Save();

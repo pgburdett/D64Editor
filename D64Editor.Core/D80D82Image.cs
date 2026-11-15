@@ -144,6 +144,25 @@ public sealed class D80D82Image : ICbmWritable
 
     public void Save() => File.WriteAllBytes(Path, _data);
 
+    private bool IsSectorFree(int track, int sector)
+    {
+        if (track < 1 || track > _trackCount || sector < 0 || sector >= _sectorsPerTrack[track]) return false;
+        foreach (var (bt, bs) in new[] { (38, 0), (38, 3), (38, 6), (38, 9) })
+        {
+            var entryBase = SectorOffset(bt, bs);
+            var lowest = _data[entryBase + 4];
+            var highestPlus1 = _data[entryBase + 5];
+            if (lowest == 0) continue;
+            if (track < lowest || track >= highestPlus1) continue;
+            var entryOff = entryBase + 6 + (track - lowest) * 5;
+            var byteIndex = sector / 8;
+            if (byteIndex >= 4) return false;
+            var bit = 7 - (sector % 8);
+            return (_data[entryOff + 1 + byteIndex] & (1 << bit)) != 0;
+        }
+        return false;
+    }
+
     public void MarkAllocated(int track, int sector)
     {
         if (track < 1 || track > _trackCount) return;
@@ -160,6 +179,53 @@ public sealed class D80D82Image : ICbmWritable
             if (_data[entryOff] > 0) _data[entryOff] = (byte)(_data[entryOff] - 1);
             return;
         }
+    }
+
+    /// <summary>Allocates the next free sector (track 1..end), or (0,0) if full.</summary>
+    public (int Track, int Sector) AllocateSector()
+    {
+        for (var t = 1; t <= _trackCount; t++)
+            for (var s = 0; s < _sectorsPerTrack[t]; s++)
+                if (IsSectorFree(t, s)) return (t, s);
+        return (0, 0);
+    }
+
+    /// <summary>Writes payload + link bytes into a sector (in-memory).</summary>
+    public void WriteSectorData(int track, int sector, int nextTrack, int nextSector, byte[] payloadBytes)
+    {
+        var off = SectorOffset(track, sector);
+        _data[off] = (byte)nextTrack;
+        _data[off + 1] = (byte)nextSector;
+        Array.Copy(payloadBytes, 0, _data, off + 2, Math.Min(payloadBytes.Length, 254));
+    }
+
+    /// <summary>Finds a blank directory slot and returns its file offset, or null if full.</summary>
+    public long? FindFreeEntrySlot()
+    {
+        (int T, int S) ts = (39, 1);
+        var guard = 0;
+        while (ts.T != 0 && guard++ < 128)
+        {
+            var baseOff = SectorOffset(ts.T, ts.S);
+            for (var i = 0; i < 8; i++)
+            {
+                var slot = baseOff + i * 32;
+                var type = _data[slot + 2];
+                var nameAllPad = true;
+                for (var k = 0; k < 16; k++)
+                {
+                    var c = _data[slot + 5 + k];
+                    if (c is not (0 or 0xA0)) { nameAllPad = false; break; }
+                }
+                if (type == 0 && _data[slot + 3] == 0 && _data[slot + 4] == 0 &&
+                    nameAllPad && _data[slot + 30] == 0 && _data[slot + 31] == 0)
+                    return slot;
+            }
+            var nextT = _data[baseOff];
+            var nextS = _data[baseOff + 1];
+            ts = (nextT, nextS);
+        }
+        return null;
     }
 
     public byte[] Export(CbmDirEntry entry) =>

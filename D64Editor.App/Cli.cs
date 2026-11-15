@@ -25,6 +25,9 @@ internal static class Cli
             case "-l" or "--list":
                 return List(args);
 
+            case "-e" or "--export":
+                return Export(args);
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -113,13 +116,97 @@ internal static class Cli
         return true;
     }
 
+    private static bool Export(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --export <image> <outdir>   (exports files from D64/D71/D81/D80/D82/DNP)");
+            return true;
+        }
+
+        var path = args[1];
+        var outDir = args[2];
+        if (!File.Exists(path))
+        {
+            Console.Error.WriteLine($"Image not found: {path}");
+            return true;
+        }
+
+        Directory.CreateDirectory(outDir);
+
+        try
+        {
+            var cbm = CbmCatalog.Open(path);
+            if (cbm is not null)
+            {
+                var n = 0;
+                foreach (var e in cbm.Entries.Where(x => !x.IsScratched))
+                {
+                    var safe = SanitizeFileName(e.FileName.TrimEnd(' '));
+                    var outPath = UniquePath(outDir, safe + ".prg");
+                    File.WriteAllBytes(outPath, cbm.Export(e));
+                    n++;
+                }
+                Console.WriteLine($"Exported {n} file(s) from {cbm.Label} to {outDir}.");
+                return true;
+            }
+
+            var ext = Path.GetExtension(path).ToLowerInvariant();
+            if (ext == ".d64" || DiskFormats.IsD64Size(new FileInfo(path).Length))
+            {
+                var img = D64Image.Load(path);
+                var n = 0;
+                foreach (var e in img.Entries.Where(x => !x.IsScratched))
+                {
+                    var outPath = Path.Combine(outDir, D64Image.SuggestedExportFileName(e));
+                    File.WriteAllBytes(outPath, img.ExportFile(e));
+                    n++;
+                }
+                Console.WriteLine($"Exported {n} file(s) from D64 to {outDir}.");
+                return true;
+            }
+
+            Console.Error.WriteLine("Export is supported for D64 and CBM-layout images (D71/D81/D80/D82/DNP).");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Export failed: {ex.Message}");
+            return true;
+        }
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "file";
+        var invalid = Path.GetInvalidFileNameChars();
+        var chars = name.Select(c => invalid.Contains(c) ? '_' : c).ToArray();
+        var s = new string(chars).Trim();
+        return s.Length == 0 ? "file" : s;
+    }
+
+    private static string UniquePath(string dir, string fileName)
+    {
+        var path = Path.Combine(dir, fileName);
+        if (!File.Exists(path)) return path;
+        var name = Path.GetFileNameWithoutExtension(fileName);
+        var ext = Path.GetExtension(fileName);
+        for (var i = 2; i < 10000; i++)
+        {
+            var p = Path.Combine(dir, $"{name}_{i}{ext}");
+            if (!File.Exists(p)) return p;
+        }
+        return path;
+    }
+
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
         Console.WriteLine("  --convert <in> <out>   Convert G64/NIB to D64 (or copy a native image)");
         Console.WriteLine("  --list <image>         Print an image's directory");
+        Console.WriteLine("  --export <image> <dir> Export files from D64/D71/D81/D80/D82/DNP to a directory");
         Console.WriteLine("  --help                 Show this help");
-        Console.WriteLine("  <image.d64>            Open the image in the GUI");
+        Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");
     }
 }

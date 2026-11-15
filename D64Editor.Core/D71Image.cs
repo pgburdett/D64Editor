@@ -128,6 +128,26 @@ public string Path { get; }
 
     public void Save() => File.WriteAllBytes(Path, _data);
 
+    private bool IsSectorFree(int track, int sector)
+    {
+        if (track < 1 || track > 70 || sector < 0 || sector >= _sectorsPerTrack[track]) return false;
+        long bitmapOff; int bytes;
+        if (track <= 35)
+        {
+            bitmapOff = SectorOffset(18, 0) + 4 + (track - 1) * 4 + 1;
+            bytes = 3;
+        }
+        else
+        {
+            bitmapOff = SectorOffset(53, 0) + (track - 36) * 3;
+            bytes = 3;
+        }
+        var byteIndex = sector / 8;
+        if (byteIndex >= bytes) return false;
+        var bit = 7 - (sector % 8);
+        return (_data[bitmapOff + byteIndex] & (1 << bit)) != 0;
+    }
+
     public void MarkAllocated(int track, int sector)
     {
         if (track < 1 || track > 70) return;
@@ -144,6 +164,53 @@ public string Path { get; }
             var off = SectorOffset(18, 0) + 0xDD + local;
             if (_data[off] > 0) _data[off] = (byte)(_data[off] - 1);
         }
+    }
+
+    /// <summary>Allocates the next free sector (track 1..70), or (0,0) if full.</summary>
+    public (int Track, int Sector) AllocateSector()
+    {
+        for (var t = 1; t <= 70; t++)
+            for (var s = 0; s < _sectorsPerTrack[t]; s++)
+                if (IsSectorFree(t, s)) return (t, s);
+        return (0, 0);
+    }
+
+    /// <summary>Writes payload + link bytes into a sector (in-memory).</summary>
+    public void WriteSectorData(int track, int sector, int nextTrack, int nextSector, byte[] payloadBytes)
+    {
+        var off = SectorOffset(track, sector);
+        _data[off] = (byte)nextTrack;
+        _data[off + 1] = (byte)nextSector;
+        Array.Copy(payloadBytes, 0, _data, off + 2, Math.Min(payloadBytes.Length, 254));
+    }
+
+    /// <summary>Finds a blank directory slot and returns its file offset, or null if full.</summary>
+    public long? FindFreeEntrySlot()
+    {
+        (int T, int S) ts = (18, 1);
+        var guard = 0;
+        while (ts.T != 0 && guard++ < 64)
+        {
+            var baseOff = SectorOffset(ts.T, ts.S);
+            for (var i = 0; i < 8; i++)
+            {
+                var slot = baseOff + i * 32;
+                var type = _data[slot + 2];
+                var nameAllPad = true;
+                for (var k = 0; k < 16; k++)
+                {
+                    var c = _data[slot + 5 + k];
+                    if (c is not (0 or 0xA0)) { nameAllPad = false; break; }
+                }
+                if (type == 0 && _data[slot + 3] == 0 && _data[slot + 4] == 0 &&
+                    nameAllPad && _data[slot + 30] == 0 && _data[slot + 31] == 0)
+                    return slot;
+            }
+            var nextT = _data[baseOff];
+            var nextS = _data[baseOff + 1];
+            ts = (nextT, nextS);
+        }
+        return null;
     }
 
     public byte[] Export(CbmDirEntry entry) =>

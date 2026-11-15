@@ -276,8 +276,9 @@ helpers.
   (header/directory/BAM diff + differing-block list), Batch export of a folder's
   files and Batch Validate (report-only).
 - Window management: the Window menu lists open documents/tabs (tabbed MDI shell).
-- CLI: `--help`, `--list <image>` (print a directory), `--convert <g64/nib> <d64>`
-  (headless G64/NIB→D64), and passing an image path opens it in the GUI.
+- CLI: `--help`, `--list <image>`, `--export <image> <dir>` (export files from
+  D64/D71/D81/D80/D82/DNP), `--convert <g64/nib> <d64>` (headless G64/NIB→D64),
+  and passing an image path opens it in the GUI.
 - PETSCII: **C64 Pro Mono** (style64.org C64 TrueType, `Fonts.cs`) + PUA/screen-code
   mapping (`Petscii.cs`) and a bundled VICE `chargen.bin` for exact ROM-bitmap
   rendering. Central charset toggle (upper/graphics ↔ lower/upper).
@@ -288,7 +289,6 @@ results — see the per-phase notes in `D64Editor.App/Roadmap.md`.
 
 ## Not yet done (see Roadmap.md)
 
-- File import for D71/D80/D82/DNP (D81 done); unscratch/re-allocate outside D81.
 - G64/NIB editing beyond D64 conversion; NIB structural viewer fallback.
 - True single-window tabbed MDI host: DONE — `DiskDocumentView` is the per-disk editor;
   `MainWindow` is a menu/toolbar + `TabControl` shell; Window menu lists open documents.

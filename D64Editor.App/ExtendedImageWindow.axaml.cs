@@ -142,12 +142,12 @@ public partial class ExtendedImageWindow : Window
         }
     }
 
-    /// <summary>Imports a host PRG as a file on the image (currently D81; other formats: entry-edit only).</summary>
+    /// <summary>Imports a host PRG as a file on the image (D71/D81/D80/D82/DNP).</summary>
     private async void OnImportClicked(object? sender, RoutedEventArgs e)
     {
-        if (_info?.Writable is not D81Image d81)
+        if (_info?.Writable is not { } writable)
         {
-            StatusLabel.Text = "File import is implemented for D81 images.";
+            StatusLabel.Text = "This image format doesn't support file import.";
             return;
         }
 
@@ -166,7 +166,7 @@ public partial class ExtendedImageWindow : Window
         try
         {
             var bytes = System.IO.File.ReadAllBytes(src);
-            var result = CbmImport.Import(d81, bytes, Path.GetFileName(src));
+            var result = CbmImport.Import(writable, bytes, Path.GetFileName(src));
             var reloaded = _reload();
             if (reloaded is { } r)
             {
