@@ -17,11 +17,18 @@ public partial class FileChainWindow : Window
     {
         InitializeComponent();
 
-        TitleLabel.Text = $"\"{entry.FileName}\" — {entry.SizeInBlocks} blocks";
-
         var chain = image.GetFileChain(entry);
+        TitleLabel.Text = $"\"{entry.FileName}\" — {chain.Count} block(s) (dir: {entry.SizeInBlocks})";
+
         ChainList.ItemsSource = chain
-            .Select((c, i) => $"{i + 1,4}.  block #{c.Block,-4}  track {c.Track,2}  sector {c.Sector,2}")
+            .Select((c, i) =>
+            {
+                var sector = image.ReadBlock(c.Block);
+                var nextT = sector.Length > 0 ? sector[0] : 0;
+                var nextS = sector.Length > 1 ? sector[1] : 0;
+                var link = nextT == 0 ? $"end (bytes used: {Math.Max(0, nextS - 1)})" : $"next {nextT},{nextS}";
+                return $"{i + 1,4}.  block #{c.Block,-4}  T{c.Track,2}/S{c.Sector,-2}  -> {link}";
+            })
             .ToList();
     }
 }
