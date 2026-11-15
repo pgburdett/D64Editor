@@ -641,8 +641,9 @@ public partial class DiskDocumentView : UserControl
         if (selected.Count == 1)
         {
             var entry = selected[0];
-            // Use a normalized ASCII/PETSCII filename for the emulator's :name selector.
-            var emuName = DirectoryFormatter.PetsciiToAscii(entry.FileName);
+            // Use a normalized name for the emulator's :name selector (lowercase letters for VICE).
+            var emuName = DirectoryFormatter.PetsciiToEmulatorName(entry.FileName);
+            if (string.IsNullOrWhiteSpace(emuName)) emuName = DirectoryFormatter.PetsciiToAscii(entry.FileName);
             if (string.IsNullOrWhiteSpace(emuName)) emuName = entry.FileName;
             target = diskPath + ":" + emuName;
             note = $"\"{emuName}\"";

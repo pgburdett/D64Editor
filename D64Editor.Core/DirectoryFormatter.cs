@@ -25,6 +25,26 @@ public static class DirectoryFormatter
         return sb.ToString().TrimEnd();
     }
 
+    /// <summary>
+    ///     Maps a PETSCII filename to the form expected by emulators (e.g. VICE autostart
+    ///     <c>image:NAME</c>). Uses lowercase a-z for letter characters so VICE interprets them
+    ///     as unshifted C64 letters instead of shifted/graphics glyphs.
+    /// </summary>
+    public static string PetsciiToEmulatorName(string name)
+    {
+        var sb = new StringBuilder(name.Length);
+        foreach (var ch in name)
+        {
+            var b = (byte)ch;
+            if (b is >= 0xC1 and <= 0xDA) sb.Append((char)(b - 0xC1 + 'a'));
+            else if (b is >= 0x41 and <= 0x5A) sb.Append((char)(b - 0x41 + 'a'));
+            else if (b is >= 0x61 and <= 0x7A) sb.Append((char)b);
+            else if (b is >= 0x20 and <= 0x7E) sb.Append((char)b);
+            else sb.Append(' ');
+        }
+        return sb.ToString().TrimEnd();
+    }
+
     private static string BaseCode(byte value) => (value & 0x0F) switch
     {
         1 => "SEQ",
