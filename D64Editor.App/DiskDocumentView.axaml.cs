@@ -23,6 +23,9 @@ public partial class DiskDocumentView : UserControl
     private bool _showDelFiles = true;
     private int _dirFontSize = 14;
 
+    private Avalonia.Point _dragStartPoint;
+    private bool _dragPressCandidate;
+
     public DiskDocumentView()
     {
         InitializeComponent();
@@ -35,6 +38,9 @@ public partial class DiskDocumentView : UserControl
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        DirectoryList.AddHandler(PointerPressedEvent, OnDirectoryPointerPressed, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        DirectoryList.AddHandler(PointerMovedEvent, OnDirectoryPointerMoved, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        DirectoryList.AddHandler(PointerReleasedEvent, (_, _) => _dragPressCandidate = false, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         PetsciiDisplay.Changed += OnPetsciiDisplayChanged;
     }
 
@@ -831,5 +837,61 @@ public partial class DiskDocumentView : UserControl
             if (counts.TryGetValue(type, out var count) && count > 0)
                 parts.Add($"{count} {type}");
         return string.Join(",", parts);
+    }
+
+    private void OnDirectoryPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        _dragPressCandidate = e.GetCurrentPoint(DirectoryList).Properties.IsLeftButtonPressed
+                              && _image is not null
+                              && DirectoryList.SelectedItems?.Count > 0;
+        _dragStartPoint = e.GetPosition(DirectoryList);
+    }
+
+    private async void OnDirectoryPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (!_dragPressCandidate || _image is null) return;
+        var point = e.GetCurrentPoint(DirectoryList);
+        if (!point.Properties.IsLeftButtonPressed) { _dragPressCandidate = false; return; }
+
+        var pos = e.GetPosition(DirectoryList);
+        if (Math.Abs(pos.X - _dragStartPoint.X) < 6 && Math.Abs(pos.Y - _dragStartPoint.Y) < 6)
+            return;
+
+        _dragPressCandidate = false;
+        var selected = SelectedEntries().Where(x => !x.IsScratched).ToList();
+        if (selected.Count == 0) return;
+
+        try
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "D64Editor-drag-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            var paths = new List<string>();
+            foreach (var entry in selected)
+            {
+                var filePath = Path.Combine(tempDir, D64Image.SuggestedExportFileName(entry));
+                await File.WriteAllBytesAsync(filePath, _image.ExportFile(entry));
+                paths.Add(filePath);
+            }
+
+            var top = TopLevel.GetTopLevel(this);
+            if (top?.StorageProvider is null) return;
+            var files = new List<Avalonia.Platform.Storage.IStorageFile>();
+            foreach (var p in paths)
+            {
+                var f = await top.StorageProvider.TryGetFileFromPathAsync(p);
+                if (f is not null) files.Add(f);
+            }
+            if (files.Count == 0) return;
+
+            var data = new DataObject();
+            data.Set(DataFormats.Files, files);
+#pragma warning disable CS0618
+            await DragDrop.DoDragDrop(e, data, DragDropEffects.Copy);
+#pragma warning restore CS0618
+        }
+        catch
+        {
+            // Best-effort drag export; ignore failures.
+        }
     }
 }
