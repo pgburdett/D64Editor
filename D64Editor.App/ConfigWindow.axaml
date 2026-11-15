@@ -2,21 +2,21 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.ConfigWindow"
         Title="Configuration"
-        Width="380" Height="390"
+        Width="460" Height="400"
         CanResize="False">
 
     <StackPanel Margin="16" Spacing="10">
 
         <TextBlock Text="File Import" FontWeight="Bold" />
-        <Grid ColumnDefinitions="Auto,8,80,20,Auto,8,80">
+        <Grid ColumnDefinitions="Auto,8,110,20,Auto,8,110">
             <TextBlock Grid.Column="0" Text="Starting Track:" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Column="2" Name="StartTrackBox" Minimum="1" Maximum="35" />
+            <NumericUpDown Grid.Column="2" Name="StartTrackBox" Minimum="1" Maximum="35" MinWidth="110" />
             <TextBlock Grid.Column="4" Text="Starting Sector:" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Column="6" Name="StartSectorBox" Minimum="0" Maximum="20" />
+            <NumericUpDown Grid.Column="6" Name="StartSectorBox" Minimum="0" Maximum="20" MinWidth="110" />
         </Grid>
-        <Grid ColumnDefinitions="Auto,8,80">
+        <Grid ColumnDefinitions="Auto,8,110">
             <TextBlock Grid.Column="0" Text="Interleave:" VerticalAlignment="Center" />
-            <NumericUpDown Grid.Column="2" Name="InterleaveBox" Minimum="1" Maximum="15" />
+            <NumericUpDown Grid.Column="2" Name="InterleaveBox" Minimum="1" Maximum="15" MinWidth="110" />
         </Grid>
 
         <Separator Margin="0,6,0,6" />
