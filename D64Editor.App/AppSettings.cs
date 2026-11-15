@@ -34,8 +34,8 @@ public static class AppSettings
     public static bool SelectNextFileUponSave { get; set; }
 
     public static string LastDirectoryPath { get; set; } = "";
-    /// <summary>Emulator command template; "{disk}" is replaced with the image path. e.g. "x64sc -autostart {disk}".</summary>
-    public static string EmulatorCommand { get; set; } = "x64sc -autostart \"{disk}\"";
+    /// <summary>Emulator command template; "{disk}" is replaced with the autostart target and "{image}" with the disk path. Extra args (e.g. cartridges) persist.</summary>
+    public static string EmulatorCommand { get; set; } = "x64sc -8 \"{image}\" -autostart \"{disk}\"";
     /// <summary>OpenCBM copy tool path (cbmcopy / cbmctrl); auto-detected if blank.</summary>
     public static string OpenCbmTool { get; set; } = "";
     /// <summary>URL for the "Check for Updates" version feed.</summary>
