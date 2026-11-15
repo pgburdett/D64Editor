@@ -111,6 +111,15 @@ internal static class Cli
             return true;
         }
 
+        var t64 = T64Image.TryLoad(path);
+        if (t64 is not null)
+        {
+            Console.WriteLine($"T64 \"{t64.Description}\" — {t64.Entries.Count} file(s)");
+            foreach (var e in t64.Entries)
+                Console.WriteLine($"  {e.Length,6}  \"{e.FileName}\"  ${e.StartAddress:X4}-${e.EndAddress:X4}");
+            return true;
+        }
+
         foreach (var e in ImageCatalog.ReadEntries(path))
             Console.WriteLine($"  {e.Type,-6} {e.Name}");
         return true;
@@ -151,6 +160,21 @@ internal static class Cli
                 return true;
             }
 
+            var t64 = T64Image.TryLoad(path);
+            if (t64 is not null)
+            {
+                var n = 0;
+                foreach (var e in t64.Entries)
+                {
+                    var safe = SanitizeFileName(e.FileName.TrimEnd(' '));
+                    var outPath = UniquePath(outDir, safe + ".prg");
+                    File.WriteAllBytes(outPath, t64.Extract(e));
+                    n++;
+                }
+                Console.WriteLine($"Exported {n} file(s) from T64 to {outDir}.");
+                return true;
+            }
+
             var ext = Path.GetExtension(path).ToLowerInvariant();
             if (ext == ".d64" || DiskFormats.IsD64Size(new FileInfo(path).Length))
             {
@@ -166,7 +190,7 @@ internal static class Cli
                 return true;
             }
 
-            Console.Error.WriteLine("Export is supported for D64 and CBM-layout images (D71/D81/D80/D82/DNP).");
+            Console.Error.WriteLine("Export is supported for D64, T64, and CBM-layout images (D71/D81/D80/D82/DNP).");
             return true;
         }
         catch (Exception ex)
@@ -204,7 +228,7 @@ internal static class Cli
         Console.WriteLine("D64 Editor — CLI");
         Console.WriteLine("  --convert <in> <out>   Convert G64/NIB to D64 (or copy a native image)");
         Console.WriteLine("  --list <image>         Print an image's directory");
-        Console.WriteLine("  --export <image> <dir> Export files from D64/D71/D81/D80/D82/DNP to a directory");
+        Console.WriteLine("  --export <image> <dir> Export files from D64/T64/D71/D81/D80/D82/DNP to a directory");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");
