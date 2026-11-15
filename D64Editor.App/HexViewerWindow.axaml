@@ -3,7 +3,8 @@
         xmlns:local="using:D64Editor.App"
         x:Class="D64Editor.App.HexViewerWindow"
         Title="Hex Viewer"
-        Width="760" Height="520">
+        Width="900" Height="520"
+        MinWidth="860">
     <DockPanel Margin="10">
         <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
 
