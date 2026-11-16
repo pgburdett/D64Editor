@@ -61,6 +61,9 @@ internal static class Cli
             case "--cpm-new":
                 return CpmNew(args);
 
+            case "--cpm-bootable":
+                return CpmBootable(args);
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -616,6 +619,40 @@ internal static class Cli
         return true;
     }
 
+    private static bool CpmBootable(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]");
+            Console.Error.WriteLine("  Clones a known-good CP/M system disk (boot/CCP/BDOS donor) and writes new files into it.");
+            return true;
+        }
+        var donor = args[1];
+        var output = args[2];
+        if (!File.Exists(donor)) { Console.Error.WriteLine($"Donor not found: {donor}"); return true; }
+        var files = new List<(string, string, byte[])>();
+        for (var i = 3; i < args.Length; i++)
+        {
+            var eq = args[i].IndexOf('=');
+            if (eq < 0) continue;
+            var name = args[i][..eq].Trim();
+            var host = args[i][(eq + 1)..].Trim();
+            if (!File.Exists(host)) { Console.Error.WriteLine($"File not found: {host}"); return true; }
+            var dot = name.IndexOf('.');
+            var baseName = dot < 0 ? name : name[..dot];
+            var ext = dot < 0 ? "" : name[(dot + 1)..];
+            files.Add((baseName, ext, File.ReadAllBytes(host)));
+        }
+        try
+        {
+            var path = C128Cpm.FormatAndWriteFromBootDonor(donor, output, files);
+            Console.WriteLine($"Created BOOTABLE CP/M image {path} from donor {donor} ({files.Count} file(s)).");
+            Console.WriteLine("Boot code/CCP/BDOS come from the donor; verify by booting in x128/x64sc.");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"CP/M bootable create failed: {ex.Message}"); }
+        return true;
+    }
+
     private static bool CpmNew(string[] args)
     {
         if (args.Length < 3)
@@ -671,6 +708,7 @@ internal static class Cli
         Console.WriteLine("  --run-script <file>    Run a headless automation script (Core ScriptEngine)");
         Console.WriteLine("  --to-gcr <d64> <out.g64|out.nib>  Encode a D64 into a G64/NIB image (native GCR write-back)");
         Console.WriteLine("  --cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]  From-scratch CP/M image (best-effort)");
+        Console.WriteLine("  --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]  Bootable CP/M image from a system-disk donor");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");

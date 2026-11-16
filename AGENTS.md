@@ -114,7 +114,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 ## Known limitations
 - G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.
 - CMD container write-back works for all partition types; richer in-container editing workflows remain incremental.
-- CP/M from-scratch formatting/writing exists; validating bootability/DPB/skew against real bootable media remains external.
+- From-scratch CP/M (`--cpm-new`) is data-only (not bootable, emulator-verified); use `--cpm-bootable` with a system-disk donor for bootable images. From-scratch DPB/skew/bitmap remain unverified.
 - Broader inter-tab/window disk-to-disk drag-and-drop not fully implemented.
 - Undo/redo coverage not comprehensive across all edit paths.
 - Native OS print dialog and built-in updater/installer not implemented (platform-dependent).

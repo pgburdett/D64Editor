@@ -629,4 +629,27 @@ public static class C128Cpm
         return outputPath;
     }
 
+    /// <summary>
+    ///     Creates a BOOTABLE CP/M image by cloning a known-good CP/M system disk (the boot/system
+    ///     donor) and writing the supplied files into its directory with <see cref="WriteFiles"/>.
+    ///     Unlike <see cref="FormatAndWrite"/>, the donor supplies the real boot code, CCP/BDOS
+    ///     and system tracks, so the result can actually boot on a C128/CP/M emulator or hardware.
+    ///     Existing files on the donor are preserved; new files are added to free directory slots.
+    /// </summary>
+    public static string FormatAndWriteFromBootDonor(
+        string donorPath,
+        string outputPath,
+        IEnumerable<(string Name, string Ext, byte[] Data)> files,
+        CpmWriteOptions? options = null)
+    {
+        if (!File.Exists(donorPath))
+            throw new FileNotFoundException("CP/M boot donor image not found.", donorPath);
+        var img = (byte[])File.ReadAllBytes(donorPath).Clone();
+        var fmt = DiskFormats.FromExtension(donorPath);
+        if (fmt != DiskFormat.D71 && fmt != DiskFormat.D81) fmt = DiskFormat.D64;
+        WriteFiles(img, fmt, files, options ?? new CpmWriteOptions());
+        File.WriteAllBytes(outputPath, img);
+        return outputPath;
+    }
+
 }

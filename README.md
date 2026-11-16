@@ -435,9 +435,13 @@ D64Editor                  (no args: starts GUI)
   The D64 directory is placed in the **real interleaved track-1 sectors** (3,4,9,10,14,15,19,20)
   observed on the reference C128 CP/M system disk (8 entries per sector); the allocation
   vector sits in sector 2 to avoid clashing with directory sector 4.
-- **Caveat:** this is a published-spec-derived, best-effort layout — bootability, DPB
-  parameters, sector skew and bitmap location are **not verified** against real bootable
-  CP/M media (D71/D81 use a self-consistent block-based directory, no real reference available). Template-based copy/format remains available for known-good images.
+- **Caveat / emulator-verified:** booting a from-scratch `--cpm-new` image in **x128** produces a
+  black screen — it is **not bootable** (the formatter writes a harmless boot stub, not real CP/M
+  boot code/CCP/BDOS). The reference image boots to the CP/M 3.0 `A>` prompt. For a **bootable**
+  image, use `--cpm-bootable <donor.d64> <out> ...`, which clones a known-good CP/M system disk
+  (boot code + CCP/BDOS + system tracks) and writes new files into its directory; verified in
+  x128 to reach the CP/M 3.0 prompt with the added file present. (D71/D81 from-scratch use a
+  self-consistent block-based directory, no real reference image available.) Template-based copy/format remains available for known-good images.
   CP/M stores record counts, so non-128-aligned files extract padded to 128-byte records.
 
 ### Writing to Real Media
@@ -547,7 +551,8 @@ log every command and its result, stop on the first error, and propagate an exit
 | `archive <zip\|tar\|tgz> <dir> [--images-only]` | Extract archive contents |
 | `geosinfo <name>` | Show GEOS/REL metadata for a file |
 | `togcr <d64> <out.g64\|nib>` | Encode a D64 into a G64/NIB container (GCR write-back) |
-| `cpmnew <d64\|d71\|d81> <out> [NAME.EXT=host ...]` | From-scratch CP/M image (best-effort) |
+| `cpmnew <d64\|d71\|d81> <out> [NAME.EXT=host ...]` | From-scratch CP/M image (best-effort, not bootable) |
+| `cpmbootable <donor.d64> <out> [NAME.EXT=host ...]` | Bootable CP/M image from a system-disk donor |
 | `exit [code]` | Stop with an exit code |
 
 Example (`scripts/example-basic.d64script`):
@@ -589,7 +594,7 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 ### Not Yet Implemented
 - **G64/NIB native GCR-level editing/save** back to original `.g64/.nib` format (requires GCR re-encoding with correct sync/timing/track rebuilding).
 - **T64/DNP/CMD deeper native read/write:** T64 has basic mutable save/rebuild; DNP supports in-image edits/save and native DNP container write-back. CMD container-level write-back for emulated partitions (D64/D71/D81) still limited.
-- **C128 CP/M layout validation** — from-scratch formatting/writing exists for all variants; validating bootability/DPB/skew/bitmap against real bootable CP/M media remains external (needs real images/emulator).
+- **C128 CP/M bootability** — from-scratch `--cpm-new` images are data-only (verified non-bootable in x128). Use `--cpm-bootable` with a known-good system-disk donor for bootable media; DPB/skew/bitmap of the from-scratch layout remain unverified.
 - **Broader inter-tab/window disk-to-disk drag-and-drop** (OS drag in/out works; inter-tab drag remains limited).
 - **More comprehensive undo/redo** coverage across all edit paths (basic for common D64 ops now).
 - **Deeper GEOS disk/application-data/VLIR workflows** beyond best-effort index/chain inspection and metadata editing.

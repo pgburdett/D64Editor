@@ -168,6 +168,7 @@ public static class ScriptEngine
             case "geosinfo": GeosInfo(c, a, r); break;
             case "togcr": ToGcr(c, a, r); break;
             case "cpmnew": CpmNew(c, a, r); break;
+            case "cpmbootable": CpmBootable(c, a, r); break;
 
             default: throw new ScriptException($"Unknown command '{cmd}' (run 'help' for the command list).");
         }
@@ -210,6 +211,7 @@ public static class ScriptEngine
         sb.AppendLine("  geosinfo <name>              Show GEOS/REL metadata for a file");
         sb.AppendLine("  togcr <d64> <out.g64|nib>    Encode a D64 into a G64/NIB container (GCR write-back)");
         sb.AppendLine("  cpmnew <d64|d71|d81> <out> [NAME.EXT=host ...]  From-scratch CP/M image (best-effort)");
+        sb.AppendLine("  cpmbootable <donor.d64> <out> [NAME.EXT=host ...]  Bootable CP/M image from a system-disk donor");
         sb.AppendLine("  echo <text...>               Print text");
         sb.AppendLine("  exit [code]                  Stop with exit code");
         Log(c, sb.ToString().TrimEnd(), r);
@@ -677,6 +679,26 @@ public static class ScriptEngine
         var imagesOnly = a.Any(x => x == "--images-only");
         var n = ArchiveExtract.Extract(arch, dir, imagesOnly);
         Log(c, $"Extracted {n} file(s) from {arch} to {dir}{(imagesOnly ? " (images only)" : "")}.", r);
+    }
+
+    private static void CpmBootable(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 2) throw new ScriptException("Usage: cpmbootable <donor.d64> <out> [NAME.EXT=host ...]");
+        var donor = Full(c, a[0]);
+        var output = Full(c, a[1]);
+        var files = new List<(string, string, byte[])>();
+        for (var i = 2; i < a.Length; i++)
+        {
+            var eq = a[i].IndexOf('=');
+            if (eq < 0) continue;
+            var name = a[i][..eq].Trim();
+            var host = Full(c, a[i][(eq + 1)..].Trim());
+            if (!File.Exists(host)) throw new ScriptException($"File not found: {host}");
+            var dot = name.IndexOf('.');
+            files.Add((dot < 0 ? name : name[..dot], dot < 0 ? "" : name[(dot + 1)..], File.ReadAllBytes(host)));
+        }
+        C128Cpm.FormatAndWriteFromBootDonor(donor, output, files);
+        Log(c, $"Created bootable CP/M image {output} from donor {donor} ({files.Count} file(s)).", r);
     }
 
     private static void ToGcr(Context c, string[] a, ScriptResult r)

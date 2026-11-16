@@ -3,6 +3,13 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Emulator Boot Verification & Bootable CP/M Donor Path
+
+### Verified (x128 emulator, VICE 3.10)
+- Real reference C128 CP/M system disk boots to the CP/M 3.0 `A>` prompt.
+- From-scratch `--cpm-new` images do NOT boot (black screen) — confirmed the documented caveat; they are data-only.
+- New `--cpm-bootable <donor.d64> <out> ...` (Core `C128Cpm.FormatAndWriteFromBootDonor`) clones a known-good system disk (boot code/CCP/BDOS) and writes new files into its directory; verified to boot to CP/M 3.0 with the added file present. Script equivalent `cpmbootable`.
+
 ## [Unreleased] — CP/M D64 Directory Layout Aligned to Real Disk
 
 ### Changed
