@@ -169,6 +169,7 @@ public static class ScriptEngine
             case "togcr": ToGcr(c, a, r); break;
             case "cpmnew": CpmNew(c, a, r); break;
             case "cpmbootable": CpmBootable(c, a, r); break;
+            case "cpmimportdir": CpmImportDir(c, a, r); break;
 
             default: throw new ScriptException($"Unknown command '{cmd}' (run 'help' for the command list).");
         }
@@ -212,6 +213,7 @@ public static class ScriptEngine
         sb.AppendLine("  togcr <d64> <out.g64|nib>    Encode a D64 into a G64/NIB container (GCR write-back)");
         sb.AppendLine("  cpmnew <d64|d71|d81> <out> [NAME.EXT=host ...]  From-scratch CP/M image (best-effort)");
         sb.AppendLine("  cpmbootable <donor.d64> <out> [NAME.EXT=host ...]  Bootable CP/M image from a system-disk donor");
+        sb.AppendLine("  cpmimportdir <donor.d64> <srcdir> <out>  Import a host directory into a bootable CP/M image");
         sb.AppendLine("  echo <text...>               Print text");
         sb.AppendLine("  exit [code]                  Stop with exit code");
         Log(c, sb.ToString().TrimEnd(), r);
@@ -679,6 +681,33 @@ public static class ScriptEngine
         var imagesOnly = a.Any(x => x == "--images-only");
         var n = ArchiveExtract.Extract(arch, dir, imagesOnly);
         Log(c, $"Extracted {n} file(s) from {arch} to {dir}{(imagesOnly ? " (images only)" : "")}.", r);
+    }
+
+    private static void CpmImportDir(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 3) throw new ScriptException("Usage: cpmimportdir <donor.d64> <srcdir> <out>");
+        var donor = a[0];
+        var srcDir = Full(c, a[1]);
+        var output = Full(c, a[2]);
+        C128Cpm.CpmImportReport report;
+        if (donor.StartsWith("new:", StringComparison.OrdinalIgnoreCase))
+        {
+            var fmt = donor[4..].ToLowerInvariant() switch
+            {
+                "d64" => DiskFormat.D64, "d71" => DiskFormat.D71, "d81" => DiskFormat.D81,
+                _ => DiskFormat.Unknown,
+            };
+            if (fmt == DiskFormat.Unknown) throw new ScriptException("Use new:d64, new:d71 or new:d81.");
+            var (files, importReport) = C128Cpm.ReadHostDirectory(srcDir);
+            C128Cpm.FormatAndWrite(fmt, output, files);
+            report = importReport;
+        }
+        else report = C128Cpm.ImportDirectoryFromBootDonor(Full(c, donor), srcDir, output);
+        foreach (var (p, n, bytes) in report.Imported)
+            Log(c, $"  {Path.GetFileName(p)} -> {n} ({bytes} bytes)", r);
+        foreach (var (p, reason) in report.Skipped)
+            Log(c, $"  SKIPPED {Path.GetFileName(p)}: {reason}", r);
+        Log(c, $"Imported {report.Imported.Count} file(s) into CP/M image {output}.", r);
     }
 
     private static void CpmBootable(Context c, string[] a, ScriptResult r)

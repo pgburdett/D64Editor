@@ -652,4 +652,96 @@ public static class C128Cpm
         return outputPath;
     }
 
+    /// <summary>Result of importing a host directory into CP/M: the 8.3 name assigned to each file and any skips.</summary>
+    public sealed record CpmImportReport(
+        IReadOnlyList<(string HostPath, string CpmName, int Bytes)> Imported,
+        IReadOnlyList<(string HostPath, string Reason)> Skipped);
+
+    /// <summary>
+    ///     Maps a host filename to a legal CP/M 8.3 name (uppercase, 8+3 chars, '.' split,
+    ///     invalid characters replaced with 'X', first char forced to A-Z). Returns name+ext.
+    /// </summary>
+    public static (string Name, string Ext) HostNameToCpm83(string hostFileName)
+    {
+        var leaf = Path.GetFileName(hostFileName);
+        var dot = leaf.LastIndexOf('.');
+        var rawName = dot < 0 ? leaf : leaf[..dot];
+        var rawExt = dot < 0 ? "" : leaf[(dot + 1)..];
+        return NormalizeName(rawName, rawExt, upper: true);
+    }
+
+    /// <summary>
+    ///     Reads all files in a host directory and returns them as CP/M 8.3 named payloads,
+    ///     resolving duplicate mapped names by appending a numeric suffix to the 8-char name
+    ///     (e.g. SECOND.TXT -> SECOND1.TXT). Files whose mapped name collides after 9 tries,
+    ///     or that cannot be read, are reported as skipped.
+    /// </summary>
+    public static (List<(string Name, string Ext, byte[] Data)> Files, CpmImportReport Report)
+        ReadHostDirectory(string directory)
+    {
+        if (!Directory.Exists(directory))
+            throw new DirectoryNotFoundException($"Host directory not found: {directory}");
+
+        var files = new List<(string, string, byte[])>();
+        var imported = new List<(string, string, int)>();
+        var skipped = new List<(string, string)>();
+        var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var path in Directory.GetFiles(directory).OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
+        {
+            var (name, ext) = HostNameToCpm83(path);
+            var key = $"{name.TrimEnd()}.{ext.TrimEnd()}";
+            if (!used.Add(key))
+            {
+                // Collision: try appending a digit to the name until unique.
+                var resolved = false;
+                for (var n = 1; n < 10 && !resolved; n++)
+                {
+                    var newName = (name.TrimEnd() + n).PadRight(8)[..8];
+                    var newKey = $"{newName.TrimEnd()}.{ext.TrimEnd()}";
+                    if (used.Add(newKey)) { name = newName; key = newKey; resolved = true; }
+                }
+                if (!resolved) { skipped.Add((path, $"duplicate CP/M name {key}")); continue; }
+            }
+
+            try
+            {
+                var data = File.ReadAllBytes(path);
+                files.Add((name, ext, data));
+                imported.Add((path, key, data.Length));
+            }
+            catch (Exception ex)
+            {
+                skipped.Add((path, $"read failed: {ex.Message}"));
+            }
+        }
+
+        return (files, new CpmImportReport(imported, skipped));
+    }
+
+    /// <summary>
+    ///     Imports every file in a host directory into a NEW data-only (from-scratch) CP/M image.
+    ///     See <see cref="ImportDirectoryFromBootDonor"/> for a bootable result.
+    /// </summary>
+    public static string ImportDirectory(
+        DiskFormat fmt, string directory, string outputPath, string volumeLabel = "")
+    {
+        var (files, _) = ReadHostDirectory(directory);
+        return FormatAndWrite(fmt, outputPath, files, volumeLabel);
+    }
+
+    /// <summary>
+    ///     Imports every file in a host directory into a BOOTABLE CP/M image cloned from a
+    ///     known-good system-disk donor. Returns the import report (assigned 8.3 names/skips).
+    /// </summary>
+    public static CpmImportReport ImportDirectoryFromBootDonor(
+        string donorPath, string directory, string outputPath, CpmWriteOptions? options = null)
+    {
+        if (!File.Exists(donorPath))
+            throw new FileNotFoundException("CP/M boot donor image not found.", donorPath);
+        var (files, report) = ReadHostDirectory(directory);
+        FormatAndWriteFromBootDonor(donorPath, outputPath, files, options);
+        return report;
+    }
+
 }

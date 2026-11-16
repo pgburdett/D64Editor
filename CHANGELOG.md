@@ -3,6 +3,13 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Whole-Host-Directory Import to CP/M
+
+### Added
+- Core: `C128Cpm.HostNameToCpm83`, `ReadHostDirectory`, `ImportDirectory`, `ImportDirectoryFromBootDonor`, `CpmImportReport` — import all files in a Linux/host directory into a CP/M image with legal 8.3 name mapping (uppercase, 8+3 split, invalid chars → X, first char A-Z, truncation) and collision suffixes (FOOXBAR1.TXT etc.).
+- CLI `--cpm-import-dir <donor|new:d64|new:d71|new:d81> <srcdir> <out>` and script `cpmimportdir`; print host→CP/M mapping and skips.
+- Verified: 4-file directory import (including long names and collision) into new:d64/d71; 2-file import into a bootable donor; extracted files byte-exact (modulo CP/M 128-byte record padding); resulting donor image boots to CP/M 3.0 in x128.
+
 ## [Unreleased] — Emulator Boot Verification & Bootable CP/M Donor Path
 
 ### Verified (x128 emulator, VICE 3.10)

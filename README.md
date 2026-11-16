@@ -441,7 +441,20 @@ D64Editor                  (no args: starts GUI)
   image, use `--cpm-bootable <donor.d64> <out> ...`, which clones a known-good CP/M system disk
   (boot code + CCP/BDOS + system tracks) and writes new files into its directory; verified in
   x128 to reach the CP/M 3.0 prompt with the added file present. (D71/D81 from-scratch use a
-  self-consistent block-based directory, no real reference image available.) Template-based copy/format remains available for known-good images.
+  self-consistent block-based directory, no real reference image available.)
+
+### Importing a Whole Linux/Host Directory
+- CLI: `--cpm-import-dir <donor.d64|new:d64|new:d71|new:d81> <srcdir> <out>`; script: `cpmimportdir`.
+  Use a bootable system-disk **donor** for a bootable result, or `new:d64`/`new:d71`/`new:d81`
+  for a fresh data-only image (no donor, no free-space limit from a full system disk).
+- Every regular file in `<srcdir>` is read and mapped to a legal CP/M **8.3** name: uppercased,
+  split at the last `.` (name ≤ 8, ext ≤ 3), invalid characters replaced with `X`, first character
+  forced A–Z. Long names are truncated (e.g. `averylongfilename.ext` → `AVERYLON.EXT`).
+- **Collisions** (two host files mapping to the same 8.3 name) get a numeric suffix on the name
+  (`FOOXBAR.TXT`, `FOOXBAR1.TXT`, …). The importer prints each host→CP/M name mapping and any skips.
+- CP/M files are padded to 128-byte records (a 14-byte file extracts as 128 bytes with the exact
+  prefix preserved). A donor disk must have enough free data blocks for the imported files;
+  a full system disk may reject a large directory — use `new:...` for bulk data-only imports. Template-based copy/format remains available for known-good images.
   CP/M stores record counts, so non-128-aligned files extract padded to 128-byte records.
 
 ### Writing to Real Media

@@ -64,6 +64,9 @@ internal static class Cli
             case "--cpm-bootable":
                 return CpmBootable(args);
 
+            case "--cpm-import-dir":
+                return CpmImportDir(args);
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -619,6 +622,50 @@ internal static class Cli
         return true;
     }
 
+    private static bool CpmImportDir(string[] args)
+    {
+        if (args.Length < 4)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --cpm-import-dir <donor.d64> <srcdir> <out>");
+            Console.Error.WriteLine("  Imports all files in <srcdir> into a CP/M image. <donor> = a bootable system .d64/.d71/.d81,");
+            Console.Error.WriteLine("  or 'new:d64'/'new:d71'/'new:d81' for a fresh data-only (non-bootable) image.");
+            Console.Error.WriteLine("  Host filenames are mapped to CP/M 8.3 names; duplicate names get a numeric suffix.");
+            return true;
+        }
+        var donor = args[1];
+        var srcDir = args[2];
+        var output = args[3];
+        if (!Directory.Exists(srcDir)) { Console.Error.WriteLine($"Source directory not found: {srcDir}"); return true; }
+        try
+        {
+            C128Cpm.CpmImportReport report;
+            if (donor.StartsWith("new:", StringComparison.OrdinalIgnoreCase))
+            {
+                var fmt = donor[4..].ToLowerInvariant() switch
+                {
+                    "d64" => DiskFormat.D64, "d71" => DiskFormat.D71, "d81" => DiskFormat.D81,
+                    _ => DiskFormat.Unknown,
+                };
+                if (fmt == DiskFormat.Unknown) { Console.Error.WriteLine("Use new:d64, new:d71 or new:d81."); return true; }
+                var (files, importReport) = C128Cpm.ReadHostDirectory(srcDir);
+                C128Cpm.FormatAndWrite(fmt, output, files);
+                report = importReport;
+            }
+            else
+            {
+                if (!File.Exists(donor)) { Console.Error.WriteLine($"Donor not found: {donor}"); return true; }
+                report = C128Cpm.ImportDirectoryFromBootDonor(donor, srcDir, output);
+            }
+            foreach (var (p, n, bytes) in report.Imported)
+                Console.WriteLine($"  {Path.GetFileName(p),-24} -> {n,-13} {bytes,8} bytes");
+            foreach (var (p, reason) in report.Skipped)
+                Console.Error.WriteLine($"  SKIPPED {Path.GetFileName(p)}: {reason}");
+            Console.WriteLine($"Imported {report.Imported.Count} file(s) into image {output}.");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"CP/M directory import failed: {ex.Message}"); }
+        return true;
+    }
+
     private static bool CpmBootable(string[] args)
     {
         if (args.Length < 3)
@@ -709,6 +756,7 @@ internal static class Cli
         Console.WriteLine("  --to-gcr <d64> <out.g64|out.nib>  Encode a D64 into a G64/NIB image (native GCR write-back)");
         Console.WriteLine("  --cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]  From-scratch CP/M image (best-effort)");
         Console.WriteLine("  --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]  Bootable CP/M image from a system-disk donor");
+        Console.WriteLine("  --cpm-import-dir <donor.d64> <srcdir> <out>  Import a whole host directory into a bootable CP/M image");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");
