@@ -487,3 +487,6 @@ serve-remote-file/
 # Local session logs / IDE user settings (not part of the repo)
 session-*.md
 D64Editor.sln.DotSettings.user
+
+# VICE emulator settings (auto-generated, not part of this repo)
+settings
