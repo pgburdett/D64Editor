@@ -150,22 +150,40 @@ public partial class GeosInfoWindow : Window
     private static void AppendVlirInfo(StringBuilder sb, D64Image image, D64FileEntry entry)
     {
         sb.AppendLine("VLIR index (best-effort):");
-        // VLIR files: first data block of file is the VLIR index block (256 bytes) containing
-        // up to 127 (t,s) record-chain pointers; (0,0)=empty, ($00,$FF) or end markers vary.
+        // VLIR files: first data block of file is commonly the VLIR index block (256 bytes)
+        // containing up to 127 (t,s) record-chain pointers; (0,0)=empty, (0,255)=end marker (varies).
         var firstBlock = D64Image.TrackSectorToBlock(entry.StartTrack, entry.StartSector);
         var idx = image.ReadBlock(firstBlock);
         sb.AppendLine($"  Index block: T{entry.StartTrack}/S{entry.StartSector} (block #{firstBlock})");
         for (var i = 0; i < 127; i++)
         {
-            var off = 2 + i * 2; // many layouts keep 2-byte link at 0,1 and records start at 2
+            var off = 2 + i * 2; // many layouts keep 2-byte link at 0,1 and record pointers start at 2
             if (off + 1 >= idx.Length) break;
             var t = idx[off];
             var s = idx[off + 1];
             if (t == 0 && s == 0) continue;
             if (t == 0 && s == 255) { sb.AppendLine($"  [{i,3}] end marker (00,FF)"); continue; }
-            sb.AppendLine($"  [{i,3}] record chain -> T{t}/S{s}");
+
+            // Best-effort: follow record chain and compute payload bytes.
+            var bytes = 0;
+            var blocks = 0;
+            var ct = (int)t; var cs = (int)s;
+            var guard = 0;
+            while (ct != 0 && guard++ < 512)
+            {
+                try
+                {
+                    var b = image.ReadBlock(D64Image.TrackSectorToBlock((byte)ct, (byte)cs));
+                    blocks++;
+                    var nt = b[0]; var ns = b[1];
+                    if (nt == 0) bytes += Math.Max(0, ns - 1);
+                    else bytes += 254;
+                    ct = nt; cs = ns;
+                }
+                catch { break; }
+            }
+            sb.AppendLine($"  [{i,3}] record -> T{t}/S{s}  ({blocks} block(s), ~{bytes} byte(s))");
         }
-        // Also show first bytes of index block for reference
         sb.AppendLine();
         sb.AppendLine("Index block dump:");
         AppendHexDump(sb, idx);

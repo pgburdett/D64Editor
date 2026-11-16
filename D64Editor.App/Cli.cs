@@ -51,6 +51,9 @@ internal static class Cli
             case "--print-dir":
                 return PrintDir(args);
 
+            case "--geos-info":
+                return GeosInfo(args);
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -522,6 +525,70 @@ internal static class Cli
         return true;
     }
 
+    private static bool GeosInfo(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --geos-info <d64> <filename>");
+            return true;
+        }
+        var path = args[1];
+        var name = args[2];
+        if (!File.Exists(path)) { Console.Error.WriteLine($"Image not found: {path}"); return true; }
+        try
+        {
+            var img = D64Image.Load(path);
+            var entry = img.Entries.FirstOrDefault(e => string.Equals(e.FileName.TrimEnd(), name.TrimEnd(), StringComparison.OrdinalIgnoreCase)
+                                                     || string.Equals(e.FileName, name, StringComparison.OrdinalIgnoreCase));
+            if (entry is null) { Console.Error.WriteLine($"File not found: {name}"); return true; }
+
+            Console.WriteLine($"File: \"{entry.FileName}\" ({entry.TypeDisplay}, {entry.SizeInBlocks} blocks)");
+            Console.WriteLine($"Bytes 15-1D: {entry.Byte15:X2} {entry.Byte16:X2} {entry.Byte17:X2} {entry.Byte18:X2} {entry.Byte19:X2} {entry.Byte1A:X2} {entry.Byte1B:X2} {entry.Byte1C:X2} {entry.Byte1D:X2}");
+            if (entry.IsGeosFile)
+            {
+                Console.WriteLine($"GEOS type: {entry.GeosFileTypeName} (byte15={entry.Byte15})");
+                Console.WriteLine($"Structure: {(entry.IsGeosVlir ? "VLIR" : "Sequential")} (byte16={entry.Byte16})");
+                if (entry.GeosInfoBlock is { } ib) Console.WriteLine($"Info block: T{ib.Track}/S{ib.Sector}");
+                Console.WriteLine($"Modified: {entry.GeosModified?.ToString("yyyy-MM-dd HH:mm") ?? "unknown/invalid"}");
+                if (entry.IsGeosVlir)
+                {
+                    Console.WriteLine("VLIR records (best-effort):");
+                    var firstBlock = D64Image.TrackSectorToBlock(entry.StartTrack, entry.StartSector);
+                    var idx = img.ReadBlock(firstBlock);
+                    for (var i = 0; i < 127; i++)
+                    {
+                        var off = 2 + i * 2;
+                        if (off + 1 >= idx.Length) break;
+                        var t = idx[off]; var s = idx[off + 1];
+                        if (t == 0 && s == 0) continue;
+                        if (t == 0 && s == 255) { Console.WriteLine($"  [{i,3}] end marker"); continue; }
+                        var bytes = 0; var blocks = 0; var ct = (int)t; var cs = (int)s; var guard = 0;
+                        while (ct != 0 && guard++ < 512)
+                        {
+                            try
+                            {
+                                var b = img.ReadBlock(D64Image.TrackSectorToBlock((byte)ct, (byte)cs));
+                                blocks++; var nt = b[0]; var ns = b[1];
+                                if (nt == 0) bytes += Math.Max(0, ns - 1); else bytes += 254;
+                                ct = nt; cs = ns;
+                            }
+                            catch { break; }
+                        }
+                        Console.WriteLine($"  [{i,3}] -> T{t}/S{s} ({blocks} blocks, ~{bytes} bytes)");
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("Not detected as a GEOS file (byte15 not in 1..14).");
+                if (entry.FileType == D64FileType.Rel)
+                    Console.WriteLine($"REL side sector T{entry.Byte15}/S{entry.Byte16}, record length {entry.Byte17}");
+            }
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"GEOS info failed: {ex.Message}"); }
+        return true;
+    }
+
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
@@ -535,6 +602,7 @@ internal static class Cli
         Console.WriteLine("  --cpm-format <tmpl> <out>  Create empty CP/M image from template (clears directory; template-based)");
         Console.WriteLine("  --extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]  Extract archive contents");
         Console.WriteLine("  --print-dir <image>    Print directory listing (text, D64)");
+        Console.WriteLine("  --geos-info <d64> <file>  Show GEOS/REL metadata and best-effort VLIR info for a file (D64)");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");
