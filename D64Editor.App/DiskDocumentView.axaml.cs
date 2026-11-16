@@ -22,6 +22,8 @@ public partial class DiskDocumentView : UserControl
     private bool _upperCase;
     private bool _showDelFiles = true;
     private int _dirFontSize = 14;
+    private readonly Stack<byte[]> _undo = new();
+    private readonly Stack<byte[]> _redo = new();
 
     private Avalonia.Point _dragStartPoint;
     private bool _dragPressCandidate;
@@ -60,6 +62,52 @@ public partial class DiskDocumentView : UserControl
 
     /// <summary>Raised when the document's disk changes so the shell can update its tab title.</summary>
     public event Action<string>? TitleChanged;
+
+    private void PushUndo()
+    {
+        if (_image is null) return;
+        try
+        {
+            _undo.Push(_image.GetRawDataCopy());
+            _redo.Clear();
+            if (_undo.Count > 50)
+            {
+                var keep = _undo.ToArray().Take(50).Reverse().ToArray();
+                _undo.Clear();
+                foreach (var k in keep) _undo.Push(k);
+            }
+        }
+        catch { }
+    }
+
+    public bool CanUndo => _undo.Count > 0;
+    public bool CanRedo => _redo.Count > 0;
+
+    public void Undo()
+    {
+        if (_image is null || _undo.Count == 0) { FileCountLabel.Text = "Nothing to undo."; return; }
+        try
+        {
+            _redo.Push(_image.GetRawDataCopy());
+            _image.RestoreRawData(_undo.Pop());
+            PopulateFrom(_image);
+            FileCountLabel.Text = "Undid last change.";
+        }
+        catch (Exception ex) { FileCountLabel.Text = $"Undo failed: {ex.Message}"; }
+    }
+
+    public void Redo()
+    {
+        if (_image is null || _redo.Count == 0) { FileCountLabel.Text = "Nothing to redo."; return; }
+        try
+        {
+            _undo.Push(_image.GetRawDataCopy());
+            _image.RestoreRawData(_redo.Pop());
+            PopulateFrom(_image);
+            FileCountLabel.Text = "Redid change.";
+        }
+        catch (Exception ex) { FileCountLabel.Text = $"Redo failed: {ex.Message}"; }
+    }
 
     /// <summary>Recolors the C64-style directory canvas (used by the shell's color selectors).</summary>
     public void ApplyColors(Avalonia.Media.Color bg, Avalonia.Media.Color fg)
@@ -321,6 +369,7 @@ public partial class DiskDocumentView : UserControl
         try
         {
             var bytes = await File.ReadAllBytesAsync(path);
+            PushUndo();
             var added = _image.ImportContainerFile(bytes, Path.GetFileName(path));
             _image.Save();
             PopulateFrom(_image);
@@ -456,6 +505,7 @@ public partial class DiskDocumentView : UserControl
     public void Scratch()
     {
         if (!RequireSelection(out var selected)) return;
+        PushUndo();
         foreach (var entry in selected) _image!.ScratchFile(entry);
         _image!.Save();
         PopulateFrom(_image);
@@ -465,6 +515,7 @@ public partial class DiskDocumentView : UserControl
     {
         if (!RequireSelection(out var selected)) return;
         var n = 0;
+        PushUndo();
         foreach (var entry in selected.Where(x => x.IsScratched)) { _image!.UnscratchFile(entry, D64FileType.Prg); n++; }
         _image!.Save();
         PopulateFrom(_image);
@@ -477,6 +528,7 @@ public partial class DiskDocumentView : UserControl
         var confirmed = await ConfirmWindow.Ask(Win,
             $"Permanently wipe {selected.Count} file(s)? This zeroes their data and cannot be undone.", "Wipe Files?");
         if (!confirmed) return;
+        PushUndo();
         foreach (var entry in selected) _image!.WipeFile(entry);
         _image!.Save();
         PopulateFrom(_image);
@@ -485,6 +537,7 @@ public partial class DiskDocumentView : UserControl
     public void RemoveEntry()
     {
         if (!RequireSelection(out var selected)) return;
+        PushUndo();
         foreach (var entry in selected) _image!.RemoveDirectoryEntry(entry);
         _image!.Save();
         PopulateFrom(_image);
@@ -495,6 +548,7 @@ public partial class DiskDocumentView : UserControl
         if (_image is null) return;
         var selected = SelectedEntries();
         if (selected.Count != 1) { FileCountLabel.Text = selected.Count == 0 ? "Select one file to move." : "You can only move one file at a time."; return; }
+        PushUndo();
         _image.MoveEntryToTop(selected[0]);
         _image.Save();
         PopulateFrom(_image);
@@ -506,6 +560,7 @@ public partial class DiskDocumentView : UserControl
         if (_image is null) return;
         var selected = SelectedEntries();
         if (selected.Count != 1) { FileCountLabel.Text = selected.Count == 0 ? "Select one file to move." : "You can only move one file at a time."; return; }
+        PushUndo();
         _image.MoveEntryToBottom(selected[0]);
         _image.Save();
         PopulateFrom(_image);
@@ -696,7 +751,7 @@ public partial class DiskDocumentView : UserControl
             PopulateFrom(_image);
             SelectEntry(entry);
             FileCountLabel.Text = $"Created REL file \"{entry.FileName}\" (record length {RelFile.RecordLength(entry)}).";
-        }));
+        }, PushUndo));
     }
 
     public void RunInEmulator()
@@ -821,6 +876,7 @@ public partial class DiskDocumentView : UserControl
             try
             {
                 var bytes = await File.ReadAllBytesAsync(path);
+                PushUndo();
                 var added = _image.ImportContainerFile(bytes, Path.GetFileName(path));
                 _image.Save();
                 PopulateFrom(_image);

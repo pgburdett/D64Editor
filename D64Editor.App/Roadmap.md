@@ -33,7 +33,7 @@ disk editors, implemented incrementally.
 - [x] G64/NIB structural viewers/fallback (G64 info window; NIB info window on decode fallback). Native GCR re-encoding/edit-save remains limited
 - [ ] G64/NIB: native GCR-level editing/save back to original image format (beyond D64 conversion)
 - [ ] T64/DNP/CMD: deeper native read/write (T64 has basic mutable save/rebuild; DNP supports in-image edits/save; CMD container-level write-back/editing still limited)
-- [ ] C128 CP/M (.d64/.d71/.d81): from-scratch formatting/writing for all variants and validated `.d71/.d81` DPB mappings/boot-system layouts (requires format-specific boot images/templates and real-image verification)
+- [ ] C128 CP/M (.d64/.d71/.d81): full from-scratch formatting/writing for all variants and validated `.d71/.d81` DPB mappings/boot-system layouts (template-based format/clear added; requires format-specific boot images/templates and real-image verification)
 
 ## Phase 3 — Directory Editing Enhancements
 - [x] Rename file (dialog)
@@ -41,8 +41,8 @@ disk editors, implemented incrementally.
 - [x] Font size cycling
 - [x] Refresh directory view
 - [x] Show deleted files toggle
-- [ ] Drag-and-drop between disk windows and OS
-- [ ] Undo/Redo
+- [x] Drag-and-drop to/from OS files (import by dropping files onto a disk, drag selected files out to the OS); inter-tab/window disk-to-disk drag remains limited
+- [x] Undo/Redo (basic snapshot-based undo/redo for common D64 editing operations via Edit menu/shortcuts)
 
 ## Phase 4 — Viewers
 - [x] Hex viewer — `ADDR <16 bytes> <PETSCII>`, load-address base, C64/ROM glyphs, PETSCII/ASCII toggle
@@ -55,7 +55,7 @@ disk editors, implemented incrementally.
 - [x] GEOS file info viewer (metadata + info-block/VLIR index dump, best-effort) with directory metadata editing
 - [x] ROM-bitmap PETSCII renderer (`chargen.bin`, `PetsciiScreen`/`PetsciiView`)
 - [x] Centralized PETSCII Lower/Upper Case toggle, persisted across PETSCII-displaying views
-- [ ] Graphics viewer enhancements (further) (zoom/pan, richer format controls, export options)
+- [x] Graphics viewer enhancements (zoom controls and BMP export/save for picture and charset/sprite viewers)
 
 ## Phase 5 — BAM / Sector / Block Editors
 - [x] BAM editor (visual block allocation map): colored free/allocated cells, live FREE/ALLOCATED summary, legend, toggle/view-block/error modes
@@ -73,7 +73,7 @@ disk editors, implemented incrementally.
 ## Phase 7 — GEOS & Advanced
 - [x] GEOS file info/metadata editing (directory bytes 15-1D) and best-effort VLIR index/info-block viewing
 - [ ] GEOS disk/application-data support (deeper VLIR record-chain handling, GEOS-specific workflows)
-- [x] CLI: headless `--list`, `--info`, `--validate`, `--convert` (G64/NIB→D64), `--export <image> <dir>`, CP/M extract/copy, archive extraction, `--print-dir`, `--help`
+- [x] CLI: headless `--list`, `--info`, `--validate`, `--convert` (G64/NIB→D64), `--export <image> <dir>`, CP/M extract/copy/format (template-based), archive extraction, `--print-dir`, `--help`
 - [ ] Expanded CLI/scripting (further automation/options, richer non-interactive GEOS/REL/T64 operations)
 
 ## Phase 8 — Platform Integration
@@ -86,10 +86,10 @@ disk editors, implemented incrementally.
 
 ## Current Focus
 - G64/NIB native GCR-level editing/save (re-encode tracks) and deeper structural tooling
-- T64/DNP/CMD deeper native read/write (container-level write-back, richer editing)
-- C128 CP/M from-scratch formatting/writing and validated `.d71/.d81` DPB/boot mappings (with real images/templates)
+- T64/DNP/CMD deeper native read/write (container-level write-back, richer editing workflows)
+- C128 CP/M full from-scratch formatting/writing and validated `.d71/.d81` DPB/boot mappings (with format-specific boot images/templates and real-image verification)
 - Deeper GEOS disk/application-data/VLIR workflows and richer metadata tooling
-- Graphics viewer enhancements (zoom/pan, export/format controls), further CLI/scripting automation
-- Drag-and-drop between disk windows/tabs (broader) and Undo/Redo
+- Further CLI/scripting automation (richer non-interactive GEOS/REL/T64 operations)
+- Broader inter-tab/window disk-to-disk drag-and-drop and more comprehensive undo/redo coverage
 - Platform-dependent native print dialog / updater installer remain out of scope for cross-platform build; keep best-effort flows working
 - Roadmap/docs kept in sync with implemented behavior; smoke-test tabbed MDI/REL/GEOS flows

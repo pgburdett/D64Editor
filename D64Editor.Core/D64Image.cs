@@ -1126,4 +1126,25 @@ public class D64Image : IDiskImage
         WriteDirectory();
         WriteBam();
     }
+
+    /// <summary>Returns a deep copy of the raw image bytes (including error info if present).</summary>
+    public byte[] GetRawDataCopy()
+    {
+        var copy = new byte[_data.Length];
+        Array.Copy(_data, copy, _data.Length);
+        return copy;
+    }
+
+    /// <summary>Restores raw image bytes and rebuilds derived state (directory/BAM/owners/header).</summary>
+    public void RestoreRawData(byte[] data)
+    {
+        if (data.Length != _data.Length)
+            throw new ArgumentException("Snapshot data size does not match current image.", nameof(data));
+        Array.Copy(data, _data, data.Length);
+        ReadDiskHeader();
+        ReadBam();
+        ReadDirectory();
+        ComputeBlockOwners();
+    }
+
 }

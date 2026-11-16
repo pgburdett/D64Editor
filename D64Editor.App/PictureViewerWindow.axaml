@@ -2,14 +2,24 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.PictureViewerWindow"
         Title="Picture Viewer"
-        Width="680" Height="540">
+        Width="760" Height="620">
 
     <DockPanel Margin="10">
-        <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
+        <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+            <TextBlock Name="TitleLabel" FontWeight="Bold" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Zoom:" VerticalAlignment="Center" />
+                <Slider Name="ZoomSlider" Minimum="1" Maximum="8" Value="2" Width="200" TickFrequency="1" IsSnapToTickEnabled="True" />
+                <TextBlock Name="ZoomLabel" VerticalAlignment="Center" Text="200%" Width="50" />
+                <Button Content="Save Image..." Click="OnSaveClicked" />
+            </StackPanel>
+        </StackPanel>
 
-        <Border Background="#0000AA" Padding="8" HorizontalAlignment="Center">
-            <Image Name="PictureImage" Stretch="Fill" Width="640" Height="400"
-                   RenderOptions.BitmapInterpolationMode="None" />
+        <Border Background="#0000AA" Padding="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <Image Name="PictureImage" Stretch="None"
+                       RenderOptions.BitmapInterpolationMode="None" />
+            </ScrollViewer>
         </Border>
     </DockPanel>
 </Window>

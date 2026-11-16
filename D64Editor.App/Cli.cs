@@ -42,6 +42,9 @@ internal static class Cli
             case "--cpm-copy":
                 return CpmCopy(args);
 
+            case "--cpm-format":
+                return CpmFormat(args);
+
             case "--extract-archive":
                 return ExtractArchive(args);
 
@@ -413,6 +416,25 @@ internal static class Cli
         return true;
     }
 
+    private static bool CpmFormat(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --cpm-format <template> <out>   (template-based: preserves boot/system, clears directory)");
+            return true;
+        }
+        var template = args[1];
+        var outPath = args[2];
+        if (!File.Exists(template)) { Console.Error.WriteLine($"Template not found: {template}"); return true; }
+        try
+        {
+            C128Cpm.FormatFromTemplate(template, outPath);
+            Console.WriteLine($"Created formatted CP/M image {outPath} from template {template} (directory cleared, template-based).");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"CP/M format failed: {ex.Message}"); }
+        return true;
+    }
+
     private static bool ExtractArchive(string[] args)
     {
         if (args.Length < 3)
@@ -510,6 +532,7 @@ internal static class Cli
         Console.WriteLine("  --validate <image>     Validate/report cross-links and basic issues (D64)");
         Console.WriteLine("  --cpm-extract <img> <dir>  Extract CP/M files (best-effort DPB-aware, .d64/.d71/.d81)");
         Console.WriteLine("  --cpm-copy <tmpl> <out> [--all|--files A,B]  Create CP/M image from template (keep all or subset)");
+        Console.WriteLine("  --cpm-format <tmpl> <out>  Create empty CP/M image from template (clears directory; template-based)");
         Console.WriteLine("  --extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]  Extract archive contents");
         Console.WriteLine("  --print-dir <image>    Print directory listing (text, D64)");
         Console.WriteLine("  --help                 Show this help");

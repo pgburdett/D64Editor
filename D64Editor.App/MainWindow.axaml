@@ -41,6 +41,9 @@
                 <MenuItem Header="_View File..." Click="OnViewSeq" />
             </MenuItem>
             <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" Click="OnUndo" InputGesture="Ctrl+Z" />
+                <MenuItem Header="_Redo" Click="OnRedo" InputGesture="Ctrl+Y" />
+                <Separator />
                 <MenuItem Header="Select _All" Click="OnSelectAll" />
                 <MenuItem Header="_Unselect All" Click="OnUnselectAll" />
                 <MenuItem Header="_Invert Selection" Click="OnInvertSelection" />

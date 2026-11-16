@@ -8,14 +8,16 @@ namespace D64Editor.App;
 public partial class CreateRelWindow : Window
 {
     private readonly D64Image _image;
+    private readonly Action? _onWillCreate;
     private readonly Action<D64FileEntry>? _onCreated;
 
-    public CreateRelWindow() : this(null!, null) { }
+    public CreateRelWindow() : this(null!, null, null) { }
 
-    public CreateRelWindow(D64Image image, Action<D64FileEntry>? onCreated = null)
+    public CreateRelWindow(D64Image image, Action<D64FileEntry>? onCreated = null, Action? onWillCreate = null)
     {
         _image = image;
         _onCreated = onCreated;
+        _onWillCreate = onWillCreate;
         InitializeComponent();
     }
 
@@ -27,6 +29,7 @@ public partial class CreateRelWindow : Window
         var rl = (int)(RecordLengthBox.Value ?? 1);
         try
         {
+            _onWillCreate?.Invoke();
             var entry = RelWrite.Create(_image, name, rl);
             _onCreated?.Invoke(entry);
             Close();

@@ -142,6 +142,8 @@ public partial class MainWindow : Window
     private void OnRemoveEntry(object? s, RoutedEventArgs e) => Active?.RemoveEntry();
     private void OnMoveTop(object? s, RoutedEventArgs e) => Active?.MoveTop();
     private void OnMoveBottom(object? s, RoutedEventArgs e) => Active?.MoveBottom();
+    private void OnUndo(object? s, RoutedEventArgs e) => Active?.Undo();
+    private void OnRedo(object? s, RoutedEventArgs e) => Active?.Redo();
     private void OnSelectAll(object? s, RoutedEventArgs e) => Active?.SelectAll();
     private void OnUnselectAll(object? s, RoutedEventArgs e) => Active?.UnselectAll();
     private void OnInvertSelection(object? s, RoutedEventArgs e) => Active?.InvertSelection();

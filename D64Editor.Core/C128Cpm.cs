@@ -285,4 +285,23 @@ public static class C128Cpm
         File.WriteAllBytes(outputPath, outBytes);
         return outputPath;
     }
+
+
+    /// <summary>
+    ///     Creates an "empty" (formatted) CP/M image from a compatible template by preserving
+    ///     boot/system/layout and marking all CP/M directory entries unused (0xE5). Allocation
+    ///     state/blocks are left as in the template (best-effort) because bitmap locations are
+    ///     format/DPB-specific; writing fresh files requires compatible directory/alloc handling.
+    ///     This is template-based formatting, not a full from-scratch formatter.
+    /// </summary>
+    public static string FormatFromTemplate(string templatePath, string outputPath)
+    {
+        var outBytes = (byte[])File.ReadAllBytes(templatePath).Clone();
+        var slots = ScanDirectorySlots(outBytes);
+        foreach (var (off, _) in slots)
+            outBytes[off] = 0xE5;
+        File.WriteAllBytes(outputPath, outBytes);
+        return outputPath;
+    }
+
 }
