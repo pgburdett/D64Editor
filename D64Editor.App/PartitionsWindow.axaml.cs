@@ -53,6 +53,21 @@ public partial class PartitionsWindow : Window
             return;
         }
 
+        // Native DNP partitions: open directly from the container with write-back on Save.
+        if (partition.Kind == PartitionKind.Native)
+        {
+            var virtualPath = $"{_containerPath}::{partition.Name.Trim()}.dnp";
+            var info = CbmCatalog.OpenDnpFromContainer(_containerPath, partition.Offset, partition.Size, virtualPath);
+            if (info is null) { StatusLabel.Text = "Could not open native DNP partition."; return; }
+            var w = new ExtendedImageWindow(info)
+            {
+                Title = $"Partition — {partition.Name} ({System.IO.Path.GetFileName(_containerPath)})"
+            };
+            w.Show(this);
+            StatusLabel.Text = $"Opened \"{partition.Name}\" (edits save back to container).";
+            return;
+        }
+
         // Extract the partition's byte range to a temp file and open it through the normal path.
         var outPath = Path.Combine(Path.GetTempPath(),
             Path.GetFileNameWithoutExtension(_containerPath) + "_" + partition.Name.Trim() + ext);

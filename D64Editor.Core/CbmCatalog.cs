@@ -67,4 +67,15 @@ public static class CbmCatalog
                 return null;
         }
     }
+
+    /// <summary>Opens a native DNP partition directly from a container (write-back to container on Save).</summary>
+    public static CbmImageInfo? OpenDnpFromContainer(string containerPath, long offset, long size, string virtualPath)
+    {
+        var i = DnpImage.TryLoadFromContainer(containerPath, offset, size, virtualPath);
+        return i is null ? null : new CbmImageInfo
+        {
+            Label = "DNP", Path = virtualPath, DiskName = i.DiskName, DiskId = i.DiskId,
+            BlocksFree = i.BlocksFree, Entries = i.Entries, Export = i.Export, Writable = i
+        };
+    }
 }

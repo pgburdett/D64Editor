@@ -21,6 +21,11 @@ public sealed class DnpImage : ICbmWritable
     public int BlocksFree { get; private set; }
     public List<CbmDirEntry> Entries { get; } = new();
 
+    // Optional container backing: when set, Save() writes the partition bytes back into the container.
+    public string? ContainerPath { get; private set; }
+    public long ContainerOffset { get; private set; }
+    public long ContainerSize { get; private set; }
+
     private DnpImage(byte[] data, string path) => (_data, Path) = (data, path);
 
     public static DnpImage? TryLoad(string path)
@@ -35,6 +40,38 @@ public sealed class DnpImage : ICbmWritable
         img.ReadHeader();
         img.Entries.AddRange(CbmImage.ReadDirectory(img.ReadSector, img.SectorOffset, 1, 0x22));
         return img;
+    }
+
+    /// <summary>Loads a DNP partition from within a container file (offset/size) and saves back into it.</summary>
+    public static DnpImage? TryLoadFromContainer(string containerPath, long offset, long size, string? virtualPath = null)
+    {
+        try
+        {
+            using var fs = File.OpenRead(containerPath);
+            fs.Position = offset;
+            var toRead = (int)Math.Min(size, int.MaxValue);
+            var bytes = new byte[toRead];
+            var read = 0;
+            while (read < toRead)
+            {
+                var r = fs.Read(bytes, read, toRead - read);
+                if (r <= 0) break;
+                read += r;
+            }
+            if (read < bytes.Length) Array.Resize(ref bytes, read);
+            if (bytes.Length < 512 * (int)SectorSize) return null;
+
+            var img = new DnpImage(bytes, virtualPath ?? containerPath)
+            {
+                ContainerPath = containerPath,
+                ContainerOffset = offset,
+                ContainerSize = size
+            };
+            img.ReadHeader();
+            img.Entries.AddRange(CbmImage.ReadDirectory(img.ReadSector, img.SectorOffset, 1, 0x22));
+            return img;
+        }
+        catch { return null; }
     }
 
     private byte[]? ReadSector(int track, int sector)
@@ -165,7 +202,19 @@ public sealed class DnpImage : ICbmWritable
         return null;
     }
 
-    public void Save() => File.WriteAllBytes(Path, _data);
+    public void Save()
+    {
+        if (!string.IsNullOrEmpty(ContainerPath))
+        {
+            using var fs = File.Open(ContainerPath, FileMode.Open, FileAccess.Write, FileShare.Read);
+            fs.Position = ContainerOffset;
+            var len = (int)Math.Min(_data.Length, ContainerSize > 0 ? ContainerSize : _data.Length);
+            fs.Write(_data, 0, len);
+            // keep Path as virtual/display path; container is the backing store
+            return;
+        }
+        File.WriteAllBytes(Path, _data);
+    }
 
     public byte[] Export(CbmDirEntry entry) =>
         CbmImage.ReadChain(ReadSector, entry.StartTrack, entry.StartSector);

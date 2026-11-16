@@ -32,7 +32,7 @@ disk editors, implemented incrementally.
 - [x] REL (D64): create, in-place record edit, and resize/grow/shrink record count (side/data-sector allocation and relinking)
 - [x] G64/NIB structural viewers/fallback (G64 info window; NIB info window on decode fallback). Native GCR re-encoding/edit-save remains limited
 - [ ] G64/NIB: native GCR-level editing/save back to original image format (beyond D64 conversion)
-- [ ] T64/DNP/CMD: deeper native read/write (T64 has basic mutable save/rebuild; DNP supports in-image edits/save; CMD container-level write-back/editing still limited)
+- [ ] T64/DNP/CMD: deeper native read/write (T64 has basic mutable save/rebuild; DNP supports in-image edits/save and native DNP partitions can be edited with write-back to D2M/D4M/DHD containers; emulated-partition container write-back still limited)
 - [ ] C128 CP/M (.d64/.d71/.d81): full from-scratch formatting/writing for all variants and validated `.d71/.d81` DPB mappings/boot-system layouts (template-based format/clear added; requires format-specific boot images/templates and real-image verification)
 
 ## Phase 3 — Directory Editing Enhancements
@@ -86,7 +86,7 @@ disk editors, implemented incrementally.
 
 ## Current Focus
 - G64/NIB native GCR-level editing/save (re-encode tracks) and deeper structural tooling
-- T64/DNP/CMD deeper native read/write (container-level write-back, richer editing workflows)
+- T64/DNP/CMD deeper native read/write (emulated-partition container write-back, richer editing workflows)
 - C128 CP/M full from-scratch formatting/writing and validated `.d71/.d81` DPB/boot mappings (with format-specific boot images/templates and real-image verification)
 - Deeper GEOS disk/application-data/VLIR workflows and richer metadata tooling
 - Further CLI/scripting automation (richer non-interactive GEOS/REL/T64 operations)
