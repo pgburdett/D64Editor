@@ -283,7 +283,8 @@ helpers.
 - CLI: `--help`, `--list`, `--info`, `--validate` (D64 cross-links/error-block summary),
   `--export <image> <dir>` (D64/T64/D71/D81/D80/D82/DNP), `--convert <g64/nib> <d64>`
   (headless G64/NIB→D64), `--cpm-extract <image> <dir>` / `--cpm-copy <tmpl> <out> [--all|--files A,B]`
-  (C128 CP/M, best-effort/template-based), and passing an image path opens it in the GUI.
+  (C128 CP/M, best-effort/template-based), `--extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]`,
+  `--print-dir <image>` (D64), and passing an image path opens it in the GUI.
 - PETSCII: **C64 Pro Mono** (style64.org C64 TrueType, `Fonts.cs`) + PUA/screen-code
   mapping (`Petscii.cs`) and a bundled VICE `chargen.bin` for exact ROM-bitmap
   rendering. Central charset toggle (upper/graphics ↔ lower/upper).
