@@ -369,7 +369,7 @@ internal static class Cli
     {
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: D64Editor --cpm-extract <image> <outdir>   (DPB-aware C128 CP/M extract, best-effort for .d64/.d71/.d81)");
+            Console.Error.WriteLine("Usage: D64Editor --cpm-extract <image> <outdir> [--strict]   (DPB-aware C128 CP/M extract, best-effort for .d64/.d71/.d81)");
             return true;
         }
         var path = args[1];
@@ -381,7 +381,8 @@ internal static class Cli
             var img = File.ReadAllBytes(path);
             var fmt = DiskFormats.FromExtension(path);
             if (fmt != DiskFormat.D71 && fmt != DiskFormat.D81) fmt = DiskFormat.D64;
-            var files = C128Cpm.ExtractFiles(img, fmt);
+            var strict = args.Any(x => x == "--strict");
+            var files = strict ? C128Cpm.ExtractFilesStrict(img, fmt) : C128Cpm.ExtractFiles(img, fmt);
             var n = 0;
             foreach (var f in files.Where(x => !x.Deleted))
             {

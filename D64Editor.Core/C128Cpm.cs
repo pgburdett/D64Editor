@@ -32,7 +32,13 @@ public static class C128Cpm
     private static long TsOffset1541(byte[] img, int track, int sector)
     {
         var off = 0L;
-        for (var tr = 1; tr < track; tr++) off += SectorsPerTrack1541(tr) * 256L;
+        for (var tr = 1; tr < track; tr++)
+        {
+            // D71 tracks 36-70 use the same speed-zone pattern as tracks 1-35;
+            // SectorsPerTrack1541 alone would treat every such track as 17 sectors.
+            var spt = SectorsPerTrack1541(tr > 35 ? tr - 35 : tr);
+            off += spt * 256L;
+        }
         return off + sector * 256L;
     }
 
@@ -193,11 +199,36 @@ public static class C128Cpm
 
     /// <summary>Extracts file contents from a C128 CP/M image (best-effort, using format-appropriate mapping).</summary>
     public static List<CpmFileEntry> ExtractFiles(byte[] img, DiskFormat fmt, bool includeDeleted = false)
+        => ExtractFromSlots(img, fmt, ScanDirectorySlots(img), includeDeleted);
+
+    /// <summary>
+    ///     Like <see cref="ExtractFiles"/> but scans ONLY the known directory slots laid out by
+    ///     <see cref="FormatBlank"/> (real interleaved sectors for D64, block-based for D71/D81),
+    ///     avoiding false-positive "files" from game/data sectors that happen to look like entries.
+    /// </summary>
+    public static List<CpmFileEntry> ExtractFilesStrict(byte[] img, DiskFormat fmt, bool includeDeleted = false)
     {
         var cimg = new CpmImage(img, fmt);
-        var slots = ScanDirectorySlots(img);
+        var opt = new CpmWriteOptions();
+        var slotOffsets = DirectorySlotOffsets(cimg, opt);
+        var slots = new List<(int Offset, byte[] Entry)>();
+        foreach (var off in slotOffsets)
+        {
+            if (off < 0 || off + 32 > img.Length) continue;
+            var e = new byte[32];
+            Array.Copy(img, (int)off, e, 0, 32);
+            // Only accept a real unused marker or a plausible live entry (name starts A-Z).
+            if (e[0] != 0xE5 && !(e[0] <= 15 && e[1] >= 0x41 && e[1] <= 0x5A)) continue;
+            slots.Add(((int)off, e));
+        }
+        return ExtractFromSlots(img, fmt, slots, includeDeleted);
+    }
 
-        // group extents by (user,name,ext)
+    /// <summary>Core extraction logic shared by ExtractFiles and ExtractFilesStrict.</summary>
+    private static List<CpmFileEntry> ExtractFromSlots(byte[] img, DiskFormat fmt,
+        List<(int Offset, byte[] Entry)> slots, bool includeDeleted)
+    {
+        var cimg = new CpmImage(img, fmt);
         var groups = new Dictionary<(int user, string name, string ext), List<(int off, byte[] e)>>();
         var order = new List<(int, string, string)>();
         foreach (var (off, e) in slots)
@@ -211,44 +242,30 @@ public static class C128Cpm
             if (!groups.TryGetValue(key, out var list)) { list = new List<(int, byte[])>(); groups[key] = list; order.Add(key); }
             list.Add((off, e));
         }
-
         var result = new List<CpmFileEntry>();
         foreach (var key in order)
         {
             var exts = groups[key];
-            // sort by extent number (EX + 32*S2 for CP/M 3 large files; usually EX/S2 small)
-            exts.Sort((a, b) =>
-            {
-                var ea = a.e[12] + (a.e[14] * 32);
-                var eb = b.e[12] + (b.e[14] * 32);
-                return ea.CompareTo(eb);
-            });
-
+            exts.Sort((a, b) => (a.e[12] + a.e[14] * 32).CompareTo(b.e[12] + b.e[14] * 32));
             using var ms = new MemoryStream();
             var totalRecords = 0;
-            var deleted = exts[0].e[0] == 0xE5;
             foreach (var (_, e) in exts)
             {
                 var rc = Math.Min((int)e[15], 128);
                 totalRecords += rc;
-                // collect blocks in order
-                var blocks = ExtentBlocks(e, cimg.WordAl).ToList();
                 var recsLeft = rc;
-                foreach (var b in blocks)
+                foreach (var b in ExtentBlocks(e, cimg.WordAl))
                 {
                     if (b <= 0 || b >= cimg.TotalBlocks) continue;
-                    var bdata = cimg.ReadBlock(b);
                     var takeRecs = Math.Min(recsLeft, cimg.BlockSize / 128);
                     if (takeRecs <= 0) break;
-                    ms.Write(bdata, 0, takeRecs * 128);
+                    ms.Write(cimg.ReadBlock(b), 0, takeRecs * 128);
                     recsLeft -= takeRecs;
                     if (recsLeft <= 0) break;
                 }
             }
-
-            result.Add(new CpmFileEntry(key.Item2, key.Item3, key.Item1, deleted, totalRecords, ms.ToArray()));
+            result.Add(new CpmFileEntry(key.Item2, key.Item3, key.Item1, exts[0].e[0] == 0xE5, totalRecords, ms.ToArray()));
         }
-
         return result;
     }
 
@@ -337,7 +354,8 @@ public static class C128Cpm
         int DirectoryStartBlock = 2,
         int DirectoryBlockCount = 4,
         bool UppercaseNames = true,
-        bool SkipExisting = true);
+        bool SkipExisting = true,
+        bool ScanAllForFreeSlots = false);
 
     /// <summary>
     ///     Track-1 sector numbers used by the observed C128 CP/M .D64 system disk for its
@@ -486,10 +504,50 @@ public static class C128Cpm
         return (n, x);
     }
 
+    /// <summary>
+    ///     True when a 256-byte sector looks entirely like CP/M directory entries: every 32-byte
+    ///     slot is either unused (0xE5) or a plausible live entry (user 0..15 and an A-Z name).
+    ///     Used to distinguish real directory sectors from file-data sectors that happen to
+    ///     contain 0xE5 bytes or ASCII text resembling entries.
+    /// </summary>
+    private static bool LooksLikeDirectorySector(byte[] sector)
+    {
+        if (sector.Length < 256) return false;
+        for (var i = 0; i < 8; i++)
+        {
+            var o = i * 32;
+            var u = sector[o];
+            if (u == 0xE5) continue;
+            if (u <= 15 && sector[o + 1] >= 0x41 && sector[o + 1] <= 0x5A) continue;
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>Offsets of every 32-byte entry slot in sectors that look like CP/M directory sectors.</summary>
+    private static List<long> ScanRealDirectorySlots(byte[] image)
+    {
+        var slots = new List<long>();
+        for (var off = 0; off + 256 <= image.Length; off += 256)
+        {
+            var sec = new byte[256];
+            Array.Copy(image, off, sec, 0, 256);
+            if (!LooksLikeDirectorySector(sec)) continue;
+            for (var i = 0; i < 8; i++) slots.Add(off + i * 32);
+        }
+        return slots;
+    }
+
     /// <summary>Finds unused (user byte 0xE5) directory slot offsets in the directory area.</summary>
     private static List<long> FindFreeDirSlots(byte[] image, CpmImage img, CpmWriteOptions opt)
     {
         var slots = new List<long>();
+        if (opt.ScanAllForFreeSlots)
+        {
+            foreach (var off in ScanRealDirectorySlots(image))
+                if (image[off] == 0xE5) slots.Add(off);
+            return slots;
+        }
         foreach (var off in DirectorySlotOffsets(img, opt))
             if (off >= 0 && off < image.Length && image[off] == 0xE5) slots.Add(off);
         return slots;
@@ -530,9 +588,16 @@ public static class C128Cpm
         // Collect live file names and every block already referenced by the directory.
         var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var used = new HashSet<int>();
-        foreach (var (_, e) in ScanDirectorySlots(imageBytes))
+        var entryOffsets = options.ScanAllForFreeSlots
+            ? ScanRealDirectorySlots(imageBytes)
+            : ScanDirectorySlots(imageBytes).Select(x => (long)x.Offset).ToList();
+        foreach (var off in entryOffsets)
         {
+            if (off < 0 || off + 32 > imageBytes.Length) continue;
+            var e = new byte[32];
+            Array.Copy(imageBytes, (int)off, e, 0, 32);
             if (e[0] == 0xE5) continue;
+            if (!(e[0] <= 15 && e[1] >= 0x41 && e[1] <= 0x5A)) continue;
             var n = Encoding.ASCII.GetString(e, 1, 8).TrimEnd(' ');
             var x = Encoding.ASCII.GetString(e, 9, 3).TrimEnd(' ');
             existing.Add($"{n}.{x}");
@@ -647,7 +712,7 @@ public static class C128Cpm
         var img = (byte[])File.ReadAllBytes(donorPath).Clone();
         var fmt = DiskFormats.FromExtension(donorPath);
         if (fmt != DiskFormat.D71 && fmt != DiskFormat.D81) fmt = DiskFormat.D64;
-        WriteFiles(img, fmt, files, options ?? new CpmWriteOptions());
+        WriteFiles(img, fmt, files, options ?? new CpmWriteOptions { ScanAllForFreeSlots = true });
         File.WriteAllBytes(outputPath, img);
         return outputPath;
     }

@@ -116,6 +116,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.
 - CMD container write-back works for all partition types; richer in-container editing workflows remain incremental.
 - From-scratch CP/M (`--cpm-new`) is data-only (not bootable, emulator-verified); use `--cpm-bootable` with a system-disk donor for bootable images. From-scratch DPB/skew/bitmap remain unverified.
+- Legacy CP/M 2.2 games (Nemesis/Zork) import byte-exact and boot to CP/M 3.0 but may hang under a mismatched BDOS/terminal/two-drive environment — an emulator/system compatibility issue, not file corruption.
 - Broader inter-tab/window disk-to-disk drag-and-drop not fully implemented.
 - Undo/redo coverage not comprehensive across all edit paths.
 - Native OS print dialog and built-in updater/installer not implemented (platform-dependent).

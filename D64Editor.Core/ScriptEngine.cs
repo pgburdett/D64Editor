@@ -632,7 +632,8 @@ public static class ScriptEngine
         if (!File.Exists(img)) throw new ScriptException($"Image not found: {img}");
         var fmt = DiskFormats.FromExtension(img);
         if (fmt != DiskFormat.D71 && fmt != DiskFormat.D81) fmt = DiskFormat.D64;
-        var files = C128Cpm.ExtractFiles(File.ReadAllBytes(img), fmt);
+        var strict = a.Any(x => x == "--strict");
+        var files = strict ? C128Cpm.ExtractFilesStrict(File.ReadAllBytes(img), fmt) : C128Cpm.ExtractFiles(File.ReadAllBytes(img), fmt);
         Directory.CreateDirectory(dir);
         var n = 0;
         foreach (var f in files.Where(x => !x.Deleted))

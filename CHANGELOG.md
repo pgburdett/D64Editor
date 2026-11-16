@@ -3,6 +3,19 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — CP/M D71 Mapping Fix & Strict Extraction (found via Nemesis/Zork import testing)
+
+### Fixed
+- `C128Cpm.TsOffset1541`: D71 tracks 36–70 now use the correct speed-zone sector counts when computing byte offsets (previously all treated as 17 sectors, corrupting files allocated past block ~88). Verified: 36-file Nemesis import now extracts byte-exact (was broken for high blocks).
+- `C128Cpm.WriteFiles`: donor imports (`ScanAllForFreeSlots`) now identify directory sectors by the "all 8 slots are unused-or-plausible-entry" heuristic for BOTH free-slot finding and used-block collection, preventing file-data sectors containing 0xE5 bytes from being mistaken for directory slots.
+
+### Added
+- `C128Cpm.ExtractFilesStrict`: scans only known directory slots (real interleaved D64 sectors / block-based D71/D81 from `FormatBlank`), avoiding false-positive "files" from data sectors. CLI `--cpm-extract ... --strict` and script `cpmextract ... --strict`.
+
+### Verification notes (emulator / x128)
+- Authentic CP/M disk images from the local collection were used as boot donors. Nemesis/Zork game files import byte-exact and the resulting D71 image boots to CP/M 3.0 `A>`.
+- The original 1981–82 CP/M 2.2 games themselves hang under the available CP/M 3.0 (BDOS 3.0/FastBIOS) donor with mismatched terminal/two-drive requirements — an environment compatibility issue, not file corruption. Documented as a limitation.
+
 ## [Unreleased] — Whole-Host-Directory Import to CP/M
 
 ### Added

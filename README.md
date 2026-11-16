@@ -363,7 +363,7 @@ D64Editor                  (no args: starts GUI)
 | `--export <image> <dir>` / `-e` | Export files from D64/T64/D71/D81/D80/D82/DNP to a directory |
 | `--info <image>` / `-i` | Show image/format information |
 | `--validate <image>` / `-v` | Validate/report cross-links and basic issues (D64) |
-| `--cpm-extract <img> <dir>` | Extract CP/M files (best-effort DPB-aware, .d64/.d71/.d81) |
+| `--cpm-extract <img> <dir> [--strict]` | Extract CP/M files (best-effort DPB-aware; `--strict` scans only known directory slots) |
 | `--cpm-copy <tmpl> <out> [--all\|--files A,B]` | Create CP/M image from template (keep all or subset) |
 | `--cpm-format <tmpl> <out>` | Create empty CP/M image from template (clears directory; template-based) |
 | `--extract-archive <zip\|tar\|tar.gz\|tgz> <dir> [--images-only]` | Extract archive contents |
