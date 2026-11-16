@@ -54,6 +54,9 @@ internal static class Cli
             case "--geos-info":
                 return GeosInfo(args);
 
+            case "--run-script":
+                return RunScript(args);
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -589,6 +592,30 @@ internal static class Cli
         return true;
     }
 
+    private static bool RunScript(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --run-script <script.txt>");
+            Console.Error.WriteLine("Headless automation over the Core engine (open/convert/save/import/export/");
+            Console.Error.WriteLine("scratch/unscratch/wipe/REL/CP-M/GEOS/archive). Run 'help' inside a script for commands.");
+            return true;
+        }
+        var script = args[1];
+        var wd = args.Length > 2 ? args[2] : null;
+        try
+        {
+            var result = ScriptEngine.RunFile(script, wd);
+            foreach (var line in result.Log) Console.WriteLine(line);
+            if (result.Error is not null)
+                Console.Error.WriteLine("Script failed: " + result.Error);
+            Console.WriteLine($"Script exit code: {result.ExitCode}");
+            Environment.ExitCode = result.ExitCode;
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"Script error: {ex.Message}"); Environment.ExitCode = 2; }
+        return true;
+    }
+
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
@@ -603,6 +630,7 @@ internal static class Cli
         Console.WriteLine("  --extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]  Extract archive contents");
         Console.WriteLine("  --print-dir <image>    Print directory listing (text, D64)");
         Console.WriteLine("  --geos-info <d64> <file>  Show GEOS/REL metadata and best-effort VLIR info for a file (D64)");
+        Console.WriteLine("  --run-script <file>    Run a headless automation script (Core ScriptEngine)");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");

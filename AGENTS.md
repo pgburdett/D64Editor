@@ -98,6 +98,14 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `PushUndo()` called before key mutations.
 - Available via Edit menu and `Ctrl+Z`/`Ctrl+Y`.
 
+## Scripting (headless automation)
+- `D64Editor.Core/ScriptEngine.cs` — line-oriented script runner over the Core engine; no UI dependencies. `Run(text, wd)` / `RunFile(path, wd)` return `ScriptResult` (log, error, exit code).
+- CLI entry point: `D64Editor.App/Cli.cs` `--run-script`. `Environment.ExitCode` propagates the script exit code.
+- `D64Editor.Core/ArchiveExtract.cs` — zip/tar/tar.gz/tgz extraction used by the `archive` script command (and the CLI `--extract-archive`).
+- Script commands cover: image lifecycle (open/close/save/new/convert), directory/file ops (list/info/validate/import/export/exportdir/rename/renamedisk/scratch/unscratch/wipe/move), REL (relnew/relresize/relwrite), CP/M (cpmextract/cpmcopy/cpmformat), archive, geosinfo, echo/help/exit.
+- Sample scripts live in `scripts/`. When adding Core automation, expose it through ScriptEngine and document it in README's Scripting section.
+- `D64Image.RenameDisk(name,id)` was added for headless disk-header renaming.
+
 ## Known limitations
 - G64/NIB native GCR-level edit/save not implemented (requires GCR re-encoding).
 - CMD container-level write-back for emulated partitions (D64/D71/D81) still limited.

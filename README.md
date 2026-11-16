@@ -346,6 +346,7 @@ D64Editor --cpm-format <tmpl> <out>
 D64Editor --extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]
 D64Editor --print-dir <image>
 D64Editor --geos-info <d64> <file>
+D64Editor --run-script <script.txt> [workdir]
 D64Editor <image>          (opens in GUI)
 D64Editor                  (no args: starts GUI)
 ```
@@ -366,6 +367,7 @@ D64Editor                  (no args: starts GUI)
 | `--extract-archive <zip\|tar\|tar.gz\|tgz> <dir> [--images-only]` | Extract archive contents |
 | `--print-dir <image>` | Print directory listing (text, D64) |
 | `--geos-info <d64> <file>` | Show GEOS/REL metadata and best-effort VLIR info for a file (D64) |
+| `--run-script <script.txt> [workdir]` | Run a headless automation script over the Core engine (see Scripting section) |
 
 ---
 
@@ -479,6 +481,78 @@ D64Editor                  (no args: starts GUI)
 
 ---
 
+## Scripting (Headless Automation)
+
+The Core exposes a line-oriented scripting engine (`D64Editor.Core/ScriptEngine.cs`) that
+automates the major disk-engine components without any UI. Run scripts from the CLI:
+
+```bash
+D64Editor --run-script scripts/example-basic.d64script
+D64Editor --run-script path/to/script.txt /path/to/workdir
+```
+
+Script syntax: one command per line; `#` and `;` start comments; arguments are
+whitespace-separated; use double or single quotes for names containing spaces. Relative
+paths resolve against the script's folder (or the optional `workdir` argument). Scripts
+log every command and its result, stop on the first error, and propagate an exit code
+(`exit [code]`; CLI sets `Environment.ExitCode` accordingly).
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `help` | Print the in-script command list |
+| `echo <text...>` | Print text |
+| `open <image>` | Open `.d64`/`.d71`/`.d81`/`.d80`/`.d82`/`.dnp`/`.t64` (auto-detected by extension) |
+| `close` | Close the current image |
+| `save [path]` | Save the current image (optionally to a new path) |
+| `new <path> [name] [id]` | Create a blank 35-track D64 and open it |
+| `convert <in> <out>` | G64/NIB → D64 decode, or passthrough copy |
+| `list` | Print the directory |
+| `info` | Print disk info + blocks free |
+| `validate` | Report cross-links / block issues (D64) |
+| `rename <old> <new>` | Rename a directory entry (D64/CBM layouts) |
+| `renamedisk <name> <id>` | Rename the disk header (D64) |
+| `import <host> [name] [type]` | Import PRG/SEQ/USR/REL/DEL or T64/P00 container (type: prg/seq/usr/rel/del) |
+| `export <name> [outpath]` | Export a file's raw bytes |
+| `exportdir <outdir>` | Export all non-deleted files |
+| `scratch <name>` | Soft-delete (frees blocks, keeps entry) |
+| `unscratch <name> [type]` | Restore a scratched entry |
+| `wipe <name>` | Hard-delete (D64 only; unrecoverable) |
+| `move <name> top\|bottom` | Reorder a directory entry (D64) |
+| `relnew <name> <reclen>` | Create a REL file (D64) |
+| `relresize <name> <count>` | Grow/shrink a REL file's record count (D64) |
+| `relwrite <name> <rec#> <hex...>` | Rewrite a REL record from hex bytes (D64) |
+| `cpmextract <img> <dir>` | Extract CP/M files (best-effort DPB-aware) |
+| `cpmcopy <tmpl> <out> [--all\|--files A,B]` | Create CP/M image from a template |
+| `cpmformat <tmpl> <out>` | Create an empty CP/M image from a template |
+| `archive <zip\|tar\|tgz> <dir> [--images-only]` | Extract archive contents |
+| `geosinfo <name>` | Show GEOS/REL metadata for a file |
+| `exit [code]` | Stop with an exit code |
+
+Example (`scripts/example-basic.d64script`):
+
+```
+echo === Creating blank disk ===
+new out/automation.d64 "MY DISK" ED
+info
+import test.prg HELLO prg
+import test.seq NOTES seq
+list
+validate
+exportdir out/exported
+scratch HELLO
+unscratch HELLO prg
+rename NOTES README
+list
+save
+exit 0
+```
+
+A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core helpers:
+`ArchiveExtract` (zip/tar/tgz extraction), `D64Image.RenameDisk` and
+`D64Image.GetRawDataCopy()/RestoreRawData()` (snapshot support used elsewhere).
+
 ## Verification & Testing
 
 - All new format readers were verified by generating synthetic images of each format (with a matching GCR encoder for G64/NIB) and byte-comparing the parsed results.
@@ -499,7 +573,7 @@ D64Editor                  (no args: starts GUI)
 - **Broader inter-tab/window disk-to-disk drag-and-drop** (OS drag in/out works; inter-tab drag remains limited).
 - **More comprehensive undo/redo** coverage across all edit paths (basic for common D64 ops now).
 - **Deeper GEOS disk/application-data/VLIR workflows** beyond best-effort index/chain inspection and metadata editing.
-- **Richer non-interactive GEOS/REL/T64 scripting** in CLI.
+- **Richer non-interactive scripting** — a headless `ScriptEngine` + `--run-script` now automates the major Core components (see Scripting section); further domain-specific command coverage remains incremental.
 - **Native OS print dialog** (platform-dependent; best-effort print-open exists).
 - **Built-in updater/installer** (platform-dependent; best-effort update-page-open exists).
 

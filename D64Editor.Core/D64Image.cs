@@ -317,6 +317,18 @@ public class D64Image : IDiskImage
         WritePetsciiField(DiskIdOffset, 5, DiskId);
     }
 
+    /// <summary>
+    ///     Renames the disk header (name + ID) in place. Callers must Save() to persist.
+    ///     NETNEW: added so headless scripting/automation can set disk identity, which the
+    ///     GUI previously did only through CreateBlank.
+    /// </summary>
+    public void RenameDisk(string? name, string? id)
+    {
+        if (name is not null) DiskName = name.Length > 16 ? name[..16] : name;
+        if (id is not null) DiskId = id.Length > 5 ? id[..5] : id;
+        WriteDiskHeader();
+    }
+
     private string ReadPetsciiField(int offset, int length)
     {
         var raw = new byte[length];
@@ -347,6 +359,7 @@ public class D64Image : IDiskImage
     {
         var allocated = new bool[TotalBlocks];
         var blockBase = 0;
+        var totalFree = 0;
 
         for (var track = 1; track <= StandardTrackCount; track++)
         {
@@ -357,6 +370,7 @@ public class D64Image : IDiskImage
             var b3 = _data[entryOffset + 3];
 
             var sectors = SectorsPerTrack(track);
+            var trackFree = 0;
             for (var s = 0; s < sectors; s++)
             {
                 var byteIndex = s / 8;
@@ -366,8 +380,11 @@ public class D64Image : IDiskImage
                 // A set bit means free (standard 1541 BAM convention, and matches
                 // the original: 'If Mid(trackCombined, o, 1) = 0 Then blocksAllocated = 1').
                 allocated[blockBase + s] = !bitSet;
+                if (bitSet) trackFree++;
             }
 
+            // Directory track's free count isn't counted toward the disk total (matches WriteBam).
+            if (track != 18) totalFree += trackFree;
             blockBase += sectors;
         }
 
@@ -378,6 +395,7 @@ public class D64Image : IDiskImage
             allocated[b] = true;
 
         AllocatedBlocks = allocated;
+        BlocksFree = totalFree;
     }
 
     public void WriteBam()

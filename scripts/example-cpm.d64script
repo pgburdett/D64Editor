@@ -1,0 +1,10 @@
+# C128 CP/M automation example — extract files, subset copy, format from template.
+# Run with: D64Editor --run-script scripts/example-cpm.d64script <workdir>
+echo === Extract CP/M files ===
+cpmextract c128-cpm.system.d64 cpm_extracted
+echo === Create subset CP/M image ===
+cpmcopy c128-cpm.system.d64 cpm_subset.d64 --files DIR.COM,PIP.COM
+echo === Create empty CP/M image ===
+cpmformat c128-cpm.system.d64 cpm_empty.d64
+echo === Done ===
+exit 0

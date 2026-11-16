@@ -74,7 +74,7 @@ disk editors, implemented incrementally.
 - [x] GEOS file info/metadata editing (directory bytes 15-1D) and best-effort VLIR index/info-block viewing
 - [ ] GEOS disk/application-data support (deeper VLIR record-chain handling, GEOS-specific workflows)
 - [x] CLI: headless `--list`, `--info`, `--validate`, `--convert` (G64/NIB→D64), `--export <image> <dir>`, CP/M extract/copy/format (template-based), archive extraction, `--print-dir`, `--help`
-- [ ] Expanded CLI/scripting (further automation/options, richer non-interactive GEOS/REL/T64 operations)
+- [x] Expanded CLI/scripting — headless `ScriptEngine` (Core) + CLI `--run-script` automates open/convert/save/import/export/scratch/unscratch/wipe/rename/move, REL create/resize/write, CP/M extract/copy/format, GEOS info and archive extraction; sample scripts in `scripts/`
 
 ## Phase 8 — Platform Integration
 - [x] Emulator launch (template `{disk}`/`{image}`, drive-8 mount, selection/`*` or `disk:NAME`, `$0801` → `-autostartprgmode 1`, safe quoting)
@@ -89,7 +89,6 @@ disk editors, implemented incrementally.
 - T64/DNP/CMD deeper native read/write (emulated-partition container write-back, richer editing workflows)
 - C128 CP/M full from-scratch formatting/writing and validated `.d71/.d81` DPB/boot mappings (with format-specific boot images/templates and real-image verification)
 - Deeper GEOS disk/application-data/VLIR workflows and richer metadata tooling
-- Further CLI/scripting automation (richer non-interactive GEOS/REL/T64 operations)
 - Broader inter-tab/window disk-to-disk drag-and-drop and more comprehensive undo/redo coverage
 - Platform-dependent native print dialog / updater installer remain out of scope for cross-platform build; keep best-effort flows working
 - Roadmap/docs kept in sync with implemented behavior; smoke-test tabbed MDI/REL/GEOS flows

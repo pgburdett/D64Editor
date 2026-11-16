@@ -1,0 +1,23 @@
+# D64 Editor automation example — build a disk, import, inspect, export.
+# Run with: D64Editor --run-script scripts/example-basic.d64script
+# Note: create two small host files named test.prg / test.seq in the working dir, or
+#       edit the import lines below to point at your own files.
+echo === Creating blank disk ===
+new out/automation.d64 MY DISK ED
+info
+echo === Importing host files ===
+import test.prg HELLO prg
+import test.seq NOTES seq
+list
+echo === Validate the directory / cross-links ===
+validate
+echo === Export everything ===
+exportdir out/exported
+echo === Scratch and unscratch ===
+scratch HELLO
+unscratch HELLO prg
+rename NOTES README
+list
+save
+echo === Done ===
+exit 0

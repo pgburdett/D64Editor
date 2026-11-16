@@ -3,6 +3,20 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Headless Scripting / Automation Engine
+
+### Added
+- Core `ScriptEngine` with line-oriented script syntax and structured `ScriptResult` (log/error/exit code), plus CLI `--run-script`.
+- Core `ArchiveExtract` helper (used by the `archive` script command and CLI `--extract-archive`).
+- `D64Image.RenameDisk` for headless disk-header renaming.
+- Sample scripts `scripts/example-basic.d64script` and `scripts/example-cpm.d64script`.
+
+### Fixed
+- `D64Image.ReadBam` now computes `BlocksFree` from the BAM (previously freshly-loaded disks reported 0 free, breaking imports).
+
+### Changed
+- Roadmap Phase 7 CLI/scripting item marked done; docs updated (README Scripting section, AGENTS, CHANGELOG).
+
 ## [Unreleased] — Detailed Copious Documentation Update
 
 ### Added
