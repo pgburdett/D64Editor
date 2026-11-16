@@ -1,5 +1,3 @@
-using System.Formats.Tar;
-using System.IO.Compression;
 using D64Editor.Core;
 
 namespace D64Editor.App;
@@ -56,6 +54,12 @@ internal static class Cli
 
             case "--run-script":
                 return RunScript(args);
+
+            case "--to-gcr":
+                return ToGcr(args);
+
+            case "--cpm-new":
+                return CpmNew(args);
 
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
@@ -452,62 +456,13 @@ internal static class Cli
         var outDir = args[2];
         var imagesOnly = args.Any(a => a == "--images-only");
         if (!File.Exists(archive)) { Console.Error.WriteLine($"Archive not found: {archive}"); return true; }
-        Directory.CreateDirectory(outDir);
         try
         {
-            var count = 0;
-            var lower = archive.ToLowerInvariant();
-            if (lower.EndsWith(".zip"))
-            {
-                using var z = ZipFile.OpenRead(archive);
-                foreach (var e in z.Entries)
-                {
-                    if (string.IsNullOrEmpty(e.Name)) continue;
-                    var rel = e.FullName.Replace('\\', '/');
-                    if (imagesOnly && !LooksLikeDiskImage(rel)) continue;
-                    var dest = Path.Combine(outDir, rel);
-                    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-                    e.ExtractToFile(dest, overwrite: true);
-                    count++;
-                }
-            }
-            else if (lower.EndsWith(".tar") || lower.EndsWith(".tar.gz") || lower.EndsWith(".tgz"))
-            {
-                Stream fs = File.OpenRead(archive);
-                if (lower.EndsWith(".gz") || lower.EndsWith(".tgz"))
-                    fs = new System.IO.Compression.GZipStream(fs, System.IO.Compression.CompressionMode.Decompress);
-                using (fs)
-                using (var tr = new TarReader(fs))
-                {
-                    TarEntry? te;
-                    while ((te = tr.GetNextEntry()) != null)
-                    {
-                        if (te.EntryType is not TarEntryType.RegularFile and not TarEntryType.V7RegularFile) continue;
-                        var rel = te.Name.Replace('\\', '/');
-                        if (imagesOnly && !LooksLikeDiskImage(rel)) continue;
-                        var dest = Path.Combine(outDir, rel);
-                        Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-                        te.ExtractToFile(dest, overwrite: true);
-                        count++;
-                    }
-                }
-            }
-            else
-            {
-                Console.Error.WriteLine("Unsupported archive type. Use .zip, .tar, .tar.gz, or .tgz.");
-                return true;
-            }
+            var count = ArchiveExtract.Extract(archive, outDir, imagesOnly);
             Console.WriteLine($"Extracted {count} file(s) from {archive} to {outDir}.");
         }
         catch (Exception ex) { Console.Error.WriteLine($"Archive extraction failed: {ex.Message}"); }
         return true;
-    }
-
-    private static bool LooksLikeDiskImage(string name)
-    {
-        var ext = Path.GetExtension(name).ToLowerInvariant();
-        return ext is ".d64" or ".d71" or ".d81" or ".d80" or ".d82" or ".dnp" or ".d2m" or ".d4m" or ".dhd"
-            or ".g64" or ".nib" or ".t64" or ".lbr" or ".cpm" or ".prg" or ".seq";
     }
 
     private static bool PrintDir(string[] args)
@@ -616,6 +571,89 @@ internal static class Cli
         return true;
     }
 
+    private static bool ToGcr(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --to-gcr <d64> <out.g64|out.nib>");
+            Console.Error.WriteLine("  Encodes a D64 byte image into a G64/NIB container with native GCR track data.");
+            return true;
+        }
+        var input = args[1];
+        var output = args[2];
+        if (!File.Exists(input)) { Console.Error.WriteLine($"Input not found: {input}"); return true; }
+        try
+        {
+            var d64 = File.ReadAllBytes(input);
+            var ext = Path.GetExtension(output).ToLowerInvariant();
+            byte[] bytes;
+            switch (ext)
+            {
+                case ".g64":
+                {
+                    var src = G64Image.TryLoad(input);
+                    // Build a G64 from the source container when available so half-tracks/speed zones are preserved;
+                    // otherwise let TryLoad on the output fail gracefully. Use a blank template derived from the D64.
+                    bytes = src is not null
+                        ? src.ToG64Bytes(d64)
+                        : G64Image.FromD64(d64);
+                    break;
+                }
+                case ".nib":
+                {
+                    var src = NibImage.TryLoad(input);
+                    bytes = src is not null ? src.ToNibBytes(d64) : NibImage.FromD64(d64);
+                    break;
+                }
+                default:
+                    Console.Error.WriteLine("Output must end in .g64 or .nib.");
+                    return true;
+            }
+            File.WriteAllBytes(output, bytes);
+            Console.WriteLine($"Encoded D64 -> {ext.TrimStart('.').ToUpperInvariant()}: {output} ({bytes.Length} bytes).");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"GCR encode failed: {ex.Message}"); }
+        return true;
+    }
+
+    private static bool CpmNew(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]");
+            Console.Error.WriteLine("  Creates a fresh C128 CP/M image from scratch (best-effort, spec-derived layout).");
+            return true;
+        }
+        var fmt = args[1].ToLowerInvariant() switch
+        {
+            "d64" => DiskFormat.D64, "d71" => DiskFormat.D71, "d81" => DiskFormat.D81,
+            _ => DiskFormat.Unknown,
+        };
+        if (fmt == DiskFormat.Unknown) { Console.Error.WriteLine("Format must be d64, d71, or d81."); return true; }
+        var output = args[2];
+        var files = new List<(string, string, byte[])>();
+        for (var i = 3; i < args.Length; i++)
+        {
+            var eq = args[i].IndexOf('=');
+            if (eq < 0) continue;
+            var name = args[i][..eq].Trim();
+            var host = args[i][(eq + 1)..].Trim();
+            if (!File.Exists(host)) { Console.Error.WriteLine($"File not found: {host}"); return true; }
+            var dot = name.IndexOf('.');
+            var baseName = dot < 0 ? name : name[..dot];
+            var ext = dot < 0 ? "" : name[(dot + 1)..];
+            files.Add((baseName, ext, File.ReadAllBytes(host)));
+        }
+        try
+        {
+            var path = C128Cpm.FormatAndWrite(fmt, output, files);
+            Console.WriteLine($"Created from-scratch {fmt} CP/M image: {path} ({files.Count} file(s)).");
+            Console.WriteLine("Note: best-effort spec-derived layout; bootability not verified against real CP/M media.");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"CP/M create failed: {ex.Message}"); }
+        return true;
+    }
+
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
@@ -631,6 +669,8 @@ internal static class Cli
         Console.WriteLine("  --print-dir <image>    Print directory listing (text, D64)");
         Console.WriteLine("  --geos-info <d64> <file>  Show GEOS/REL metadata and best-effort VLIR info for a file (D64)");
         Console.WriteLine("  --run-script <file>    Run a headless automation script (Core ScriptEngine)");
+        Console.WriteLine("  --to-gcr <d64> <out.g64|out.nib>  Encode a D64 into a G64/NIB image (native GCR write-back)");
+        Console.WriteLine("  --cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]  From-scratch CP/M image (best-effort)");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");

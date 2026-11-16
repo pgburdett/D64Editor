@@ -75,6 +75,16 @@ public class D64Image : IDiskImage
     public int TotalBlocks { get; private set; } = StandardTotalBlocks;
 
     public string SourcePath { get; set; } = "";
+
+    /// <summary>
+    ///     When this image was opened from a slice of a CMD container (D2M/D4M/DHD),
+    ///     these identify the backing file and the slice to write back on Save().
+    ///     Null when the image is backed by a standalone .d64 file.
+    /// </summary>
+    public string? ContainerPath { get; private set; }
+    public long ContainerOffset { get; private set; }
+    public long ContainerSize { get; private set; }
+
     public string DiskName { get; private set; } = "";
     public string DiskId { get; private set; } = "";
     public bool HasErrorInfo { get; private set; }
@@ -233,6 +243,89 @@ public class D64Image : IDiskImage
         return image;
     }
 
+    /// <summary>
+    ///     Opens a D64 image that lives inside a CMD container (D2M/D4M/DHD) at the given
+    ///     byte offset/size. The bytes are read into an in-memory slice and initialized exactly
+    ///     like <see cref="Load"/>; <see cref="Save()"/> then writes the modified image back
+    ///     into the container at <paramref name="offset"/> instead of creating a standalone file.
+    ///     Returns null when the container cannot be read or the slice isn't a supported D64 size.
+    /// </summary>
+    public static D64Image? TryLoadFromContainer(string containerPath, long offset, long size,
+        string? virtualPath = null)
+    {
+        try
+        {
+            using var fs = File.OpenRead(containerPath);
+            fs.Position = offset;
+            var toRead = (int)Math.Min(size, int.MaxValue);
+            var bytes = new byte[toRead];
+            var read = 0;
+            while (read < toRead)
+            {
+                var r = fs.Read(bytes, read, toRead - read);
+                if (r <= 0) break;
+                read += r;
+            }
+            if (read < bytes.Length) Array.Resize(ref bytes, read);
+
+            var len = bytes.LongLength;
+            int trackCount;
+            bool hasErrorInfo;
+            if (len == StandardSize)
+            {
+                trackCount = StandardTrackCount;
+                hasErrorInfo = false;
+            }
+            else if (len == StandardSizeWithErrorInfo)
+            {
+                trackCount = StandardTrackCount;
+                hasErrorInfo = true;
+            }
+            else if (len == ExtendedSize)
+            {
+                trackCount = ExtendedTrackCount;
+                hasErrorInfo = false;
+            }
+            else if (len == ExtendedSizeWithErrorInfo)
+            {
+                trackCount = ExtendedTrackCount;
+                hasErrorInfo = true;
+            }
+            else
+            {
+                return null;
+            }
+
+            var image = new D64Image
+            {
+                _data = bytes,
+                SourcePath = virtualPath ?? containerPath,
+                TrackCount = trackCount,
+                TotalBlocks = trackCount == ExtendedTrackCount ? ExtendedTotalBlocks : StandardTotalBlocks,
+                HasErrorInfo = hasErrorInfo,
+                ContainerPath = containerPath,
+                ContainerOffset = offset,
+                ContainerSize = size
+            };
+            image.AllocatedBlocks = new bool[image.TotalBlocks];
+            image.ErrorInfo = new byte[image.TotalBlocks];
+
+            image.ReadDiskHeader();
+            image.ReadBam(); // computes BlocksFree from the BAM
+            image.ReadDirectory();
+
+            if (image.HasErrorInfo)
+                Array.Copy(bytes, (int)StandardSize, image.ErrorInfo, 0, image.TotalBlocks);
+
+            image.CaptureSnapshot();
+            return image;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public void Save(string? path = null)
     {
         WriteDiskHeader();
@@ -242,7 +335,21 @@ public class D64Image : IDiskImage
         if (HasErrorInfo)
             Array.Copy(ErrorInfo, 0, _data, (int)StandardSize, TotalBlocks);
 
-        File.WriteAllBytes(path ?? SourcePath, _data);
+        var container = ContainerPath;
+        if (path is null && !string.IsNullOrEmpty(container))
+        {
+            // Container-backed image: write the slice back in place; keep SourcePath as the
+            // virtual/display path and leave any standalone file untouched.
+            using var fs = File.Open(container, FileMode.Open, FileAccess.Write, FileShare.Read);
+            fs.Position = ContainerOffset;
+            var len = (int)Math.Min(_data.Length, ContainerSize > 0 ? ContainerSize : _data.Length);
+            fs.Write(_data, 0, len);
+        }
+        else
+        {
+            // Explicit path (or a standalone image): preserve the original behavior.
+            File.WriteAllBytes(path ?? SourcePath, _data);
+        }
         CaptureSnapshot();
     }
 

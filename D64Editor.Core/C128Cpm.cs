@@ -304,4 +304,296 @@ public static class C128Cpm
         return outputPath;
     }
 
+    // -------------------------------------------------------------------------------------
+    // From-scratch formatting / writing.
+    //
+    // IMPORTANT (honesty about the layout): the functions below do NOT use a bootable
+    // template. They synthesise a CP/M-looking image from published C128 CP/M layout facts:
+    // 128-byte records, 1K (.D64) / 2K (.D71/.D81) allocation blocks, 32-byte directory
+    // entries with 1-byte (.D64/.D71) or 2-byte little-endian (.D81) allocation pointers,
+    // and a "CBM" boot signature at track 1 / sector 0.
+    //
+    // The real C128 CP/M variants differ in DPB parameters, reserved-track counts, physical
+    // sector skew/interleave, boot/system code and allocation-bitmap location. This code uses
+    // the same *linear, unskewed* logical-sector mapping as the rest of this file (see
+    // BuildBlockMap / CpmImage), so the result is self-consistent for write -> ExtractFiles
+    // round trips but is NOT guaranteed to boot on real hardware or in an emulator, nor to be
+    // byte-compatible with any particular CP/M distribution. Treat it as a best-effort,
+    // spec-derived layout, not verified bootable media.
+    // -------------------------------------------------------------------------------------
+
+    /// <summary>
+    ///     Tunables for <see cref="WriteFiles(byte[], DiskFormat, IEnumerable{ValueTuple{string,string,byte[]}}, CpmWriteOptions)"/>.
+    ///     The defaults match the from-scratch layout produced by <see cref="FormatBlank"/> and
+    ///     the observed C128 CP/M .D64 system disk (data blocks start at block 25).
+    /// </summary>
+    /// <param name="FirstDataBlock">First block available for file data; blocks below it are treated as reserved (boot/system/directory).</param>
+    /// <param name="DirectoryStartBlock">First block of the CP/M directory area.</param>
+    /// <param name="DirectoryBlockCount">Number of consecutive blocks reserved for the directory.</param>
+    /// <param name="UppercaseNames">Uppercase and validate 8.3 names before writing.</param>
+    /// <param name="SkipExisting">Skip a requested file when a live entry with the same NAME.EXT already exists.</param>
+    public sealed record CpmWriteOptions(
+        int FirstDataBlock = 25,
+        int DirectoryStartBlock = 2,
+        int DirectoryBlockCount = 4,
+        bool UppercaseNames = true,
+        bool SkipExisting = true);
+
+    private static int BlankImageSize(DiskFormat fmt) => fmt switch
+    {
+        DiskFormat.D64 => 174848,       // 683 sectors (35 tracks) * 256
+        DiskFormat.D71 => 349696,       // two 1541 sides
+        DiskFormat.D81 => 819200,       // 80 tracks * 40 sectors * 256
+        _ => throw new ArgumentOutOfRangeException(nameof(fmt), fmt,
+            "From-scratch CP/M formatting supports only D64, D71 and D81.")
+    };
+
+    /// <summary>Byte offsets of the physical sectors that make up a logical CP/M block.</summary>
+    private static List<long> BlockSectorOffsets(CpmImage img, int block)
+    {
+        var result = new List<long>();
+        for (var i = 0; i < img.SectorsPerBlock; i++)
+        {
+            var idx = block * img.SectorsPerBlock + i;
+            if (idx < 0 || idx >= img.BlockSectors.Count) break;
+            var (t, s) = img.BlockSectors[idx];
+            var off = img.Format == DiskFormat.D81
+                ? TsOffset1581(t, s)
+                : TsOffset1541(img.Data, t, s);
+            if (off >= 0 && off + 256 <= img.Data.Length) result.Add(off);
+        }
+        return result;
+    }
+
+    private static void FillBlock(CpmImage img, int block, byte value)
+    {
+        foreach (var off in BlockSectorOffsets(img, block))
+            for (var i = 0; i < 256; i++) img.Data[off + i] = value;
+    }
+
+    /// <summary>
+    ///     Builds a fresh, bootable-style C128 CP/M image from scratch (no template).
+    ///     Supports D64 (1K blocks, 1-byte AL), D71 (2K blocks, 1-byte AL) and D81
+    ///     (2K blocks, 2-byte little-endian AL).
+    ///     Layout: "CBM\0" + a short harmless stub at track 1 / sector 0, a 1-bit-per-block
+    ///     allocation vector in block 1 with the reserved range (blocks 0..24) marked used,
+    ///     and an all-0xE5 (unused) directory in blocks 2..5. VolumeLabel is written as plain
+    ///     ASCII into sector 1 as informational metadata only.
+    ///     BEST-EFFORT / NOT VERIFIED AGAINST REAL BOOTABLE CP/M MEDIA: DPB parameters, sector
+    ///     skew, boot code and bitmap location vary between C128 CP/M variants; this is a
+    ///     published-spec-derived, self-consistent layout (the writer/reader use the same
+    ///     linear mapping), not guaranteed to boot or match any real distribution.
+    /// </summary>
+    public static byte[] FormatBlank(DiskFormat fmt, string volumeLabel = "")
+    {
+        var img = new byte[BlankImageSize(fmt)];
+        var cimg = new CpmImage(img, fmt);
+        var opt = new CpmWriteOptions();
+
+        // Track 1 / sector 0: boot signature + a tiny, layout-safe stub (NOP NOP LDA #0 STA RTS).
+        var sig = Encoding.ASCII.GetBytes("CBM\0");
+        Array.Copy(sig, 0, img, 0, sig.Length);
+        byte[] stub = { 0xEA, 0xEA, 0xA9, 0x00, 0x8D, 0x00, 0x04, 0x60 };
+        Array.Copy(stub, 0, img, sig.Length, stub.Length);
+
+        // Sector 1: informational volume label (plain ASCII, uppercased).
+        if (!string.IsNullOrEmpty(volumeLabel))
+        {
+            var label = Encoding.ASCII.GetBytes(volumeLabel.ToUpperInvariant());
+            Array.Copy(label, 0, img, 256, Math.Min(label.Length, 255));
+        }
+
+        // Best-effort allocation vector: one bit per block, stored in reserved block 1.
+        // Mark the reserved boot/system/directory range (blocks 0..FirstDataBlock-1) as used.
+        var bitmap = new byte[cimg.BlockSize];
+        for (var b = 0; b < opt.FirstDataBlock && b < bitmap.Length * 8; b++)
+            bitmap[b / 8] |= (byte)(0x80 >> (b % 8));
+        cimg.WriteBlock(1, bitmap);
+
+        // Directory area: every 32-byte slot marked unused with 0xE5.
+        for (var b = opt.DirectoryStartBlock; b < opt.DirectoryStartBlock + opt.DirectoryBlockCount; b++)
+            if (b >= 0 && b < cimg.TotalBlocks) FillBlock(cimg, b, 0xE5);
+
+        return img;
+    }
+
+    private static (string Name, string Ext) NormalizeName(string name, string ext, bool upper)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("CP/M file name must not be empty.", nameof(name));
+        if (upper) { name = name.ToUpperInvariant(); ext = ext.ToUpperInvariant(); }
+
+        static string Fix(string value, int length)
+        {
+            var chars = value.Trim().ToCharArray();
+            for (var i = 0; i < chars.Length; i++)
+                if (!IsNameChar((byte)chars[i])) chars[i] = 'X';
+            if (chars.Length == 0) return new string(' ', length);
+            return chars.Length <= length
+                ? new string(chars).PadRight(length)
+                : new string(chars, 0, length);
+        }
+
+        var n = Fix(name, 8);
+        var x = Fix(ext ?? string.Empty, 3);
+        if (n[0] < 'A' || n[0] > 'Z')
+            throw new ArgumentException("CP/M file name must start with an ASCII letter A-Z.", nameof(name));
+        return (n, x);
+    }
+
+    /// <summary>Finds unused (user byte 0xE5) directory slots in the configured directory area.</summary>
+    private static List<(int Block, int Slot)> FindFreeDirSlots(CpmImage img, CpmWriteOptions opt)
+    {
+        var slots = new List<(int, int)>();
+        var perBlock = img.BlockSize / 32;
+        for (var b = opt.DirectoryStartBlock; b < opt.DirectoryStartBlock + opt.DirectoryBlockCount; b++)
+        {
+            if (b < 0 || b >= img.TotalBlocks) break;
+            var data = img.ReadBlock(b);
+            for (var s = 0; s < perBlock; s++)
+            {
+                var o = s * 32;
+                if (o + 32 > data.Length) break;
+                if (data[o] == 0xE5) slots.Add((b, s));
+            }
+        }
+        return slots;
+    }
+
+    /// <summary>
+    ///     Writes files into an existing CP/M image (typically one produced by
+    ///     <see cref="FormatBlank"/>). Reuses <see cref="ScanDirectorySlots"/> to discover live
+    ///     files and referenced blocks so existing data is never overwritten, and fills unused
+    ///     0xE5 directory slots with new 8.3 entries. Files larger than one extent are split
+    ///     into 128-record extents with incrementing EX (and S2 for more than 32 extents).
+    ///     Data is padded to whole 128-byte records, as CP/M has no exact byte length.
+    ///     BEST-EFFORT: relies on the linear block mapping used throughout this file.
+    /// </summary>
+    public static void WriteFiles(
+        byte[] imageBytes,
+        DiskFormat fmt,
+        IEnumerable<(string Name, string Ext, byte[] Data)> files)
+        => WriteFiles(imageBytes, fmt, files, new CpmWriteOptions());
+
+    /// <summary>Overload of <see cref="WriteFiles(byte[], DiskFormat, IEnumerable{ValueTuple{string,string,byte[]}})"/> with explicit layout options.</summary>
+    public static void WriteFiles(
+        byte[] imageBytes,
+        DiskFormat fmt,
+        IEnumerable<(string Name, string Ext, byte[] Data)> files,
+        CpmWriteOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(imageBytes);
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(options);
+
+        var cimg = new CpmImage(imageBytes, fmt);
+        var blockSize = cimg.BlockSize;
+        var recordsPerBlock = blockSize / 128;
+        var alCount = cimg.WordAl ? 8 : 16; // 16 bytes of AL: 8 x 2-byte or 16 x 1-byte pointers
+        const int recordsPerExtent = 128;
+
+        // Collect live file names and every block already referenced by the directory.
+        var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var used = new HashSet<int>();
+        foreach (var (_, e) in ScanDirectorySlots(imageBytes))
+        {
+            if (e[0] == 0xE5) continue;
+            var n = Encoding.ASCII.GetString(e, 1, 8).TrimEnd(' ');
+            var x = Encoding.ASCII.GetString(e, 9, 3).TrimEnd(' ');
+            existing.Add($"{n}.{x}");
+            foreach (var b in ExtentBlocks(e, cimg.WordAl)) used.Add(b);
+        }
+
+        var freeSlots = FindFreeDirSlots(cimg, options);
+        var slotCursor = 0;
+        var nextBlock = Math.Max(0, options.FirstDataBlock);
+
+        foreach (var f in files)
+        {
+            var (name, ext) = NormalizeName(f.Name, f.Ext, options.UppercaseNames);
+            var key = $"{name.TrimEnd(' ')}.{ext.TrimEnd(' ')}";
+            if (options.SkipExisting && existing.Contains(key)) continue;
+
+            var data = f.Data ?? Array.Empty<byte>();
+            var records = (data.Length + 127) / 128;                       // ceil(len / 128)
+            var extentCount = Math.Max(1, (records + recordsPerExtent - 1) / recordsPerExtent);
+            if (freeSlots.Count - slotCursor < extentCount)
+                throw new InvalidOperationException($"Not enough free CP/M directory slots for '{key}'.");
+
+            for (var ex = 0; ex < extentCount; ex++)
+            {
+                var recs = Math.Min(recordsPerExtent, records - ex * recordsPerExtent);
+                var blocksNeeded = recs == 0 ? 0 : (recs + recordsPerBlock - 1) / recordsPerBlock;
+
+                // Simple monotonic allocator: start after the reserved area, skip referenced blocks.
+                var blocks = new List<int>();
+                while (blocks.Count < blocksNeeded)
+                {
+                    while (used.Contains(nextBlock)) nextBlock++;
+                    if (nextBlock >= cimg.TotalBlocks)
+                        throw new InvalidOperationException("No free CP/M data blocks left.");
+                    blocks.Add(nextBlock);
+                    used.Add(nextBlock);
+                    nextBlock++;
+                }
+
+                for (var bi = 0; bi < blocks.Count; bi++)
+                {
+                    var buf = new byte[blockSize];
+                    var src = ex * recordsPerExtent * 128 + bi * blockSize;
+                    var len = Math.Min(blockSize, Math.Max(0, data.Length - src));
+                    if (len > 0) Array.Copy(data, src, buf, 0, len);
+                    cimg.WriteBlock(blocks[bi], buf);
+                }
+
+                // 32-byte CP/M directory entry: user, 8.3 name, EX/S1/S2, RC, allocation vector.
+                var entry = new byte[32];
+                entry[0] = 0;
+                Encoding.ASCII.GetBytes(name, 0, 8, entry, 1);
+                Encoding.ASCII.GetBytes(ext, 0, 3, entry, 9);
+                entry[12] = (byte)(ex % 32);         // EX (0..31)
+                entry[13] = 0;                       // S1
+                entry[14] = (byte)(ex / 32);         // S2 (extents beyond 31)
+                entry[15] = (byte)recs;              // RC (records in this extent, 0..128)
+                for (var i = 0; i < alCount; i++)
+                {
+                    var bv = i < blocks.Count ? blocks[i] : 0;
+                    if (cimg.WordAl)
+                    {
+                        entry[16 + i * 2] = (byte)(bv & 0xFF);
+                        entry[17 + i * 2] = (byte)((bv >> 8) & 0xFF);
+                    }
+                    else
+                    {
+                        entry[16 + i] = (byte)(bv & 0xFF);
+                    }
+                }
+
+                var (db, ds) = freeSlots[slotCursor++];
+                var dirData = cimg.ReadBlock(db);
+                Array.Copy(entry, 0, dirData, ds * 32, 32);
+                cimg.WriteBlock(db, dirData);
+            }
+
+            existing.Add(key);
+        }
+    }
+
+    /// <summary>
+    ///     Convenience: <see cref="FormatBlank"/> a new image, <see cref="WriteFiles"/> the
+    ///     supplied files into it, and save to <paramref name="outputPath"/>. Returns the path.
+    ///     Uses the same best-effort, spec-derived layout and limitations as FormatBlank.
+    /// </summary>
+    public static string FormatAndWrite(
+        DiskFormat fmt,
+        string outputPath,
+        IEnumerable<(string Name, string Ext, byte[] Data)> files,
+        string volumeLabel = "")
+    {
+        var img = FormatBlank(fmt, volumeLabel);
+        WriteFiles(img, fmt, files);
+        File.WriteAllBytes(outputPath, img);
+        return outputPath;
+    }
+
 }

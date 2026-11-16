@@ -16,6 +16,14 @@ public sealed class CbmImageInfo
 
     /// <summary>Underlying reader for in-place edits (scratch/entry write), or null if read-only.</summary>
     public required ICbmWritable? Writable { get; init; }
+
+    /// <summary>
+    ///     Container-backed D64 images opened via <see cref="CbmCatalog.OpenD64FromContainer"/>.
+    ///     D64Image doesn't implement ICbmWritable (it has its own D64FileEntry model), so it is
+    ///     exposed here instead of through <see cref="Writable"/>; callers can edit it and call
+    ///     D64Image.Save() to write back into the container. Null for all other image kinds.
+    /// </summary>
+    public D64Image? D64Image { get; init; }
 }
 
 /// <summary>Opens any CBM-layout image (identical 32-byte root entries) into a common shape.</summary>
@@ -75,6 +83,67 @@ public static class CbmCatalog
         return i is null ? null : new CbmImageInfo
         {
             Label = "DNP", Path = virtualPath, DiskName = i.DiskName, DiskId = i.DiskId,
+            BlocksFree = i.BlocksFree, Entries = i.Entries, Export = i.Export, Writable = i
+        };
+    }
+
+    /// <summary>
+    ///     Opens a D64 image from a container slice. D64Image uses its own entry model rather than
+    ///     ICbmWritable, so <see cref="Writable"/> is null here; the editable image is available
+    ///     via <see cref="CbmImageInfo.D64Image"/> (or directly from D64Image.TryLoadFromContainer).
+    ///     Its Save() writes back into the container at the supplied offset.
+    /// </summary>
+    public static CbmImageInfo? OpenD64FromContainer(string containerPath, long offset, long size, string virtualPath)
+    {
+        var i = D64Image.TryLoadFromContainer(containerPath, offset, size, virtualPath);
+        if (i is null) return null;
+
+        // Adapt D64FileEntry list to the common CbmDirEntry shape; keep a reference map so
+        // Export() can dispatch back to the matching D64Image.ExportFile() call.
+        var byDirEntry = new Dictionary<CbmDirEntry, D64FileEntry>();
+        var entries = new List<CbmDirEntry>(i.Entries.Count);
+        foreach (var e in i.Entries)
+        {
+            var c = new CbmDirEntry
+            {
+                FileName = e.FileName,
+                RawFileType = e.RawFileType,
+                StartTrack = e.StartTrack,
+                StartSector = e.StartSector,
+                SizeInBlocks = e.SizeInBlocks
+            };
+            entries.Add(c);
+            byDirEntry[c] = e;
+        }
+
+        return new CbmImageInfo
+        {
+            Label = "D64", Path = virtualPath, DiskName = i.DiskName, DiskId = i.DiskId,
+            BlocksFree = i.BlocksFree, Entries = entries,
+            Export = e => byDirEntry.TryGetValue(e, out var d64) ? i.ExportFile(d64) : Array.Empty<byte>(),
+            Writable = null,
+            D64Image = i
+        };
+    }
+
+    /// <summary>Opens a D71 partition directly from a container (write-back to container on Save).</summary>
+    public static CbmImageInfo? OpenD71FromContainer(string containerPath, long offset, long size, string virtualPath)
+    {
+        var i = D71Image.TryLoadFromContainer(containerPath, offset, size, virtualPath);
+        return i is null ? null : new CbmImageInfo
+        {
+            Label = "D71", Path = virtualPath, DiskName = i.DiskName, DiskId = i.DiskId,
+            BlocksFree = i.BlocksFree, Entries = i.Entries, Export = i.Export, Writable = i
+        };
+    }
+
+    /// <summary>Opens a D81 partition directly from a container (write-back to container on Save).</summary>
+    public static CbmImageInfo? OpenD81FromContainer(string containerPath, long offset, long size, string virtualPath)
+    {
+        var i = D81Image.TryLoadFromContainer(containerPath, offset, size, virtualPath);
+        return i is null ? null : new CbmImageInfo
+        {
+            Label = "D81", Path = virtualPath, DiskName = i.DiskName, DiskId = i.DiskId,
             BlocksFree = i.BlocksFree, Entries = i.Entries, Export = i.Export, Writable = i
         };
     }

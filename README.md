@@ -347,6 +347,8 @@ D64Editor --extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]
 D64Editor --print-dir <image>
 D64Editor --geos-info <d64> <file>
 D64Editor --run-script <script.txt> [workdir]
+D64Editor --to-gcr <d64> <out.g64|out.nib>
+D64Editor --cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]
 D64Editor <image>          (opens in GUI)
 D64Editor                  (no args: starts GUI)
 ```
@@ -368,6 +370,8 @@ D64Editor                  (no args: starts GUI)
 | `--print-dir <image>` | Print directory listing (text, D64) |
 | `--geos-info <d64> <file>` | Show GEOS/REL metadata and best-effort VLIR info for a file (D64) |
 | `--run-script <script.txt> [workdir]` | Run a headless automation script over the Core engine (see Scripting section) |
+| `--to-gcr <d64> <out.g64\|out.nib>` | Encode a D64 into a G64/NIB image (native GCR write-back; byte-exact round-trip) |
+| `--cpm-new <d64\|d71\|d81> <out> [NAME.EXT=hostfile ...]` | From-scratch C128 CP/M image (best-effort spec-derived layout) |
 
 ---
 
@@ -421,6 +425,17 @@ D64Editor                  (no args: starts GUI)
 - Unselected directory extents are marked unused (0xE5); data blocks become unreferenced.
 - CLI: `--cpm-copy <template> <out> [--all|--files A,B]`.
 - `--cpm-format <template> <out>`: creates an empty CP/M image from template (clears directory; template-based).
+
+### From-Scratch Formatting (no template)
+- `C128Cpm.FormatBlank(fmt)` / `WriteFiles(...)` / `FormatAndWrite(...)` create a fresh
+  C128 CP/M `.d64/.d71/.d81` with boot signature, directory (all slots `0xE5`) and
+  a simple allocation bitmap, then write 8.3 files (multi-extent aware, 1-byte AL for
+  D64/D71, 2-byte LE for D81). CLI: `--cpm-new <fmt> <out> [NAME.EXT=hostfile ...]`;
+  script: `cpmnew`. Extraction round-trips verified for all three formats.
+- **Caveat:** this is a published-spec-derived, best-effort layout — bootability, DPB
+  parameters, sector skew and bitmap location are **not verified** against real bootable
+  CP/M media. Template-based copy/format remains available for known-good images.
+  CP/M stores record counts, so non-128-aligned files extract padded to 128-byte records.
 
 ### Writing to Real Media
 - Use OpenCBM for writing to real floppy drives:
@@ -528,6 +543,8 @@ log every command and its result, stop on the first error, and propagate an exit
 | `cpmformat <tmpl> <out>` | Create an empty CP/M image from a template |
 | `archive <zip\|tar\|tgz> <dir> [--images-only]` | Extract archive contents |
 | `geosinfo <name>` | Show GEOS/REL metadata for a file |
+| `togcr <d64> <out.g64\|nib>` | Encode a D64 into a G64/NIB container (GCR write-back) |
+| `cpmnew <d64\|d71\|d81> <out> [NAME.EXT=host ...]` | From-scratch CP/M image (best-effort) |
 | `exit [code]` | Stop with an exit code |
 
 Example (`scripts/example-basic.d64script`):
@@ -569,7 +586,7 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 ### Not Yet Implemented
 - **G64/NIB native GCR-level editing/save** back to original `.g64/.nib` format (requires GCR re-encoding with correct sync/timing/track rebuilding).
 - **T64/DNP/CMD deeper native read/write:** T64 has basic mutable save/rebuild; DNP supports in-image edits/save and native DNP container write-back. CMD container-level write-back for emulated partitions (D64/D71/D81) still limited.
-- **C128 CP/M full from-scratch formatting/writing** for all variants and validated `.d71/.d81` DPB/boot-system layouts (template-based extract/copy/format exists; needs format-specific boot images/templates + real-image verification).
+- **C128 CP/M layout validation** — from-scratch formatting/writing exists for all variants; validating bootability/DPB/skew/bitmap against real bootable CP/M media remains external (needs real images/emulator).
 - **Broader inter-tab/window disk-to-disk drag-and-drop** (OS drag in/out works; inter-tab drag remains limited).
 - **More comprehensive undo/redo** coverage across all edit paths (basic for common D64 ops now).
 - **Deeper GEOS disk/application-data/VLIR workflows** beyond best-effort index/chain inspection and metadata editing.

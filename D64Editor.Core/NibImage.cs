@@ -133,4 +133,84 @@ public sealed class NibImage
 
         return (image, warnings, trackCount);
     }
+
+    /// <summary>
+    ///     Writes this NIB's structure back out with every present whole track re-encoded
+    ///     from <paramref name="d64ImageBytes"/> into a fixed 8192-byte GCR block. The header
+    ///     (signature, version and the full track table) is preserved verbatim; half tracks
+    ///     keep their original data. Killer tracks keep their density byte but still receive
+    ///     freshly encoded sector data.
+    /// </summary>
+    public byte[] ToNibBytes(byte[] d64ImageBytes)
+    {
+        var slots = TrackTable.Count;
+        var result = new byte[HeaderSize + slots * TrackBlockSize];
+
+        // Preserve signature, version and the complete [trackX2, density] track table.
+        Array.Copy(_data, 0, result, 0, HeaderSize);
+
+        for (var i = 0; i < slots; i++)
+        {
+            var slot = TrackTable[i];
+            var dest = HeaderSize + i * TrackBlockSize;
+
+            if (!slot.IsHalfTrack && slot.TrackNumber >= 1 && slot.TrackNumber <= 40)
+            {
+                var encoded = Gcr.EncodeTrack(d64ImageBytes, slot.TrackNumber, slot.SpeedZone);
+                var copy = Math.Min(encoded.Length, TrackBlockSize);
+                if (copy > 0) Array.Copy(encoded, 0, result, dest, copy);
+            }
+            else if (slot.DataOffset >= 0 && slot.DataOffset + TrackBlockSize <= _data.Length)
+            {
+                // Preserve half-track / out-of-range blocks as-is.
+                Array.Copy(_data, (int)slot.DataOffset, result, dest, TrackBlockSize);
+            }
+        }
+
+        return result;
+    }
+    /// <summary>
+    ///     Builds a fresh NIB container from a raw D64 byte image (no source NIB needed).
+    ///     Whole tracks present in the D64 are encoded with Gcr.EncodeTrack into fixed
+    ///     8192-byte blocks; no half tracks are emitted.
+    /// </summary>
+    public static byte[] FromD64(byte[] d64ImageBytes)
+    {
+        var trackCount = d64ImageBytes.LongLength == D64Image.ExtendedSize
+                          || d64ImageBytes.LongLength == D64Image.ExtendedSizeWithErrorInfo
+            ? D64Image.ExtendedTrackCount
+            : D64Image.StandardTrackCount;
+
+        var header = new byte[HeaderSize];
+        Encoding.ASCII.GetBytes("MNIB-1541-RAW").CopyTo(header, 0);
+        header[0x0D] = 0; // version
+
+        var slots = new List<(int TrackX2, byte Density)>();
+        for (var t = 1; t <= trackCount; t++)
+        {
+            var zone = D64Image.SectorsPerTrack(t) switch { 21 => 0, 19 => 1, 18 => 2, _ => 3 };
+            slots.Add((t * 2, (byte)zone));
+        }
+
+        // Track table: [trackX2, density] pairs followed by a terminating 0,0.
+        for (var i = 0; i < slots.Count && i < MaxSlots; i++)
+        {
+            header[0x10 + i * 2] = (byte)slots[i].TrackX2;
+            header[0x10 + i * 2 + 1] = slots[i].Density;
+        }
+        // terminator remains 0,0 (header is zero-initialized)
+
+        var result = new byte[HeaderSize + slots.Count * TrackBlockSize];
+        Array.Copy(header, result, HeaderSize);
+        for (var i = 0; i < slots.Count; i++)
+        {
+            var t = slots[i].TrackX2 / 2;
+            var zone = slots[i].Density & 0x03;
+            var encoded = Gcr.EncodeTrack(d64ImageBytes, t, zone);
+            var copy = Math.Min(encoded.Length, TrackBlockSize);
+            if (copy > 0) Array.Copy(encoded, 0, result, HeaderSize + i * TrackBlockSize, copy);
+        }
+        return result;
+    }
+
 }

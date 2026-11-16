@@ -60,6 +60,25 @@ public partial class DiskDocumentView : UserControl
     public string SourcePath => _image?.SourcePath ?? "";
     public bool HasImage => _image is not null;
 
+    /// <summary>
+    ///     Loads an already-open D64Image into this document (e.g. a container-backed image
+    ///     from CbmCatalog.OpenD64FromContainer whose Save() writes back into its container).
+    ///     Mirrors the D64 tail of LoadDisk without re-reading from a standalone path.
+    /// </summary>
+    public void LoadImage(D64Image image, string? title = null)
+    {
+        _image = image;
+        _image.Interleave = AppSettings.Interleave;
+        _image.PreferredStartTrack = AppSettings.StartingTrack;
+        _image.PreferredStartSector = AppSettings.StartingSector;
+        _image.ComputeBlockOwners();
+        PopulateFrom(_image);
+        TitleChanged?.Invoke(title ?? Path.GetFileName(image.SourcePath));
+
+        if (!AppSettings.DisableCrosslinkCheck && _image.CrossLinkWarnings.Count > 0)
+            ShowDialog(new CrossLinksWindow(_image));
+    }
+
     /// <summary>Raised when the document's disk changes so the shell can update its tab title.</summary>
     public event Action<string>? TitleChanged;
 

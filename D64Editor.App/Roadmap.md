@@ -30,10 +30,10 @@ disk editors, implemented incrementally.
 - [x] Unscratch/re-allocate (CBM layouts): D71/D81/D80/D82/DNP via `ICbmWritable`/`CbmScratch`
 - [x] File import (CBM layouts): D71/D81/D80/D82/DNP — allocate/write chain, directory slot, BAM update, single flush (`CbmImport`)
 - [x] REL (D64): create, in-place record edit, and resize/grow/shrink record count (side/data-sector allocation and relinking)
-- [x] G64/NIB structural viewers/fallback (G64 info window; NIB info window on decode fallback). Native GCR re-encoding/edit-save remains limited
-- [ ] G64/NIB: native GCR-level editing/save back to original image format (beyond D64 conversion)
-- [ ] T64/DNP/CMD: deeper native read/write (T64 has basic mutable save/rebuild; DNP supports in-image edits/save and native DNP partitions can be edited with write-back to D2M/D4M/DHD containers; emulated-partition container write-back still limited)
-- [ ] C128 CP/M (.d64/.d71/.d81): full from-scratch formatting/writing for all variants and validated `.d71/.d81` DPB mappings/boot-system layouts (template-based format/clear added; requires format-specific boot images/templates and real-image verification)
+- [x] G64/NIB structural viewers/fallback (G64 info window; NIB info window on decode fallback)
+- [x] G64/NIB: native GCR-level write-back — `Gcr.EncodeTrack` + `G64Image.ToG64Bytes`/`FromD64` and `NibImage.ToNibBytes`/`FromD64`; CLI `--to-gcr` and script `togcr`. Byte-exact D64->G64/NIB->D64 round-trip verified (683/683 sectors). Half-track/copy-protected data preserved verbatim
+- [x] T64/DNP/CMD: deeper native read/write — T64 mutable save/rebuild; DNP + emulated D64/D71/D81 partitions all open directly from D2M/D4M/DHD containers with Save() writing back into the container (`TryLoadFromContainer`, `CbmCatalog.Open*FromContainer`, PartitionsWindow opens directly). Verified container slice edit/save-back
+- [x] C128 CP/M (.d64/.d71/.d81): from-scratch formatting/writing — `C128Cpm.FormatBlank`/`WriteFiles`/`FormatAndWrite` (multi-extent 8.3 files, 1-/2-byte AL) + CLI `--cpm-new` and script `cpmnew`. Extraction round-trip verified for d64/d71/d81. NOTE: bootability/DPB/skew not verified against real bootable CP/M media; template-based copy/format still available
 
 ## Phase 3 — Directory Editing Enhancements
 - [x] Rename file (dialog)
@@ -85,9 +85,9 @@ disk editors, implemented incrementally.
 - [ ] Native OS print dialog and built-in updater/installer (platform-dependent; not implemented cross-platform)
 
 ## Current Focus
-- G64/NIB native GCR-level editing/save (re-encode tracks) and deeper structural tooling
-- T64/DNP/CMD deeper native read/write (emulated-partition container write-back, richer editing workflows)
-- C128 CP/M full from-scratch formatting/writing and validated `.d71/.d81` DPB/boot mappings (with format-specific boot images/templates and real-image verification)
+- Deeper GCR fidelity: per-zone tuned interleave/gaps, copy-protected track re-encoding, half-track editing
+- CMD/DNP richer editing workflows inside containers; validation against real container images
+- C128 CP/M validation of from-scratch layouts against real bootable media / specific DPB variants (boot code, skew, bitmap location)
 - Deeper GEOS disk/application-data/VLIR workflows and richer metadata tooling
 - Broader inter-tab/window disk-to-disk drag-and-drop and more comprehensive undo/redo coverage
 - Platform-dependent native print dialog / updater installer remain out of scope for cross-platform build; keep best-effort flows working

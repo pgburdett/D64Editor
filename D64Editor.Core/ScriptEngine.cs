@@ -166,6 +166,8 @@ public static class ScriptEngine
 
             case "archive": ArchiveCmd(c, a, r); break;
             case "geosinfo": GeosInfo(c, a, r); break;
+            case "togcr": ToGcr(c, a, r); break;
+            case "cpmnew": CpmNew(c, a, r); break;
 
             default: throw new ScriptException($"Unknown command '{cmd}' (run 'help' for the command list).");
         }
@@ -206,6 +208,8 @@ public static class ScriptEngine
         sb.AppendLine("  cpmformat <tmpl> <out>       Create empty CP/M image from template");
         sb.AppendLine("  archive <zip|tar|tgz> <dir>  Extract archive contents");
         sb.AppendLine("  geosinfo <name>              Show GEOS/REL metadata for a file");
+        sb.AppendLine("  togcr <d64> <out.g64|nib>    Encode a D64 into a G64/NIB container (GCR write-back)");
+        sb.AppendLine("  cpmnew <d64|d71|d81> <out> [NAME.EXT=host ...]  From-scratch CP/M image (best-effort)");
         sb.AppendLine("  echo <text...>               Print text");
         sb.AppendLine("  exit [code]                  Stop with exit code");
         Log(c, sb.ToString().TrimEnd(), r);
@@ -673,6 +677,58 @@ public static class ScriptEngine
         var imagesOnly = a.Any(x => x == "--images-only");
         var n = ArchiveExtract.Extract(arch, dir, imagesOnly);
         Log(c, $"Extracted {n} file(s) from {arch} to {dir}{(imagesOnly ? " (images only)" : "")}.", r);
+    }
+
+    private static void ToGcr(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 2) throw new ScriptException("Usage: togcr <d64> <out.g64|out.nib>");
+        var input = Full(c, a[0]);
+        var output = Full(c, a[1]);
+        if (!File.Exists(input)) throw new ScriptException($"Input not found: {input}");
+        var d64 = File.ReadAllBytes(input);
+        var ext = Path.GetExtension(output).ToLowerInvariant();
+        byte[] bytes;
+        if (ext == ".g64")
+        {
+            var src = G64Image.TryLoad(input);
+            bytes = src is not null ? src.ToG64Bytes(d64) : G64Image.FromD64(d64);
+        }
+        else if (ext == ".nib")
+        {
+            var src = NibImage.TryLoad(input);
+            bytes = src is not null ? src.ToNibBytes(d64) : NibImage.FromD64(d64);
+        }
+        else throw new ScriptException("Output must end in .g64 or .nib.");
+        File.WriteAllBytes(output, bytes);
+        Log(c, $"Encoded D64 -> {ext.TrimStart('.').ToUpperInvariant()}: {output} ({bytes.Length} bytes).", r);
+    }
+
+    private static void CpmNew(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 2) throw new ScriptException("Usage: cpmnew <d64|d71|d81> <out> [NAME.EXT=host ...]");
+        var fmt = a[0].ToLowerInvariant() switch
+        {
+            "d64" => DiskFormat.D64, "d71" => DiskFormat.D71, "d81" => DiskFormat.D81,
+            _ => DiskFormat.Unknown,
+        };
+        if (fmt == DiskFormat.Unknown) throw new ScriptException("Format must be d64, d71, or d81.");
+        var output = Full(c, a[1]);
+        var files = new List<(string, string, byte[])>();
+        for (var i = 2; i < a.Length; i++)
+        {
+            var eq = a[i].IndexOf('=');
+            if (eq < 0) continue;
+            var name = a[i][..eq].Trim();
+            var host = Full(c, a[i][(eq + 1)..].Trim());
+            if (!File.Exists(host)) throw new ScriptException($"File not found: {host}");
+            var dot = name.IndexOf('.');
+            var baseName = dot < 0 ? name : name[..dot];
+            var ext = dot < 0 ? "" : name[(dot + 1)..];
+            files.Add((baseName, ext, File.ReadAllBytes(host)));
+        }
+        C128Cpm.FormatAndWrite(fmt, output, files);
+        Log(c, $"Created from-scratch {fmt} CP/M image: {output} ({files.Count} file(s)).", r);
+        Log(c, "Note: best-effort spec-derived layout; bootability not verified against real media.", r);
     }
 
     private static void GeosInfo(Context c, string[] a, ScriptResult r)

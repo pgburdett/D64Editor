@@ -76,6 +76,119 @@ public static class Gcr
         return bytes;
     }
 
+    /// <summary>Simple MSB-first bit accumulator used when building raw GCR tracks.</summary>
+    private sealed class BitWriter
+    {
+        private readonly List<byte> _bits = new();
+
+        public void WriteOnes(int count)
+        {
+            for (var i = 0; i < count; i++) _bits.Add(1);
+        }
+
+        public void WriteZeros(int count)
+        {
+            for (var i = 0; i < count; i++) _bits.Add(0);
+        }
+
+        /// <summary>Encodes one byte as two 5-bit GCR symbols (hi nibble first).</summary>
+        public void WriteGcrByte(byte value)
+        {
+            WriteSymbol(EncodeNibble[value >> 4]);
+            WriteSymbol(EncodeNibble[value & 0x0F]);
+        }
+
+        private void WriteSymbol(byte code5)
+        {
+            for (var i = 4; i >= 0; i--) _bits.Add((byte)((code5 >> i) & 1));
+        }
+
+        public byte[] ToBytes() => Pack(_bits);
+    }
+
+    /// <summary>
+    ///     Builds a raw GCR track (bit-packed MSB-first bytes) for a logical track from a
+    ///     decoded D64 byte image. Every logical sector is emitted as a sync run followed by
+    ///     an 0x08 header block, then a sync run followed by an 0x07 data block, with optional
+    ///     zero gaps. Physical sector order is permuted by <paramref name="interleave"/> so it
+    ///     differs from logical order, as on a real 1541 track. The returned bytes are
+    ///     decodable with <see cref="DecodeTrackSectors"/>.
+    /// </summary>
+    public static byte[] EncodeTrack(byte[] d64ImageBytes, int track, int speedZone,
+        int interleave = 10, int gapBytes = 0)
+    {
+        var spt = SectorsPerTrack(track);
+        if (spt <= 0) return Array.Empty<byte>();
+
+        // Gaps are whole zero bytes. Scale them slightly by the speed zone so different
+        // zones end up with slightly different track lengths, as on a real disk.
+        var gapBits = Math.Max(0, gapBytes + Math.Max(0, speedZone)) * 8;
+
+        // Map physical position -> logical sector using interleave, with a linear-probe
+        // fallback when interleave is not coprime with the sector count (e.g. 18 sectors).
+        var logicalAt = new int[spt];
+        var used = new bool[spt];
+        for (var s = 0; s < spt; s++)
+        {
+            var p = (s * interleave) % spt;
+            if (used[p])
+            {
+                for (var k = 1; k <= spt; k++)
+                {
+                    var cand = (p + k) % spt;
+                    if (!used[cand]) { p = cand; break; }
+                }
+            }
+            used[p] = true;
+            logicalAt[p] = s;
+        }
+
+        const byte id1 = 0x00;
+        const byte id2 = 0x00;
+        var bw = new BitWriter();
+
+        for (var p = 0; p < spt; p++)
+        {
+            var sector = logicalAt[p];
+
+            var payload = new byte[256];
+            var off = SectorOffset(track, sector);
+            if (off >= 0 && off + 256 <= d64ImageBytes.Length)
+                Array.Copy(d64ImageBytes, off, payload, 0, 256);
+
+            // --- header block: 0x08 + checksum + sector + track + id1 + id2 + 0x0F 0x0F ---
+            bw.WriteOnes(16); // sync; first GCR symbol (0x0A for 0x08) starts with a 0 bit,
+                              // so FindSync lands exactly on the start of the header.
+            bw.WriteGcrByte(0x08);
+            bw.WriteGcrByte((byte)(track ^ sector ^ id1 ^ id2));
+            bw.WriteGcrByte((byte)sector);
+            bw.WriteGcrByte((byte)track);
+            bw.WriteGcrByte(id1);
+            bw.WriteGcrByte(id2);
+            bw.WriteGcrByte(0x0F);
+            bw.WriteGcrByte(0x0F);
+
+            if (gapBits > 0) bw.WriteZeros(gapBits);
+
+            // --- data block: 0x07 + 256 payload bytes + checksum + 0x0F 0x0F ---
+            bw.WriteOnes(16); // sync
+            bw.WriteGcrByte(0x07);
+            byte dataChecksum = 0;
+            foreach (var b in payload)
+            {
+                bw.WriteGcrByte(b);
+                dataChecksum ^= b;
+            }
+            bw.WriteGcrByte(dataChecksum);
+            bw.WriteGcrByte(0x0F);
+            bw.WriteGcrByte(0x0F);
+
+            if (gapBits > 0) bw.WriteZeros(gapBits);
+        }
+
+        return bw.ToBytes();
+    }
+
     // ---- Decode ----
 
     private readonly struct BitReader

@@ -3,6 +3,21 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Phase 2 Completion: GCR Write-back, Container Write-back, CP/M From-Scratch
+
+### Added
+- GCR write-back: `Gcr.EncodeTrack`, `G64Image.ToG64Bytes`/`FromD64`, `NibImage.ToNibBytes`/`FromD64`; CLI `--to-gcr` and script `togcr`. Verified byte-exact D64→G64/NIB→D64 round-trip (683/683 sectors).
+- CMD container write-back for emulated D64/D71/D81 partitions (`TryLoadFromContainer` + `CbmCatalog.Open*FromContainer`); `PartitionsWindow` now opens all partition types directly with save-back into D2M/D4M/DHD containers. `DiskDocumentView.LoadImage` added for container-backed D64.
+- C128 CP/M from-scratch formatting/writing: `C128Cpm.FormatBlank`/`WriteFiles`/`FormatAndWrite` with multi-extent 8.3 files and 1-/2-byte allocation pointers; CLI `--cpm-new` and script `cpmnew`. Extraction round-trip verified for d64/d71/d81.
+- CLI `--extract-archive` now delegates to the shared Core `ArchiveExtract` helper.
+
+### Changed
+- Roadmark Phase 2 items marked complete; docs updated (README, AGENTS, CHANGELOG).
+
+### Known limitations
+- GCR: per-zone tuned interleave/gaps and copy-protected/half-track re-encoding not implemented (preserved verbatim).
+- CP/M: from-scratch layout is spec-derived and self-consistent but bootability/DPB/skew/bitmap not verified against real bootable media.
+
 ## [Unreleased] — Headless Scripting / Automation Engine
 
 ### Added

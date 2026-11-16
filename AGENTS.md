@@ -106,10 +106,15 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - Sample scripts live in `scripts/`. When adding Core automation, expose it through ScriptEngine and document it in README's Scripting section.
 - `D64Image.RenameDisk(name,id)` was added for headless disk-header renaming.
 
+## GCR write-back / container / CP/M notes
+- `Gcr.EncodeTrack(d64, track, speedZone)` builds raw GCR track bytes; `G64Image.ToG64Bytes`/`FromD64` and `NibImage.ToNibBytes`/`FromD64` build containers. Round-trip D64→G64/NIB→D64 is byte-exact (verified 683/683 sectors). Half-track/copy-protected data is preserved verbatim, not re-encoded.
+- Container-backed images: `D64Image`/`D71Image`/`D81Image`/`DnpImage` all have `TryLoadFromContainer` + `ContainerPath/Offset/Size`; `Save()` writes back into the container. `CbmCatalog.Open{D64,D71,D81,Dnp}FromContainer` and `PartitionsWindow` open partitions directly with write-back.
+- `C128Cpm.FormatBlank`/`WriteFiles`/`FormatAndWrite` create CP/M images from scratch (no template); best-effort spec-derived layout, bootability not verified against real media.
+
 ## Known limitations
-- G64/NIB native GCR-level edit/save not implemented (requires GCR re-encoding).
-- CMD container-level write-back for emulated partitions (D64/D71/D81) still limited.
-- CP/M from-scratch formatting/writing for all variants needs format-specific boot images/templates.
+- G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.
+- CMD container write-back works for all partition types; richer in-container editing workflows remain incremental.
+- CP/M from-scratch formatting/writing exists; validating bootability/DPB/skew against real bootable media remains external.
 - Broader inter-tab/window disk-to-disk drag-and-drop not fully implemented.
 - Undo/redo coverage not comprehensive across all edit paths.
 - Native OS print dialog and built-in updater/installer not implemented (platform-dependent).

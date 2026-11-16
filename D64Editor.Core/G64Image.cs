@@ -157,4 +157,119 @@ public sealed class G64Image
 
         return (image, warnings, trackCount);
     }
+
+    /// <summary>
+    ///     Writes this G64's structure back out with every present whole track re-encoded
+    ///     from <paramref name="d64ImageBytes"/>. The header (signature, version, track count,
+    ///     declared size and speed-zone table) is preserved verbatim, half tracks and other
+    ///     present non-standard slots keep their original GCR data, and the offset table and
+    ///     data area are rebuilt sequentially.
+    /// </summary>
+    public byte[] ToG64Bytes(byte[] d64ImageBytes)
+    {
+        const int headerLength = 12 + MaxSlots * 4 + MaxSlots * 4; // 684
+        const int trackTableStart = 12;
+
+        // Preserve the whole header first; the offset table entries are overwritten below.
+        var result = new byte[Math.Max(_data.Length, headerLength)];
+        Array.Copy(_data, 0, result, 0, headerLength);
+
+        var writePos = headerLength;
+        for (var slot = 0; slot < MaxSlots; slot++)
+        {
+            var tr = Tracks[slot];
+            byte[]? trackData = null;
+
+            if (tr.Present)
+            {
+                if (!tr.IsHalfTrack && tr.TrackNumber >= 1 && tr.TrackNumber <= 40)
+                    trackData = Gcr.EncodeTrack(d64ImageBytes, tr.TrackNumber, tr.SpeedZone);
+                else
+                    trackData = GetTrackData(tr); // preserve half tracks / out-of-range slots
+            }
+
+            var tableIndex = trackTableStart + slot * 4;
+            if (trackData is null)
+            {
+                // Absent (or unreadable) slot: zero offset, no data.
+                result[tableIndex] = result[tableIndex + 1] =
+                    result[tableIndex + 2] = result[tableIndex + 3] = 0;
+                continue;
+            }
+
+            // Offset table entry (little-endian 32-bit) and 2-byte size prefix.
+            result[tableIndex] = (byte)writePos;
+            result[tableIndex + 1] = (byte)(writePos >> 8);
+            result[tableIndex + 2] = (byte)(writePos >> 16);
+            result[tableIndex + 3] = (byte)(writePos >> 24);
+
+            var size = trackData.Length;
+            if (writePos + 2 + size > result.Length)
+                Array.Resize(ref result, writePos + 2 + size + 4096);
+
+            result[writePos] = (byte)(size & 0xFF);
+            result[writePos + 1] = (byte)((size >> 8) & 0xFF);
+            Array.Copy(trackData, 0, result, writePos + 2, size);
+            writePos += 2 + size;
+        }
+
+        var final = new byte[writePos];
+        Array.Copy(result, 0, final, 0, writePos);
+        return final;
+    }
+
+    /// <summary>
+    ///     Builds a fresh G64 container from a raw D64 byte image (no source G64 needed).
+    ///     Whole tracks present in the D64 are encoded with Gcr.EncodeTrack using standard
+    ///     speed zones; no half tracks are emitted.
+    /// </summary>
+    public static byte[] FromD64(byte[] d64ImageBytes)
+    {
+        var trackCount = d64ImageBytes.LongLength == D64Image.ExtendedSize
+                          || d64ImageBytes.LongLength == D64Image.ExtendedSizeWithErrorInfo
+            ? D64Image.ExtendedTrackCount
+            : D64Image.StandardTrackCount;
+        const int headerBytes = 12 + MaxSlots * 4 + MaxSlots * 4; // 12 + 336 + 336
+        var header = new byte[headerBytes];
+        Encoding.ASCII.GetBytes("GCR-1541").CopyTo(header, 0);
+        header[8] = 0;                 // version
+        header[9] = (byte)trackCount;  // track count
+        const int declared = 7928;     // typical max whole-track size for a 21-sector zone
+        header[10] = (byte)(declared & 0xFF);
+        header[11] = (byte)(declared >> 8);
+
+        var offsets = new long[MaxSlots];
+        var zones = new int[MaxSlots];
+        var data = new List<byte>();
+
+        for (var t = 1; t <= trackCount; t++)
+        {
+            var zone = D64Image.SectorsPerTrack(t) switch { 21 => 0, 19 => 1, 18 => 2, _ => 3 };
+            var trackData = Gcr.EncodeTrack(d64ImageBytes, t, zone);
+            var slot = (t - 1) * 2; // whole track slot
+            zones[slot] = zone;
+            offsets[slot] = headerBytes + data.Count;
+            data.Add((byte)(trackData.Length & 0xFF));
+            data.Add((byte)((trackData.Length >> 8) & 0xFF));
+            data.AddRange(trackData);
+        }
+
+        var total = headerBytes + data.Count;
+        var result = new byte[total];
+        Array.Copy(header, result, headerBytes);
+        for (var i = 0; i < MaxSlots; i++)
+        {
+            var off = 12 + i * 4;              // track offset table
+            var o = offsets[i];
+            result[off] = (byte)(o & 0xFF);
+            result[off + 1] = (byte)((o >> 8) & 0xFF);
+            result[off + 2] = (byte)((o >> 16) & 0xFF);
+            result[off + 3] = (byte)((o >> 24) & 0xFF);
+
+            var zp = 12 + MaxSlots * 4 + i * 4; // speed-zone table
+            result[zp] = (byte)zones[i];
+        }
+        data.CopyTo(result, headerBytes);
+        return result;
+    }
 }

@@ -53,52 +53,49 @@ public partial class PartitionsWindow : Window
             return;
         }
 
-        // Native DNP partitions: open directly from the container with write-back on Save.
+        var virtualPath = $"{_containerPath}::{partition.Name.Trim()}{ext}";
+        var title = $"Partition — {partition.Name} ({System.IO.Path.GetFileName(_containerPath)})";
+
+        // Open every partition type directly from the container with write-back on Save.
         if (partition.Kind == PartitionKind.Native)
         {
-            var virtualPath = $"{_containerPath}::{partition.Name.Trim()}.dnp";
             var info = CbmCatalog.OpenDnpFromContainer(_containerPath, partition.Offset, partition.Size, virtualPath);
             if (info is null) { StatusLabel.Text = "Could not open native DNP partition."; return; }
-            var w = new ExtendedImageWindow(info)
-            {
-                Title = $"Partition — {partition.Name} ({System.IO.Path.GetFileName(_containerPath)})"
-            };
-            w.Show(this);
+            new ExtendedImageWindow(info) { Title = title }.Show(this);
             StatusLabel.Text = $"Opened \"{partition.Name}\" (edits save back to container).";
             return;
         }
 
-        // Extract the partition's byte range to a temp file and open it through the normal path.
-        var outPath = Path.Combine(Path.GetTempPath(),
-            Path.GetFileNameWithoutExtension(_containerPath) + "_" + partition.Name.Trim() + ext);
-
-        await using (var src = File.OpenRead(_containerPath))
+        if (partition.Kind == PartitionKind.Emulated1541)
         {
-            src.Position = partition.Offset;
-            await using var dst = File.Create(outPath);
-
-            var chunk = new byte[1 << 16];
-            long remaining = partition.Size;
-            while (remaining > 0)
+            var d64 = D64Image.TryLoadFromContainer(_containerPath, partition.Offset, partition.Size, virtualPath);
+            if (d64 is null) { StatusLabel.Text = "Could not open emulated 1541 partition."; return; }
+            if (Owner is MainWindow mw)
             {
-                var toRead = (int)Math.Min(chunk.Length, remaining);
-                var r = await src.ReadAsync(chunk, 0, toRead);
-                if (r <= 0) break;
-                await dst.WriteAsync(chunk.AsMemory(0, r));
-                remaining -= r;
+                var view = mw.NewTab();
+                view.LoadImage(d64, partition.Name.Trim());
             }
+            else
+            {
+                var w = new MainWindow();
+                w.Show();
+                w.NewTab().LoadImage(d64, partition.Name.Trim());
+            }
+            StatusLabel.Text = $"Opened \"{partition.Name}\" (edits save back to container).";
+            return;
         }
 
-        if (Owner is MainWindow mw)
+        if (partition.Kind is PartitionKind.Emulated1571 or PartitionKind.Emulated1581)
         {
-            mw.OpenDiskFile(outPath);
-            Close();
+            var info = partition.Kind == PartitionKind.Emulated1571
+                ? CbmCatalog.OpenD71FromContainer(_containerPath, partition.Offset, partition.Size, virtualPath)
+                : CbmCatalog.OpenD81FromContainer(_containerPath, partition.Offset, partition.Size, virtualPath);
+            if (info is null) { StatusLabel.Text = "Could not open emulated partition."; return; }
+            new ExtendedImageWindow(info) { Title = title }.Show(this);
+            StatusLabel.Text = $"Opened \"{partition.Name}\" (edits save back to container).";
+            return;
         }
-        else
-        {
-            var w = new MainWindow();
-            w.Show();
-            w.OpenDiskFile(outPath);
-        }
+
+        StatusLabel.Text = $"Partition '{partition.Name}' ({partition.Kind}) can't be opened directly.";
     }
 }
