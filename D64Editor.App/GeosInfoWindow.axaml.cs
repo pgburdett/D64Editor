@@ -1,17 +1,75 @@
+using System.Globalization;
 using System.Text;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using D64Editor.Core;
 
 namespace D64Editor.App;
 
-/// <summary>Displays GEOS metadata for a directory entry and, when available, its info-block bytes.</summary>
+/// <summary>Displays and edits GEOS metadata for a directory entry and, when available, info/VLIR data.</summary>
 public partial class GeosInfoWindow : Window
 {
+    private D64Image? _image;
+    private D64FileEntry? _entry;
+
     public GeosInfoWindow() { InitializeComponent(); }
 
     public GeosInfoWindow(D64Image image, D64FileEntry entry) : this()
     {
+        _image = image;
+        _entry = entry;
         Title = $"GEOS Info — {entry.FileName}";
+        LoadFields();
+        RefreshView();
+    }
+
+    private void LoadFields()
+    {
+        if (_entry is null) return;
+        B15.Text = _entry.Byte15.ToString();
+        B16.Text = _entry.Byte16.ToString();
+        B17.Text = _entry.Byte17.ToString();
+        B18.Text = _entry.Byte18.ToString();
+        B19.Text = _entry.Byte19.ToString();
+        B1A.Text = _entry.Byte1A.ToString();
+        B1B.Text = _entry.Byte1B.ToString();
+        B1C.Text = _entry.Byte1C.ToString();
+        B1D.Text = _entry.Byte1D.ToString();
+    }
+
+    private static byte ParseByte(TextBox? box)
+    {
+        var t = box?.Text?.Trim() ?? "0";
+        if (t.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) t = t[2..];
+        if (byte.TryParse(t, NumberStyles.HexNumber, null, out var hb) && box?.Text != null && box.Text.Trim().StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            return hb;
+        if (byte.TryParse(t, out var b)) return b;
+        if (byte.TryParse(t, NumberStyles.HexNumber, null, out hb)) return hb;
+        return 0;
+    }
+
+    private void OnSaveClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_image is null || _entry is null) return;
+        _entry.Byte15 = ParseByte(B15);
+        _entry.Byte16 = ParseByte(B16);
+        _entry.Byte17 = ParseByte(B17);
+        _entry.Byte18 = ParseByte(B18);
+        _entry.Byte19 = ParseByte(B19);
+        _entry.Byte1A = ParseByte(B1A);
+        _entry.Byte1B = ParseByte(B1B);
+        _entry.Byte1C = ParseByte(B1C);
+        _entry.Byte1D = ParseByte(B1D);
+        _image.WriteDirectory();
+        _image.Save();
+        StatusLabel.Text = "Saved metadata (directory updated).";
+        RefreshView();
+    }
+
+    private void RefreshView()
+    {
+        if (_image is null || _entry is null) return;
+        var entry = _entry;
         TitleLabel.Text = $"\"{entry.FileName}\" ({entry.TypeDisplay}, {entry.SizeInBlocks} blocks)";
 
         var sbMeta = new StringBuilder();
@@ -36,29 +94,18 @@ public partial class GeosInfoWindow : Window
         MetaLabel.Text = sbMeta.ToString().TrimEnd();
 
         var sb = new StringBuilder();
+
+        // GEOS info block dump (best-effort)
         if (entry.IsGeosFile && entry.GeosInfoBlock is { } infoBlock && infoBlock.Track > 0)
         {
             try
             {
                 var block = D64Image.TrackSectorToBlock(infoBlock.Track, infoBlock.Sector);
-                var data = image.ReadBlock(block);
+                var data = _image.ReadBlock(block);
                 sb.AppendLine($"Info block dump (T{infoBlock.Track}/S{infoBlock.Sector}, block #{block}):");
                 sb.AppendLine();
-                for (var row = 0; row < 16; row++)
-                {
-                    var off = row * 16;
-                    sb.Append($"{off:X2}  ");
-                    for (var col = 0; col < 16; col++) sb.Append(data[off + col].ToString("X2") + (col == 7 ? "  " : " "));
-                    sb.Append(" ");
-                    for (var col = 0; col < 16; col++)
-                    {
-                        var b = data[off + col];
-                        sb.Append(b is >= 0x20 and <= 0x7E ? (char)b : '.');
-                    }
-                    sb.AppendLine();
-                }
-                // Best-effort: GEOS info sector often stores class/name strings as PETSCII/ASCII-ish in fixed offsets.
-                var cls = ReadZString(data, 0x05, 0x15); // common offsets (best-effort)
+                AppendHexDump(sb, data);
+                var cls = ReadZString(data, 0x05, 0x15);
                 var name = ReadZString(data, 0x16, 0x15);
                 if (!string.IsNullOrWhiteSpace(cls) || !string.IsNullOrWhiteSpace(name))
                 {
@@ -67,18 +114,78 @@ public partial class GeosInfoWindow : Window
                     if (!string.IsNullOrWhiteSpace(cls)) sb.AppendLine($"  Class/Type text: {cls}");
                     if (!string.IsNullOrWhiteSpace(name)) sb.AppendLine($"  Name/Comment:    {name}");
                 }
+                sb.AppendLine();
             }
             catch (Exception ex)
             {
                 sb.AppendLine($"Could not read info block: {ex.Message}");
+                sb.AppendLine();
             }
+        }
+
+        // VLIR index/records (best-effort)
+        if (entry.IsGeosFile && entry.IsGeosVlir)
+        {
+            try
+            {
+                AppendVlirInfo(sb, _image, entry);
+            }
+            catch (Exception ex)
+            {
+                sb.AppendLine($"VLIR parse failed: {ex.Message}");
+            }
+        }
+        else if (entry.IsGeosFile)
+        {
+            sb.AppendLine("GEOS sequential file (not VLIR).");
         }
         else
         {
-            sb.AppendLine("No GEOS info block to display.");
+            sb.AppendLine("No GEOS info/VLIR data to display.");
         }
 
         DetailText.Text = sb.ToString();
+    }
+
+    private static void AppendVlirInfo(StringBuilder sb, D64Image image, D64FileEntry entry)
+    {
+        sb.AppendLine("VLIR index (best-effort):");
+        // VLIR files: first data block of file is the VLIR index block (256 bytes) containing
+        // up to 127 (t,s) record-chain pointers; (0,0)=empty, ($00,$FF) or end markers vary.
+        var firstBlock = D64Image.TrackSectorToBlock(entry.StartTrack, entry.StartSector);
+        var idx = image.ReadBlock(firstBlock);
+        sb.AppendLine($"  Index block: T{entry.StartTrack}/S{entry.StartSector} (block #{firstBlock})");
+        for (var i = 0; i < 127; i++)
+        {
+            var off = 2 + i * 2; // many layouts keep 2-byte link at 0,1 and records start at 2
+            if (off + 1 >= idx.Length) break;
+            var t = idx[off];
+            var s = idx[off + 1];
+            if (t == 0 && s == 0) continue;
+            if (t == 0 && s == 255) { sb.AppendLine($"  [{i,3}] end marker (00,FF)"); continue; }
+            sb.AppendLine($"  [{i,3}] record chain -> T{t}/S{s}");
+        }
+        // Also show first bytes of index block for reference
+        sb.AppendLine();
+        sb.AppendLine("Index block dump:");
+        AppendHexDump(sb, idx);
+    }
+
+    private static void AppendHexDump(StringBuilder sb, byte[] data)
+    {
+        for (var row = 0; row < 16; row++)
+        {
+            var off = row * 16;
+            sb.Append($"{off:X2}  ");
+            for (var col = 0; col < 16; col++) sb.Append(data[off + col].ToString("X2") + (col == 7 ? "  " : " "));
+            sb.Append(" ");
+            for (var col = 0; col < 16; col++)
+            {
+                var b = data[off + col];
+                sb.Append(b is >= 0x20 and <= 0x7E ? (char)b : '.');
+            }
+            sb.AppendLine();
+        }
     }
 
     private static string ReadZString(byte[] data, int offset, int maxLen)

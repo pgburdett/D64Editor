@@ -1,3 +1,5 @@
+using System.Formats.Tar;
+using System.IO.Compression;
 using D64Editor.Core;
 
 namespace D64Editor.App;
@@ -39,6 +41,12 @@ internal static class Cli
 
             case "--cpm-copy":
                 return CpmCopy(args);
+
+            case "--extract-archive":
+                return ExtractArchive(args);
+
+            case "--print-dir":
+                return PrintDir(args);
 
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
@@ -405,6 +413,93 @@ internal static class Cli
         return true;
     }
 
+    private static bool ExtractArchive(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --extract-archive <archive.zip|.tar|.tar.gz|.tgz> <outdir> [--images-only]");
+            return true;
+        }
+        var archive = args[1];
+        var outDir = args[2];
+        var imagesOnly = args.Any(a => a == "--images-only");
+        if (!File.Exists(archive)) { Console.Error.WriteLine($"Archive not found: {archive}"); return true; }
+        Directory.CreateDirectory(outDir);
+        try
+        {
+            var count = 0;
+            var lower = archive.ToLowerInvariant();
+            if (lower.EndsWith(".zip"))
+            {
+                using var z = ZipFile.OpenRead(archive);
+                foreach (var e in z.Entries)
+                {
+                    if (string.IsNullOrEmpty(e.Name)) continue;
+                    var rel = e.FullName.Replace('\\', '/');
+                    if (imagesOnly && !LooksLikeDiskImage(rel)) continue;
+                    var dest = Path.Combine(outDir, rel);
+                    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                    e.ExtractToFile(dest, overwrite: true);
+                    count++;
+                }
+            }
+            else if (lower.EndsWith(".tar") || lower.EndsWith(".tar.gz") || lower.EndsWith(".tgz"))
+            {
+                Stream fs = File.OpenRead(archive);
+                if (lower.EndsWith(".gz") || lower.EndsWith(".tgz"))
+                    fs = new System.IO.Compression.GZipStream(fs, System.IO.Compression.CompressionMode.Decompress);
+                using (fs)
+                using (var tr = new TarReader(fs))
+                {
+                    TarEntry? te;
+                    while ((te = tr.GetNextEntry()) != null)
+                    {
+                        if (te.EntryType is not TarEntryType.RegularFile and not TarEntryType.V7RegularFile) continue;
+                        var rel = te.Name.Replace('\\', '/');
+                        if (imagesOnly && !LooksLikeDiskImage(rel)) continue;
+                        var dest = Path.Combine(outDir, rel);
+                        Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                        te.ExtractToFile(dest, overwrite: true);
+                        count++;
+                    }
+                }
+            }
+            else
+            {
+                Console.Error.WriteLine("Unsupported archive type. Use .zip, .tar, .tar.gz, or .tgz.");
+                return true;
+            }
+            Console.WriteLine($"Extracted {count} file(s) from {archive} to {outDir}.");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"Archive extraction failed: {ex.Message}"); }
+        return true;
+    }
+
+    private static bool LooksLikeDiskImage(string name)
+    {
+        var ext = Path.GetExtension(name).ToLowerInvariant();
+        return ext is ".d64" or ".d71" or ".d81" or ".d80" or ".d82" or ".dnp" or ".d2m" or ".d4m" or ".dhd"
+            or ".g64" or ".nib" or ".t64" or ".lbr" or ".cpm" or ".prg" or ".seq";
+    }
+
+    private static bool PrintDir(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --print-dir <image>");
+            return true;
+        }
+        var path = args[1];
+        if (!File.Exists(path)) { Console.Error.WriteLine($"Image not found: {path}"); return true; }
+        try
+        {
+            var image = D64Image.Load(path);
+            Console.WriteLine(image.ExportDirectoryListing());
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"Could not print directory: {ex.Message}"); }
+        return true;
+    }
+
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
@@ -415,6 +510,8 @@ internal static class Cli
         Console.WriteLine("  --validate <image>     Validate/report cross-links and basic issues (D64)");
         Console.WriteLine("  --cpm-extract <img> <dir>  Extract CP/M files (best-effort DPB-aware, .d64/.d71/.d81)");
         Console.WriteLine("  --cpm-copy <tmpl> <out> [--all|--files A,B]  Create CP/M image from template (keep all or subset)");
+        Console.WriteLine("  --extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]  Extract archive contents");
+        Console.WriteLine("  --print-dir <image>    Print directory listing (text, D64)");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");

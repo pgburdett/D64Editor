@@ -2,11 +2,50 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.GeosInfoWindow"
         Title="GEOS File Info"
-        Width="700" Height="420">
+        Width="760" Height="520">
     <DockPanel Margin="10">
-        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+        <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
             <TextBlock Name="TitleLabel" FontWeight="Bold" />
             <TextBlock Name="MetaLabel" TextWrapping="Wrap" FontFamily="monospace" />
+            <Border BorderThickness="1" BorderBrush="#555" Padding="8">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="GEOS / directory metadata (bytes 15-1D) — editable" FontWeight="Bold" />
+                    <WrapPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,10,4">
+                            <TextBlock Text="GEOS type (15):" VerticalAlignment="Center" /><TextBox Name="B15" Width="50" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,10,4">
+                            <TextBlock Text="Structure (16):" VerticalAlignment="Center" /><TextBox Name="B16" Width="50" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,10,4">
+                            <TextBlock Text="Info T (17):" VerticalAlignment="Center" /><TextBox Name="B17" Width="50" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,10,4">
+                            <TextBlock Text="Info S (18):" VerticalAlignment="Center" /><TextBox Name="B18" Width="50" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,10,4">
+                            <TextBlock Text="Year (19):" VerticalAlignment="Center" /><TextBox Name="B19" Width="50" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,10,4">
+                            <TextBlock Text="Month (1A):" VerticalAlignment="Center" /><TextBox Name="B1A" Width="50" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,10,4">
+                            <TextBlock Text="Day (1B):" VerticalAlignment="Center" /><TextBox Name="B1B" Width="50" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,10,4">
+                            <TextBlock Text="Hour (1C):" VerticalAlignment="Center" /><TextBox Name="B1C" Width="50" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,10,4">
+                            <TextBlock Text="Min (1D):" VerticalAlignment="Center" /><TextBox Name="B1D" Width="50" />
+                        </StackPanel>
+                    </WrapPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Save Metadata" Click="OnSaveClicked" />
+                        <TextBlock Name="StatusLabel" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="Tip: for REL files, 15/16 = side-sector T/S and 17 = record length." FontSize="11" Opacity="0.75" />
+                </StackPanel>
+            </Border>
         </StackPanel>
         <Border BorderThickness="1" BorderBrush="#555" Padding="6">
             <ScrollViewer>

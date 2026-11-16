@@ -52,10 +52,10 @@ disk editors, implemented incrementally.
 - [x] REL viewer (side-sector chain → fixed-length records; record-content edit in place)
 - [x] Picture viewer (Koala/Art Studio hi-res)
 - [x] Charset + Sprite viewers
-- [x] GEOS file info viewer (metadata + info-block dump, best-effort)
+- [x] GEOS file info viewer (metadata + info-block/VLIR index dump, best-effort) with directory metadata editing
 - [x] ROM-bitmap PETSCII renderer (`chargen.bin`, `PetsciiScreen`/`PetsciiView`)
 - [x] Centralized PETSCII Lower/Upper Case toggle, persisted across PETSCII-displaying views
-- [ ] Graphics viewer enhancements (further)
+- [ ] Graphics viewer enhancements (further) (zoom/pan, richer format controls, export options)
 
 ## Phase 5 — BAM / Sector / Block Editors
 - [x] BAM editor (visual block allocation map): colored free/allocated cells, live FREE/ALLOCATED summary, legend, toggle/view-block/error modes
@@ -68,26 +68,28 @@ disk editors, implemented incrementally.
 - [x] Find in Disks — filename and file-contents search across supported formats (`ImageCatalog`)
 - [x] Compare Disks — header/directory/BAM diff and differing-block list
 - [x] Batch export and Batch Validate (report-only)
-- [ ] Archive extraction (zip/tar of disk sets)
+- [x] Archive extraction (zip/tar/tar.gz/tgz of disk sets) via CLI `--extract-archive` (optional `--images-only`)
 
 ## Phase 7 — GEOS & Advanced
-- [ ] GEOS disk support (VLIR, application data)
-- [ ] GEOS file metadata editing
-- [x] CLI: headless `--list`, `--info`, `--validate`, `--convert` (G64/NIB→D64), `--export <image> <dir>` (D64/T64/D71/D81/D80/D82/DNP), `--help`
-- [ ] Expanded CLI/scripting (further automation/options)
+- [x] GEOS file info/metadata editing (directory bytes 15-1D) and best-effort VLIR index/info-block viewing
+- [ ] GEOS disk/application-data support (deeper VLIR record-chain handling, GEOS-specific workflows)
+- [x] CLI: headless `--list`, `--info`, `--validate`, `--convert` (G64/NIB→D64), `--export <image> <dir>`, CP/M extract/copy, archive extraction, `--print-dir`, `--help`
+- [ ] Expanded CLI/scripting (further automation/options, richer non-interactive GEOS/REL/T64 operations)
 
 ## Phase 8 — Platform Integration
 - [x] Emulator launch (template `{disk}`/`{image}`, drive-8 mount, selection/`*` or `disk:NAME`, `$0801` → `-autostartprgmode 1`, safe quoting)
 - [x] OpenCBM transfer (detects tools on PATH; `{device}/{disk}/{out}` template)
 - [x] File associations (Linux .desktop + MIME, Windows .reg)
-- [x] "Check for Updates" reads a version-feed URL (configurable)
-- [x] Printable directory export (text)
-- [ ] Native OS print dialog / built-in updater installer (platform-dependent; intentionally skipped)
+- [x] "Check for Updates" reads a version-feed URL and opens the releases page in the default browser (best-effort)
+- [x] Printable directory export (text) with best-effort open-in-default-handler for OS printing
+- [ ] Native OS print dialog and built-in updater/installer (platform-dependent; not implemented cross-platform)
 
 ## Current Focus
 - G64/NIB native GCR-level editing/save (re-encode tracks) and deeper structural tooling
 - T64/DNP/CMD deeper native read/write (container-level write-back, richer editing)
 - C128 CP/M from-scratch formatting/writing and validated `.d71/.d81` DPB/boot mappings (with real images/templates)
+- Deeper GEOS disk/application-data/VLIR workflows and richer metadata tooling
+- Graphics viewer enhancements (zoom/pan, export/format controls), further CLI/scripting automation
 - Drag-and-drop between disk windows/tabs (broader) and Undo/Redo
-- Further viewer/editor/CLI polish (graphics enhancements, deeper GEOS/VLIR support, more scripting)
-- Roadmap/docs kept in sync with implemented behavior; smoke-test tabbed MDI/REL flows
+- Platform-dependent native print dialog / updater installer remain out of scope for cross-platform build; keep best-effort flows working
+- Roadmap/docs kept in sync with implemented behavior; smoke-test tabbed MDI/REL/GEOS flows

@@ -197,7 +197,22 @@ public partial class MainWindow : Window
             var tag = System.Text.RegularExpressions.Regex.Match(json, "\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
             var latest = tag.Success ? tag.Groups[1].Value : "(unknown)";
             var version = GetType().Assembly.GetName().Version?.ToString() ?? "?";
-            new AboutWindow($"Latest release: {latest}\nThis build: {version}\n{AppSettings.UpdateFeedUrl}").Show(this);
+            var url = AppSettings.UpdateFeedUrl ?? "";
+            new AboutWindow($"Latest release: {latest}\nThis build: {version}\n{url}").Show(this);
+
+            // Best-effort: open releases/download page in the default browser (no built-in installer).
+            try
+            {
+                var page = url.Contains("api.github.com/repos", StringComparison.OrdinalIgnoreCase)
+                    ? System.Text.RegularExpressions.Regex.Replace(url, @"^https?://api\.github\.com/repos/([^/]+/[^/]+)/releases/latest$", "https://github.com/$1/releases/latest")
+                    : url;
+                if (!string.IsNullOrWhiteSpace(page))
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo(page) { UseShellExecute = true };
+                    System.Diagnostics.Process.Start(psi);
+                }
+            }
+            catch { }
         }
         catch (System.Exception ex)
         {

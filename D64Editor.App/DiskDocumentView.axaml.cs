@@ -377,7 +377,18 @@ public partial class DiskDocumentView : UserControl
             e.IsScratched, e.IsClosed, e.IsLocked));
         var text = DirectoryFormatter.Format(_image.DiskName, _image.DiskId, _image.BlocksFree, entries);
         await File.WriteAllTextAsync(path, text);
-        FileCountLabel.Text = $"Directory listing written to {Path.GetFileName(path)} (print from any viewer).";
+
+        // Best-effort: open with the system default handler so the user can print via OS/app dialog.
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true };
+            System.Diagnostics.Process.Start(psi);
+            FileCountLabel.Text = $"Directory listing written to {Path.GetFileName(path)} and opened for printing.";
+        }
+        catch
+        {
+            FileCountLabel.Text = $"Directory listing written to {Path.GetFileName(path)} (open it to print).";
+        }
     }
 
     public void CopyToMemory()
