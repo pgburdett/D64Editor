@@ -15,23 +15,25 @@ disk editors, implemented incrementally.
 ## Phase 2 — Multi-Format Engine
 - [x] `IDiskImage` abstraction; `D64Image` conforms
 - [x] Format detection (`DiskFormats`) and broad Open filter; unsupported formats fail gracefully
-- [x] T64 tape archive — reader + viewer (synthetic-verified)
+- [x] T64 tape archive — reader + viewer + mutable rebuild/save support (basic native read/write)
 - [x] D71 (1571) — reader + viewer; directory/BAM-aware (synthetic-verified)
 - [x] D81 (1581) — reader + viewer (synthetic-verified)
 - [x] D80 (8050, 77 tracks) / D82 (8250, 154 tracks) — reader + viewer (synthetic-verified)
 - [x] DNP (CMD native partition) — reader + viewer (synthetic-verified)
 - [x] D2M/D4M/DHD CMD containers — partition-table listing + per-partition open (synthetic-verified)
-- [x] G64 — structural parse + GCR bitstream decode → D64 conversion (byte-exact on synthetic .g64); opening auto-converts for editing
-- [x] NIB — structural parse + decode → D64 conversion (byte-exact on synthetic .nib); opening auto-converts for editing
+- [x] G64 — structural parse + GCR bitstream decode → D64 conversion (byte-exact on synthetic .g64); opening auto-converts for editing, with structural-viewer fallback on decode failure
+- [x] NIB — structural parse + decode → D64 conversion (byte-exact on synthetic .nib); opening auto-converts for editing, with structural-viewer fallback on decode failure
 - [x] CP/M 2.2 images + .LBR catalogs — best-effort directory reader + viewer
 - [x] C128 CP/M (.d64/.d71/.d81) — DPB-aware extraction and template-based create/copy (all/subset) via CLI (best-effort; `.d71/.d81` mappings need validation against real images)
 - [x] Export-to-PRG for read-only CBM-layout views (D71/D81/D80/D82/T64)
 - [x] Scratch with block-freeing (CBM layouts): D71/D81/D80/D82/DNP (chain-walk → BAM update, single flush)
 - [x] Unscratch/re-allocate (CBM layouts): D71/D81/D80/D82/DNP via `ICbmWritable`/`CbmScratch`
 - [x] File import (CBM layouts): D71/D81/D80/D82/DNP — allocate/write chain, directory slot, BAM update, single flush (`CbmImport`)
-- [ ] G64/NIB: editing beyond auto-conversion to D64; NIB structural-viewer fallback
-- [ ] T64/G64/NIB/DNP/CMD: full native read/write (beyond current read/view/convert)
-- [ ] REL: create/grow/resize (record-content edit in place is done; needs side/data-sector allocation and side-sector rebuild)
+- [x] REL (D64): create, in-place record edit, and resize/grow/shrink record count (side/data-sector allocation and relinking)
+- [x] G64/NIB structural viewers/fallback (G64 info window; NIB info window on decode fallback). Native GCR re-encoding/edit-save remains limited
+- [ ] G64/NIB: native GCR-level editing/save back to original image format (beyond D64 conversion)
+- [ ] T64/DNP/CMD: deeper native read/write (T64 has basic mutable save/rebuild; DNP supports in-image edits/save; CMD container-level write-back/editing still limited)
+- [ ] C128 CP/M (.d64/.d71/.d81): from-scratch formatting/writing for all variants and validated `.d71/.d81` DPB mappings/boot-system layouts (requires format-specific boot images/templates and real-image verification)
 
 ## Phase 3 — Directory Editing Enhancements
 - [x] Rename file (dialog)
@@ -83,8 +85,9 @@ disk editors, implemented incrementally.
 - [ ] Native OS print dialog / built-in updater installer (platform-dependent; intentionally skipped)
 
 ## Current Focus
-- REL create/grow/resize (side/data-sector allocation, side-sector rebuild)
-- G64/NIB native editing and structural viewing
+- G64/NIB native GCR-level editing/save (re-encode tracks) and deeper structural tooling
+- T64/DNP/CMD deeper native read/write (container-level write-back, richer editing)
+- C128 CP/M from-scratch formatting/writing and validated `.d71/.d81` DPB/boot mappings (with real images/templates)
 - Drag-and-drop between disk windows/tabs (broader) and Undo/Redo
 - Further viewer/editor/CLI polish (graphics enhancements, deeper GEOS/VLIR support, more scripting)
-- Roadmap/docs kept in sync with implemented behavior; smoke-test tabbed MDI flows
+- Roadmap/docs kept in sync with implemented behavior; smoke-test tabbed MDI/REL flows

@@ -24,6 +24,7 @@
             </MenuItem>
             <MenuItem Header="_File">
                 <MenuItem Header="_Import..." Click="OnImport" />
+                <MenuItem Header="New _REL File..." Click="OnNewRel" />
                 <MenuItem Header="_Export..." Click="OnExport" />
                 <MenuItem Header="Export Directory..." Click="OnExportDir" />
                 <MenuItem Header="Copy Files to _Memory..." Click="OnMemory" />

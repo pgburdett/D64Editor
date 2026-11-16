@@ -133,6 +133,7 @@ public partial class MainWindow : Window
     private void OnExport(object? s, RoutedEventArgs e) => Active?.Export();
     private void OnExportDir(object? s, RoutedEventArgs e) => Active?.ExportDir();
     private void OnMemory(object? s, RoutedEventArgs e) => Active?.CopyToMemory();
+    private void OnNewRel(object? s, RoutedEventArgs e) => Active?.CreateRelFile();
     private void OnProperties(object? s, RoutedEventArgs e) => Active?.ShowProperties();
     private void OnRename(object? s, RoutedEventArgs e) => Active?.Rename();
     private void OnScratch(object? s, RoutedEventArgs e) => Active?.Scratch();

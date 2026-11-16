@@ -117,13 +117,27 @@ public partial class DiskDocumentView : UserControl
             {
                 var g64 = G64Image.TryLoad(path);
                 if (g64 is null) { FileCountLabel.Text = $"Could not read G64 image '{Path.GetFileName(path)}'."; return; }
-                var (d64Bytes, warnings, tracks) = g64.ToD64Bytes();
-                var outPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(path) + ".d64");
-                File.WriteAllBytes(outPath, d64Bytes);
-                FileCountLabel.Text = (warnings.Count == 0
-                    ? $"Converted G64→D64 ({tracks} tracks, clean); opening it."
-                    : $"Converted G64→D64 ({tracks} tracks); {warnings.Count} sector(s) undecoded; opening it.");
-                LoadDisk(outPath);
+                try
+                {
+                    var (d64Bytes, warnings, tracks) = g64.ToD64Bytes();
+                    if (tracks <= 0 || g64.MaxStoredTrack <= 0)
+                    {
+                        FileCountLabel.Text = $"G64 image: {Path.GetFileName(path)} (no decodable tracks; showing structural view).";
+                        ShowDialog(new G64InfoWindow(g64, "No decodable whole tracks were found; showing G64 structure."));
+                        return;
+                    }
+                    var outPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(path) + ".d64");
+                    File.WriteAllBytes(outPath, d64Bytes);
+                    FileCountLabel.Text = (warnings.Count == 0
+                        ? $"Converted G64→D64 ({tracks} tracks, clean); opening it."
+                        : $"Converted G64→D64 ({tracks} tracks); {warnings.Count} sector(s) undecoded; opening it.");
+                    LoadDisk(outPath);
+                }
+                catch (Exception ex)
+                {
+                    FileCountLabel.Text = $"G64 decode failed ({ex.Message}); showing structural view.";
+                    ShowDialog(new G64InfoWindow(g64, $"Decode failed: {ex.Message}"));
+                }
                 return;
             }
 
@@ -131,13 +145,27 @@ public partial class DiskDocumentView : UserControl
             {
                 var nibImg = NibImage.TryLoad(path);
                 if (nibImg is null) { FileCountLabel.Text = $"Could not read NIB image '{Path.GetFileName(path)}'."; return; }
-                var (n64, nibWarnings, nibTracks) = nibImg.ToD64Bytes();
-                var nout = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(path) + ".d64");
-                File.WriteAllBytes(nout, n64);
-                FileCountLabel.Text = (nibWarnings.Count == 0
-                    ? $"Converted NIB→D64 ({nibTracks} tracks, clean); opening it."
-                    : $"Converted NIB→D64 ({nibTracks} tracks); {nibWarnings.Count} sector(s) undecoded; opening it.");
-                LoadDisk(nout);
+                try
+                {
+                    var (n64, nibWarnings, nibTracks) = nibImg.ToD64Bytes();
+                    if (nibTracks <= 0 || nibImg.MaxStoredTrack <= 0)
+                    {
+                        FileCountLabel.Text = $"NIB image: {Path.GetFileName(path)} (no decodable tracks; showing structural view).";
+                        ShowDialog(new NibInfoWindow(nibImg));
+                        return;
+                    }
+                    var nout = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(path) + ".d64");
+                    File.WriteAllBytes(nout, n64);
+                    FileCountLabel.Text = (nibWarnings.Count == 0
+                        ? $"Converted NIB→D64 ({nibTracks} tracks, clean); opening it."
+                        : $"Converted NIB→D64 ({nibTracks} tracks); {nibWarnings.Count} sector(s) undecoded; opening it.");
+                    LoadDisk(nout);
+                }
+                catch (Exception ex)
+                {
+                    FileCountLabel.Text = $"NIB decode failed ({ex.Message}); showing structural view.";
+                    ShowDialog(new NibInfoWindow(nibImg));
+                }
                 return;
             }
 
@@ -647,6 +675,17 @@ public partial class DiskDocumentView : UserControl
         var one = OneSelected();
         if (one is null) return;
         ShowDialog(new GeosInfoWindow(_image!, one));
+    }
+
+    public void CreateRelFile()
+    {
+        if (_image is null) { FileCountLabel.Text = "Open a D64 file first."; return; }
+        ShowDialog(new CreateRelWindow(_image, entry =>
+        {
+            PopulateFrom(_image);
+            SelectEntry(entry);
+            FileCountLabel.Text = $"Created REL file \"{entry.FileName}\" (record length {RelFile.RecordLength(entry)}).";
+        }));
     }
 
     public void RunInEmulator()

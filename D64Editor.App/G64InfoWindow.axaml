@@ -1,0 +1,12 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="D64Editor.App.G64InfoWindow"
+        Title="G64 Image"
+        Width="520" Height="460">
+
+    <DockPanel Margin="10">
+        <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
+        <TextBlock DockPanel.Dock="Top" Name="HintLabel" Margin="0,0,0,8" TextWrapping="Wrap" Opacity="0.85" />
+        <ListBox Name="TrackList" FontFamily="Consolas,Monospace" FontSize="12" />
+    </DockPanel>
+</Window>
