@@ -339,6 +339,14 @@ public static class C128Cpm
         bool UppercaseNames = true,
         bool SkipExisting = true);
 
+    /// <summary>
+    ///     Track-1 sector numbers used by the observed C128 CP/M .D64 system disk for its
+    ///     directory. Eight 32-byte entries fill each 256-byte sector (no link byte). The
+    ///     interleaved order (3,4,9,10,14,15,19,20) is what the real BIOS expects; using it
+    ///     gives from-scratch images physical directory placement matching the reference disk.
+    /// </summary>
+    private static readonly int[] RealD64DirectorySectors = { 3, 4, 9, 10, 14, 15, 19, 20 };
+
     private static int BlankImageSize(DiskFormat fmt) => fmt switch
     {
         DiskFormat.D64 => 174848,       // 683 sectors (35 tracks) * 256
@@ -372,17 +380,49 @@ public static class C128Cpm
     }
 
     /// <summary>
+    ///     Absolute byte offsets of every 32-byte directory entry slot, 8 per directory sector.
+    ///     D64 uses the real interleaved track-1 sector list (see <see cref="RealD64DirectorySectors"/>);
+    ///     D71/D81 use the block-based area from <paramref name="opt"/> (unverified against real media).
+    /// </summary>
+    private static List<long> DirectorySlotOffsets(CpmImage img, CpmWriteOptions opt)
+    {
+        var offsets = new List<long>();
+        if (img.Format == DiskFormat.D64)
+        {
+            foreach (var sec in RealD64DirectorySectors)
+            {
+                var baseOff = TsOffset1541(img.Data, 1, sec);
+                if (baseOff < 0 || baseOff + 256 > img.Data.Length) continue;
+                for (var slot = 0; slot < 8; slot++) offsets.Add(baseOff + slot * 32);
+            }
+            return offsets;
+        }
+
+        var perBlock = img.BlockSize / 32;
+        for (var b = opt.DirectoryStartBlock; b < opt.DirectoryStartBlock + opt.DirectoryBlockCount; b++)
+        {
+            if (b < 0 || b >= img.TotalBlocks) break;
+            foreach (var secOff in BlockSectorOffsets(img, b))
+                for (var slot = 0; slot < 8 && slot < perBlock; slot++)
+                    if (secOff + (slot + 1) * 32 <= img.Data.Length) offsets.Add(secOff + slot * 32);
+        }
+        return offsets;
+    }
+
+    /// <summary>
     ///     Builds a fresh, bootable-style C128 CP/M image from scratch (no template).
     ///     Supports D64 (1K blocks, 1-byte AL), D71 (2K blocks, 1-byte AL) and D81
     ///     (2K blocks, 2-byte little-endian AL).
-    ///     Layout: "CBM\0" + a short harmless stub at track 1 / sector 0, a 1-bit-per-block
-    ///     allocation vector in block 1 with the reserved range (blocks 0..24) marked used,
-    ///     and an all-0xE5 (unused) directory in blocks 2..5. VolumeLabel is written as plain
-    ///     ASCII into sector 1 as informational metadata only.
+    ///     Layout: "CBM\0" + a short harmless stub at track 1 / sector 0, the volume label
+    ///     (informational ASCII) in sector 1, a 1-bit-per-block allocation vector in sector 2
+    ///     with the reserved range (blocks 0..24) marked used, and an all-0xE5 (unused) directory.
+    ///     For D64 the directory is placed in the REAL interleaved track-1 sectors
+    ///     (3,4,9,10,14,15,19,20) observed on the reference C128 CP/M system disk, 8 entries per
+    ///     sector — physically matching the BIOS's directory layout. D71/D81 use a self-consistent
+    ///     block-based directory (no real reference image available).
     ///     BEST-EFFORT / NOT VERIFIED AGAINST REAL BOOTABLE CP/M MEDIA: DPB parameters, sector
-    ///     skew, boot code and bitmap location vary between C128 CP/M variants; this is a
-    ///     published-spec-derived, self-consistent layout (the writer/reader use the same
-    ///     linear mapping), not guaranteed to boot or match any real distribution.
+    ///     skew, boot code and bitmap location vary between C128 CP/M variants; bootability of
+    ///     these images is not guaranteed.
     /// </summary>
     public static byte[] FormatBlank(DiskFormat fmt, string volumeLabel = "")
     {
@@ -403,16 +443,21 @@ public static class C128Cpm
             Array.Copy(label, 0, img, 256, Math.Min(label.Length, 255));
         }
 
-        // Best-effort allocation vector: one bit per block, stored in reserved block 1.
+        // Best-effort allocation vector: one bit per block, stored in track 1 / sector 2.
+        // (Sector 4 is a real D64 directory sector, so the old block-1 placement would clash.)
         // Mark the reserved boot/system/directory range (blocks 0..FirstDataBlock-1) as used.
         var bitmap = new byte[cimg.BlockSize];
         for (var b = 0; b < opt.FirstDataBlock && b < bitmap.Length * 8; b++)
             bitmap[b / 8] |= (byte)(0x80 >> (b % 8));
-        cimg.WriteBlock(1, bitmap);
+        var bitmapOff = fmt == DiskFormat.D64
+            ? TsOffset1541(img, 1, 2)
+            : (BlockSectorOffsets(cimg, 1).Count > 0 ? BlockSectorOffsets(cimg, 1)[0] : -1L);
+        if (bitmapOff >= 0 && bitmapOff + 256 <= img.Length)
+            Array.Copy(bitmap, 0, img, (int)bitmapOff, Math.Min(256, bitmap.Length));
 
-        // Directory area: every 32-byte slot marked unused with 0xE5.
-        for (var b = opt.DirectoryStartBlock; b < opt.DirectoryStartBlock + opt.DirectoryBlockCount; b++)
-            if (b >= 0 && b < cimg.TotalBlocks) FillBlock(cimg, b, 0xE5);
+        // Directory area: every 32-byte slot marked unused with 0xE5 at its real sector offset.
+        foreach (var off in DirectorySlotOffsets(cimg, opt))
+            for (var i = 0; i < 32 && off + i < img.Length; i++) img[off + i] = 0xE5;
 
         return img;
     }
@@ -441,22 +486,12 @@ public static class C128Cpm
         return (n, x);
     }
 
-    /// <summary>Finds unused (user byte 0xE5) directory slots in the configured directory area.</summary>
-    private static List<(int Block, int Slot)> FindFreeDirSlots(CpmImage img, CpmWriteOptions opt)
+    /// <summary>Finds unused (user byte 0xE5) directory slot offsets in the directory area.</summary>
+    private static List<long> FindFreeDirSlots(byte[] image, CpmImage img, CpmWriteOptions opt)
     {
-        var slots = new List<(int, int)>();
-        var perBlock = img.BlockSize / 32;
-        for (var b = opt.DirectoryStartBlock; b < opt.DirectoryStartBlock + opt.DirectoryBlockCount; b++)
-        {
-            if (b < 0 || b >= img.TotalBlocks) break;
-            var data = img.ReadBlock(b);
-            for (var s = 0; s < perBlock; s++)
-            {
-                var o = s * 32;
-                if (o + 32 > data.Length) break;
-                if (data[o] == 0xE5) slots.Add((b, s));
-            }
-        }
+        var slots = new List<long>();
+        foreach (var off in DirectorySlotOffsets(img, opt))
+            if (off >= 0 && off < image.Length && image[off] == 0xE5) slots.Add(off);
         return slots;
     }
 
@@ -504,7 +539,7 @@ public static class C128Cpm
             foreach (var b in ExtentBlocks(e, cimg.WordAl)) used.Add(b);
         }
 
-        var freeSlots = FindFreeDirSlots(cimg, options);
+        var freeSlots = FindFreeDirSlots(imageBytes, cimg, options);
         var slotCursor = 0;
         var nextBlock = Math.Max(0, options.FirstDataBlock);
 
@@ -569,10 +604,8 @@ public static class C128Cpm
                     }
                 }
 
-                var (db, ds) = freeSlots[slotCursor++];
-                var dirData = cimg.ReadBlock(db);
-                Array.Copy(entry, 0, dirData, ds * 32, 32);
-                cimg.WriteBlock(db, dirData);
+                var dirOff = (int)freeSlots[slotCursor++];
+                Array.Copy(entry, 0, imageBytes, dirOff, 32);
             }
 
             existing.Add(key);

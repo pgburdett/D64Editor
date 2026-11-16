@@ -109,7 +109,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 ## GCR write-back / container / CP/M notes
 - `Gcr.EncodeTrack(d64, track, speedZone)` builds raw GCR track bytes; `G64Image.ToG64Bytes`/`FromD64` and `NibImage.ToNibBytes`/`FromD64` build containers. Round-trip D64→G64/NIB→D64 is byte-exact (verified 683/683 sectors). Half-track/copy-protected data is preserved verbatim, not re-encoded.
 - Container-backed images: `D64Image`/`D71Image`/`D81Image`/`DnpImage` all have `TryLoadFromContainer` + `ContainerPath/Offset/Size`; `Save()` writes back into the container. `CbmCatalog.Open{D64,D71,D81,Dnp}FromContainer` and `PartitionsWindow` open partitions directly with write-back.
-- `C128Cpm.FormatBlank`/`WriteFiles`/`FormatAndWrite` create CP/M images from scratch (no template); best-effort spec-derived layout, bootability not verified against real media.
+- `C128Cpm.FormatBlank`/`WriteFiles`/`FormatAndWrite` create CP/M images from scratch (no template). D64 directory uses the real interleaved track-1 sectors (3,4,9,10,14,15,19,20) from the reference system disk; bitmap in sector 2. D71/D81 use a self-consistent block-based directory. Bootability still not verified against real media.
 
 ## Known limitations
 - G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.

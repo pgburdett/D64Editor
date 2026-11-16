@@ -3,6 +3,12 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — CP/M D64 Directory Layout Aligned to Real Disk
+
+### Changed
+- `CpmImage.FormatBlank`/`WriteFiles`: D64 from-scratch CP/M directory now uses the real interleaved track-1 sectors (3,4,9,10,14,15,19,20, 8 entries/sector) observed on the reference C128 CP/M system disk, and the allocation bitmap was moved to sector 2 to avoid clashing with directory sector 4. D71/D81 keep their self-consistent block-based directory.
+- Verified: from-scratch d64/d71/d81 images still round-trip through `--cpm-extract` with byte-exact data; real reference image still extracts 9 files. Bootability remains unverified against real media.
+
 ## [Unreleased] — Phase 2 Completion: GCR Write-back, Container Write-back, CP/M From-Scratch
 
 ### Added

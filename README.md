@@ -432,9 +432,12 @@ D64Editor                  (no args: starts GUI)
   a simple allocation bitmap, then write 8.3 files (multi-extent aware, 1-byte AL for
   D64/D71, 2-byte LE for D81). CLI: `--cpm-new <fmt> <out> [NAME.EXT=hostfile ...]`;
   script: `cpmnew`. Extraction round-trips verified for all three formats.
+  The D64 directory is placed in the **real interleaved track-1 sectors** (3,4,9,10,14,15,19,20)
+  observed on the reference C128 CP/M system disk (8 entries per sector); the allocation
+  vector sits in sector 2 to avoid clashing with directory sector 4.
 - **Caveat:** this is a published-spec-derived, best-effort layout — bootability, DPB
   parameters, sector skew and bitmap location are **not verified** against real bootable
-  CP/M media. Template-based copy/format remains available for known-good images.
+  CP/M media (D71/D81 use a self-consistent block-based directory, no real reference available). Template-based copy/format remains available for known-good images.
   CP/M stores record counts, so non-128-aligned files extract padded to 128-byte records.
 
 ### Writing to Real Media
