@@ -7,5 +7,10 @@
         <RootNamespace>D64Editor.Core</RootNamespace>
         <LangVersion>12</LangVersion>
     </PropertyGroup>
-    
+
+    <ItemGroup>
+        <EmbeddedResource Include="Assets\CPM.SYS" LogicalName="D64Editor.Core.Assets.CPM.SYS" />
+        <EmbeddedResource Include="Assets\BOOT.D71.bin" LogicalName="D64Editor.Core.Assets.BOOT.D71.bin" />
+    </ItemGroup>
+
 </Project>

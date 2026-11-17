@@ -67,6 +67,9 @@ internal static class Cli
             case "--cpm-import-dir":
                 return CpmImportDir(args);
 
+            case "--cpm-cpmtools":
+                return CpmCpmtools(args);
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -739,6 +742,129 @@ internal static class Cli
         return true;
     }
 
+    private static bool CpmCpmtools(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --cpm-cpmtools <command> [args...]");
+            Console.Error.WriteLine("  Commands:");
+            Console.Error.WriteLine("    format <d64|d71|d81> <out> [--label NAME]");
+            Console.Error.WriteLine("    create <d64|d71|d81> <out> [NAME.EXT=hostfile ...] [--label NAME]");
+            Console.Error.WriteLine("    import-dir <d64|d71|d81> <srcdir> <out> [--label NAME]");
+            Console.Error.WriteLine("    list <image>");
+            Console.Error.WriteLine("  Uses cpmtools (mkfs.cpm, cpmcp, cpmls) for authoritative CP/M filesystem ops.");
+            return true;
+        }
+
+        if (!CpmToolsCopier.IsAvailable())
+        {
+            Console.Error.WriteLine("cpmtools not found in PATH. Install with: paru -S cpmtools");
+            Console.Error.WriteLine("Required binaries: mkfs.cpm, cpmcp, cpmls");
+            return true;
+        }
+
+        var cmd = args[1].ToLowerInvariant();
+        try
+        {
+            switch (cmd)
+            {
+                case "format":
+                    if (args.Length < 4)
+                    {
+                        Console.Error.WriteLine("Usage: --cpm-cpmtools format <d64|d71|d81> <out> [--label NAME]");
+                        return true;
+                    }
+                    {
+                        var fmt = ParseFormat(args[2]);
+                        var output = args[3];
+                        var label = "";
+                        for (var i = 4; i < args.Length; i++)
+                            if (args[i] == "--label" && i + 1 < args.Length) label = args[++i];
+                        CpmToolsCopier.FormatImage(output, fmt, label);
+                        Console.WriteLine($"Created formatted {fmt} CP/M image: {output}");
+                    }
+                    break;
+
+                case "create":
+                    if (args.Length < 4)
+                    {
+                        Console.Error.WriteLine("Usage: --cpm-cpmtools create <d64|d71|d81> <out> [NAME.EXT=hostfile ...] [--label NAME]");
+                        return true;
+                    }
+                    {
+                        var fmt = ParseFormat(args[2]);
+                        var output = args[3];
+                        var label = "";
+                        var files = new List<(string HostPath, string CpmName)>();
+                        for (var i = 4; i < args.Length; i++)
+                        {
+                            if (args[i] == "--label" && i + 1 < args.Length) { label = args[++i]; continue; }
+                            var eq = args[i].IndexOf('=');
+                            if (eq < 0) continue;
+                            var cpmName = args[i][..eq].Trim();
+                            var host = args[i][(eq + 1)..].Trim();
+                            if (!File.Exists(host)) { Console.Error.WriteLine($"File not found: {host}"); return true; }
+                            files.Add((host, cpmName));
+                        }
+                        CpmToolsCopier.CreateAndPopulate(output, fmt, files, label);
+                        Console.WriteLine($"Created {fmt} CP/M image: {output} ({files.Count} file(s))");
+                    }
+                    break;
+
+                case "import-dir":
+                    if (args.Length < 5)
+                    {
+                        Console.Error.WriteLine("Usage: --cpm-cpmtools import-dir <d64|d71|d81> <srcdir> <out> [--label NAME]");
+                        return true;
+                    }
+                    {
+                        var fmt = ParseFormat(args[2]);
+                        var srcDir = args[3];
+                        var output = args[4];
+                        var label = "";
+                        for (var i = 5; i < args.Length; i++)
+                            if (args[i] == "--label" && i + 1 < args.Length) label = args[++i];
+                        if (!Directory.Exists(srcDir)) { Console.Error.WriteLine($"Source directory not found: {srcDir}"); return true; }
+                        var files = new List<(string HostPath, string CpmName)>();
+                        foreach (var path in Directory.GetFiles(srcDir).OrderBy(p => p, StringComparer.OrdinalIgnoreCase))
+                        {
+                            var (name, ext) = C128Cpm.HostNameToCpm83(Path.GetFileName(path));
+                            files.Add((path, $"{name}.{ext}"));
+                        }
+                        CpmToolsCopier.CreateAndPopulate(output, fmt, files, label);
+                        Console.WriteLine($"Created {fmt} CP/M image: {output} ({files.Count} file(s))");
+                    }
+                    break;
+
+                case "list":
+                    if (args.Length < 3)
+                    {
+                        Console.Error.WriteLine("Usage: --cpm-cpmtools list <image>");
+                        return true;
+                    }
+                    {
+                        var path = args[2];
+                        var fmt = DiskFormats.FromExtension(path);
+                        var files = CpmToolsCopier.ListFiles(path, fmt);
+                        foreach (var f in files) Console.WriteLine(f);
+                    }
+                    break;
+
+                default:
+                    Console.Error.WriteLine($"Unknown cpmtools command: {cmd}");
+                    return true;
+            }
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"cpmtools failed: {ex.Message}"); }
+        return true;
+    }
+
+    private static DiskFormat ParseFormat(string s) => s.ToLowerInvariant() switch
+    {
+        "d64" => DiskFormat.D64, "d71" => DiskFormat.D71, "d81" => DiskFormat.D81,
+        _ => throw new ArgumentException("Format must be d64, d71, or d81.")
+    };
+
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
@@ -758,6 +884,7 @@ internal static class Cli
         Console.WriteLine("  --cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]  From-scratch CP/M image (best-effort)");
         Console.WriteLine("  --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]  Bootable CP/M image from a system-disk donor");
         Console.WriteLine("  --cpm-import-dir <donor.d64> <srcdir> <out>  Import a whole host directory into a bootable CP/M image");
+        Console.WriteLine("  --cpm-cpmtools <cmd>   cpmtools-backed CP/M ops (format/create/import-dir/list) when available");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");

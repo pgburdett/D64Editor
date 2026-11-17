@@ -339,6 +339,16 @@ public static class C128Cpm
     // spec-derived layout, not verified bootable media.
     // -------------------------------------------------------------------------------------
 
+    /// <summary>Loads an embedded CP/M system asset (boot sector or CPM+.SYS) from the Core assembly.</summary>
+    private static byte[] LoadSystemAsset(string name)
+    {
+        using var stream = typeof(C128Cpm).Assembly.GetManifestResourceStream(name)
+            ?? throw new InvalidOperationException($"Missing embedded CP/M system asset: {name}");
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        return ms.ToArray();
+    }
+
     /// <summary>
     ///     Tunables for <see cref="WriteFiles(byte[], DiskFormat, IEnumerable{ValueTuple{string,string,byte[]}}, CpmWriteOptions)"/>.
     ///     The defaults match the from-scratch layout produced by <see cref="FormatBlank"/> and
@@ -416,8 +426,14 @@ public static class C128Cpm
             return offsets;
         }
 
+        // D71/D81: the real C128 CP/M directory starts at track 1 / sector 10 (block 1),
+        // 8 entries per 256-byte sector. Scan the whole track-1 sector range that makes up
+        // the directory rather than a generic block index.
         var perBlock = img.BlockSize / 32;
-        for (var b = opt.DirectoryStartBlock; b < opt.DirectoryStartBlock + opt.DirectoryBlockCount; b++)
+        var dirStart = opt.DirectoryStartBlock; // 2 by default (generic)
+        // C128 CP/M Plus D71/D81: directory lives at T1/S8..S15 (block 1) on real disks.
+        if (img.Format == DiskFormat.D71 || img.Format == DiskFormat.D81) dirStart = 1;
+        for (var b = dirStart; b < dirStart + opt.DirectoryBlockCount; b++)
         {
             if (b < 0 || b >= img.TotalBlocks) break;
             foreach (var secOff in BlockSectorOffsets(img, b))
@@ -448,34 +464,63 @@ public static class C128Cpm
         var cimg = new CpmImage(img, fmt);
         var opt = new CpmWriteOptions();
 
-        // Track 1 / sector 0: boot signature + a tiny, layout-safe stub (NOP NOP LDA #0 STA RTS).
-        var sig = Encoding.ASCII.GetBytes("CBM\0");
-        Array.Copy(sig, 0, img, 0, sig.Length);
-        byte[] stub = { 0xEA, 0xEA, 0xA9, 0x00, 0x8D, 0x00, 0x04, 0x60 };
-        Array.Copy(stub, 0, img, sig.Length, stub.Length);
+        // ---- Boot sector: copy the authentic C128 CP/M Plus boot stub (28-May-87) ----
+        var boot = LoadSystemAsset("D64Editor.Core.Assets.BOOT.D71.bin");
+        Array.Copy(boot, 0, img, 0, Math.Min(boot.Length, 256));
 
-        // Sector 1: informational volume label (plain ASCII, uppercased).
+        // ---- CPM+.SYS: the CP/M Plus system/reservation file the boot ROM loads ----
+        // It occupies the reserved blocks starting at block 2 (the same location as on real
+        // C128 CP/M system disks). The boot ROM reads it directly from these physical blocks;
+        // a directory entry is also written so CP/M's DIR can see it.
+        var sys = LoadSystemAsset("D64Editor.Core.Assets.CPM.SYS");
+        var sysBlocks = (sys.Length + cimg.BlockSize - 1) / cimg.BlockSize;
+        for (var b = 0; b < sysBlocks; b++)
+        {
+            var buf = new byte[cimg.BlockSize];
+            var src = b * cimg.BlockSize;
+            var len = Math.Min(cimg.BlockSize, Math.Max(0, sys.Length - src));
+            if (len > 0) Array.Copy(sys, src, buf, 0, len);
+            cimg.WriteBlock(2 + b, buf); // blocks 2.. = CPM+.SYS
+        }
+
+        // Directory area: mark every slot unused (0xE5) first.
+        foreach (var off in DirectorySlotOffsets(cimg, opt))
+            for (var i = 0; i < 32 && off + i < img.Length; i++) img[off + i] = 0xE5;
+
+        // Write the CPM+.SYS directory entry in the first free directory slot.
+        // The '+' is not a standard CP/M name char, so write the entry bytes directly.
+        var cpmEntry = new byte[32];
+        cpmEntry[0] = 0;                                        // user 0
+        Encoding.ASCII.GetBytes("CPM+    ", 0, 8, cpmEntry, 1);
+        Encoding.ASCII.GetBytes("SYS", 0, 3, cpmEntry, 9);
+        cpmEntry[12] = 1;                                       // EX = 1 (as on the reference system disk)
+        cpmEntry[13] = 0;                                       // S1
+        cpmEntry[14] = 0;                                       // S2
+        cpmEntry[15] = 68; // RC (records in this extent) — reference CPM+.SYS has 68
+        // Reference CPM+.SYS reserves 13 allocation units (blocks 2..14) even though only
+        // the first 68 records hold the system image; the boot ROM expects this layout.
+        var sysAlCount = Math.Max(sysBlocks, 13);
+        for (var i = 0; i < sysAlCount && i < 16; i++)
+        {
+            var bv = 2 + i;
+            if (cimg.WordAl)
+            {
+                cpmEntry[16 + i * 2] = (byte)(bv & 0xFF);
+                cpmEntry[17 + i * 2] = (byte)(bv >> 8);
+            }
+            else cpmEntry[16 + i] = (byte)bv;
+        }
+        // Reserve the first directory slot for CPM+.SYS (8 entries per sector).
+        var firstDir = DirectorySlotOffsets(cimg, opt).FirstOrDefault();
+        if (firstDir >= 0 && firstDir + 32 <= img.Length)
+            Array.Copy(cpmEntry, 0, img, (int)firstDir, 32);
+
+        // Optional informational volume label in sector 1 (does not affect boot).
         if (!string.IsNullOrEmpty(volumeLabel))
         {
             var label = Encoding.ASCII.GetBytes(volumeLabel.ToUpperInvariant());
             Array.Copy(label, 0, img, 256, Math.Min(label.Length, 255));
         }
-
-        // Best-effort allocation vector: one bit per block, stored in track 1 / sector 2.
-        // (Sector 4 is a real D64 directory sector, so the old block-1 placement would clash.)
-        // Mark the reserved boot/system/directory range (blocks 0..FirstDataBlock-1) as used.
-        var bitmap = new byte[cimg.BlockSize];
-        for (var b = 0; b < opt.FirstDataBlock && b < bitmap.Length * 8; b++)
-            bitmap[b / 8] |= (byte)(0x80 >> (b % 8));
-        var bitmapOff = fmt == DiskFormat.D64
-            ? TsOffset1541(img, 1, 2)
-            : (BlockSectorOffsets(cimg, 1).Count > 0 ? BlockSectorOffsets(cimg, 1)[0] : -1L);
-        if (bitmapOff >= 0 && bitmapOff + 256 <= img.Length)
-            Array.Copy(bitmap, 0, img, (int)bitmapOff, Math.Min(256, bitmap.Length));
-
-        // Directory area: every 32-byte slot marked unused with 0xE5 at its real sector offset.
-        foreach (var off in DirectorySlotOffsets(cimg, opt))
-            for (var i = 0; i < 32 && off + i < img.Length; i++) img[off + i] = 0xE5;
 
         return img;
     }
@@ -807,6 +852,62 @@ public static class C128Cpm
         var (files, report) = ReadHostDirectory(directory);
         FormatAndWriteFromBootDonor(donorPath, outputPath, files, options);
         return report;
+    }
+
+    /// <summary>
+    ///     Writes a CPM+.SYS system file (the C128 CP/M Plus boot configuration) into an image.
+    ///     The '+' character is not a normal CP/M 8.3 name char, so this writes the special-cased
+    ///     directory entry directly. Returns true on success.
+    /// </summary>
+    public static bool WriteCpmPlusSys(byte[] imageBytes, DiskFormat fmt, byte[] sysData)
+    {
+        var cimg = new CpmImage(imageBytes, fmt);
+        var opt = new CpmWriteOptions { ScanAllForFreeSlots = true };
+        var freeSlots = FindFreeDirSlots(imageBytes, cimg, opt);
+        if (freeSlots.Count == 0) return false;
+
+        // Find a free directory slot and write the special name/ext.
+        var off = (int)freeSlots[0];
+        var entry = new byte[32];
+        entry[0] = 0;                                  // user 0
+        Encoding.ASCII.GetBytes("CPM+    ", 0, 8, entry, 1);
+        Encoding.ASCII.GetBytes("SYS", 0, 3, entry, 9);
+        entry[15] = (byte)Math.Min(128, (sysData.Length + 127) / 128); // RC
+        // Allocate blocks for the data using the monotonic allocator.
+        var used = new HashSet<int>();
+        foreach (var slot in ScanRealDirectorySlots(imageBytes))
+        {
+            if (imageBytes[slot] == 0xE5) continue;
+            for (var i = 16; i < 32; i++) if (imageBytes[slot + i] != 0) used.Add(imageBytes[slot + i]);
+        }
+        var next = opt.FirstDataBlock;
+        var alCount = cimg.WordAl ? 8 : 16;
+        var blocksNeeded = (sysData.Length + cimg.BlockSize - 1) / cimg.BlockSize;
+        var blocks = new List<int>();
+        while (blocks.Count < blocksNeeded)
+        {
+            while (used.Contains(next)) next++;
+            if (next >= cimg.TotalBlocks) return false;
+            blocks.Add(next);
+            used.Add(next);
+            next++;
+        }
+        for (var i = 0; i < blocks.Count; i++)
+        {
+            var buf = new byte[cimg.BlockSize];
+            var src = i * cimg.BlockSize;
+            var len = Math.Min(cimg.BlockSize, Math.Max(0, sysData.Length - src));
+            if (len > 0) Array.Copy(sysData, src, buf, 0, len);
+            cimg.WriteBlock(blocks[i], buf);
+            if (cimg.WordAl)
+            {
+                entry[16 + i * 2] = (byte)(blocks[i] & 0xFF);
+                entry[17 + i * 2] = (byte)(blocks[i] >> 8);
+            }
+            else entry[16 + i] = (byte)blocks[i];
+        }
+        Array.Copy(entry, 0, imageBytes, off, 32);
+        return true;
     }
 
 }
