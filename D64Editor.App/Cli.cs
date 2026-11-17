@@ -70,6 +70,9 @@ internal static class Cli
             case "--cpm-cpmtools":
                 return CpmCpmtools(args);
 
+            case "--ctools":
+                return Ctools(args);
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -379,6 +382,25 @@ internal static class Cli
         var outDir = args[2];
         if (!File.Exists(path)) { Console.Error.WriteLine($"Image not found: {path}"); return true; }
         Directory.CreateDirectory(outDir);
+
+        // Prefer ctools when available — it handles CBM CP/M geometry, skew and extent
+        // encoding authoritatively (verified: extracted files byte-exact, MBASIC runs).
+        var fmt0 = DiskFormats.FromExtension(path);
+        if (CtoolsCopier.IsAvailable() && (fmt0 == DiskFormat.D64 || fmt0 == DiskFormat.D71))
+        {
+            try
+            {
+                CtoolsCopier.GetFilesAll(path, outDir);
+                var count = Directory.GetFiles(outDir).Length;
+                Console.WriteLine($"Extracted {count} CP/M file(s) to {outDir} via ctools (authoritative).");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"ctools extraction failed ({ex.Message}); falling back to in-process reader.");
+            }
+        }
+
         try
         {
             var img = File.ReadAllBytes(path);
@@ -732,6 +754,34 @@ internal static class Cli
             var ext = dot < 0 ? "" : name[(dot + 1)..];
             files.Add((baseName, ext, File.ReadAllBytes(host)));
         }
+        // Prefer ctools for authoritative geometry when available (D64/D71 only).
+        if (CtoolsCopier.IsAvailable() && (fmt == DiskFormat.D64 || fmt == DiskFormat.D71))
+        {
+            var stageDir = Path.Combine(Path.GetTempPath(), "d64e-cpm-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(stageDir);
+                var staged = new List<string>();
+                foreach (var (name, ext, data) in files)
+                {
+                    // ctools takes the CP/M 8.3 name from the host filename in its cwd.
+                    var leaf = string.IsNullOrEmpty(ext) ? name.TrimEnd() : $"{name.TrimEnd()}.{ext.TrimEnd()}";
+                    var dst = Path.Combine(stageDir, leaf.ToLowerInvariant());
+                    File.WriteAllBytes(dst, data);
+                    staged.Add(dst);
+                }
+                CtoolsCopier.FormatImage(output, fmt);
+                CtoolsCopier.PutFiles(output, staged, stageDir);
+                Console.WriteLine($"Created {fmt} CP/M image: {output} ({files.Count} file(s)) via ctools (authoritative).");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"ctools creation failed ({ex.Message}); falling back to in-process writer.");
+            }
+            finally { if (Directory.Exists(stageDir)) Directory.Delete(stageDir, recursive: true); }
+        }
+
         try
         {
             var path = C128Cpm.FormatAndWrite(fmt, output, files);
@@ -865,6 +915,85 @@ internal static class Cli
         _ => throw new ArgumentException("Format must be d64, d71, or d81.")
     };
 
+    private static bool Ctools(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --ctools <command> [args...]");
+            Console.Error.WriteLine("  Commands:");
+            Console.Error.WriteLine("    format <d64|d71> <out>            Create a blank CP/M image");
+            Console.Error.WriteLine("    create <d64|d71> <out> <hostfiles...>  Create image and import files");
+            Console.Error.WriteLine("    import <image> <hostfiles...>     Import files into an existing image");
+            Console.Error.WriteLine("    list <image>                      List CP/M directory");
+            Console.Error.WriteLine("    extract <image> <outdir> [files...]  Extract files from image");
+            Console.Error.WriteLine("  Uses ctools (ctools, cformat) for authoritative CBM CP/M filesystem ops.");
+            return true;
+        }
+
+        if (!CtoolsCopier.IsAvailable())
+        {
+            Console.Error.WriteLine("ctools not found in PATH. Install from: https://github.com/mist64/ctools");
+            Console.Error.WriteLine("Required binaries: ctools, cformat");
+            return true;
+        }
+
+        var cmd = args[1].ToLowerInvariant();
+        try
+        {
+            switch (cmd)
+            {
+                case "format":
+                    if (args.Length < 4) { Console.Error.WriteLine("Usage: --ctools format <d64|d71> <out>"); return true; }
+                    CtoolsCopier.FormatImage(args[3], ParseFormat(args[2]));
+                    Console.WriteLine($"Created formatted {args[2]} CP/M image: {args[3]}");
+                    break;
+
+                case "create":
+                    if (args.Length < 5) { Console.Error.WriteLine("Usage: --ctools create <d64|d71> <out> <hostfiles...>"); return true; }
+                    {
+                        var fmt = ParseFormat(args[2]);
+                        var files = args.Skip(4).ToArray();
+                        foreach (var f in files)
+                            if (!File.Exists(f)) { Console.Error.WriteLine($"File not found: {f}"); return true; }
+                        CtoolsCopier.CreateAndPopulate(args[3], fmt, files);
+                        Console.WriteLine($"Created {fmt} CP/M image: {args[3]} ({files.Length} file(s))");
+                    }
+                    break;
+
+                case "import":
+                    if (args.Length < 4) { Console.Error.WriteLine("Usage: --ctools import <image> <hostfiles...>"); return true; }
+                    {
+                        var files = args.Skip(3).ToArray();
+                        foreach (var f in files)
+                            if (!File.Exists(f)) { Console.Error.WriteLine($"File not found: {f}"); return true; }
+                        CtoolsCopier.PutFiles(args[2], files);
+                        Console.WriteLine($"Imported {files.Length} file(s) into {args[2]}");
+                    }
+                    break;
+
+                case "list":
+                    if (args.Length < 3) { Console.Error.WriteLine("Usage: --ctools list <image>"); return true; }
+                    Console.Write(CtoolsCopier.ListFiles(args[2]));
+                    break;
+
+                case "extract":
+                    if (args.Length < 4) { Console.Error.WriteLine("Usage: --ctools extract <image> <outdir> [files...]"); return true; }
+                    {
+                        var names = args.Length > 4 ? args.Skip(4).ToArray() : new[] { "*.*" };
+                        CtoolsCopier.GetFiles(args[2], names, args[3]);
+                        Console.WriteLine($"Extracted file(s) to {args[3]}");
+                    }
+                    break;
+
+                default:
+                    Console.Error.WriteLine($"Unknown ctools command: {cmd}");
+                    return true;
+            }
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"ctools failed: {ex.Message}"); }
+        return true;
+    }
+
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
@@ -885,6 +1014,7 @@ internal static class Cli
         Console.WriteLine("  --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]  Bootable CP/M image from a system-disk donor");
         Console.WriteLine("  --cpm-import-dir <donor.d64> <srcdir> <out>  Import a whole host directory into a bootable CP/M image");
         Console.WriteLine("  --cpm-cpmtools <cmd>   cpmtools-backed CP/M ops (format/create/import-dir/list) when available");
+        Console.WriteLine("  --ctools <cmd>         ctools-backed CBM CP/M ops (format/create/import/list/extract)");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");

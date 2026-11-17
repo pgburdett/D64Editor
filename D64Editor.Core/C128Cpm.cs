@@ -72,32 +72,72 @@ public static class C128Cpm
             return list;
         }
 
-        if (fmt == DiskFormat.D71)
-        {
-            // 70 tracks in linear order (1571). Include all tracks in the logical CP/M block
-            // space; track 18/53 hold CBM structures but may be mapped by the CP/M format.
-            // (Best-effort mapping; format-specific DPB/skew may vary.)
-            for (var t = 1; t <= 70; t++)
-            {
-                var spt = SectorsPerTrack1541(t <= 35 ? t : t - 35);
-                for (var s = 0; s < spt; s++) list.Add((t, s));
-            }
-            return list;
-        }
+        // C128 CP/M uses speed-zone translation with interleave skew (ctools bios.cc).
+        // Physical sector nr -> (track, sector) through 4 zones:
+        //   zone 1: tracks  1-17, 21 sect/track, 357 sectors, 2 reserved
+        //   zone 2: tracks 18-24, 19 sect/track, 133 sectors, 1 reserved
+        //   zone 3: tracks 25-30, 18 sect/track, 108 sectors, 0 reserved
+        //   zone 4: tracks 31-35, 17 sect/track,  85 sectors, 0 reserved
+        // Sector = (5 * nr) % sectors_per_track (skew). D71 side 1 adds 35 to track.
+        // Disk type is detected from the boot sector at track 1/sector 0:
+        //   "CBM" + byte 255 == 0xFF  -> C128 double-sided
+        //   "CBM" + byte 255 != 0xFF  -> C128 single-sided
+        //   otherwise                 -> C64 CP/M
+        var boot = ReadSector(img, 1, 0, fmt);
+        var isCbm = boot.Length >= 3 && boot[0] == (byte)'C' && boot[1] == (byte)'B' && boot[2] == (byte)'M';
+        var doubleSided = fmt == DiskFormat.D71 && isCbm && boot.Length > 255 && boot[255] == 0xFF;
+        var c128Ss = isCbm && (fmt == DiskFormat.D71 || boot.Length <= 255 || boot[255] != 0xFF);
 
-        // D64: 35 tracks in linear sector order (1541/C128 CP/M). Track 18 is included in the
-        // logical block address space for this common layout (observed in C128 CP/M .d64 images).
-        for (var t = 1; t <= 35; t++)
-            for (var s = 0; s < SectorsPerTrack1541(t); s++) list.Add((t, s));
+        // Number of physical sectors addressable: C64=544, C128 SS=680, C128 DS=1360
+        var usable = doubleSided ? 1360 : c128Ss ? 680 : 544;
+
+        for (var nr = 0; nr < usable; nr++)
+        {
+            int tr, sec;
+            if (!c128Ss && !doubleSided)
+            {
+                // C64: tr = nr/17 + 3, skip track 18; sec = nr % 17
+                tr = nr / 17 + 3;
+                if (tr >= 18) tr++;
+                sec = nr % 17;
+            }
+            else
+            {
+                var side1 = doubleSided && nr >= 680;
+                var n = side1 ? nr - 680 : nr;
+                if (n >= 680) continue;
+                (tr, sec) = TranslateC128Ss(n);
+                if (side1 && tr > 0) tr += 35;
+            }
+            list.Add((tr, sec));
+        }
         return list;
     }
 
-    private static (int sectorsPerBlock, bool wordAl) FormatParams(DiskFormat fmt) => fmt switch
+    /// <summary>C128 single-sided physical-sector->T/S translation (ctools bios.cc).</summary>
+    private static (int T, int S) TranslateC128Ss(int nr)
     {
-        DiskFormat.D81 => (8, true),  // 2K blocks, 8x256-byte sectors in image, 2-byte AL
-        DiskFormat.D71 => (8, false), // 2K blocks on DS 1571 CP/M, 1-byte AL in many layouts? but can vary; prefer 8/1-byte and be careful
-        _ => (4, false)               // 1K blocks, 4 sectors, 1-byte AL (1541/C128 SS typical)
-    };
+        // zone: firstTrack, sectorsPerTrack, zoneSize, reservedSectors
+        Span<int> first = stackalloc int[] { 1, 18, 25, 31 };
+        Span<int> bl = stackalloc int[] { 21, 19, 18, 17 };
+        Span<int> sz = stackalloc int[] { 357, 133, 108, 85 };
+        Span<int> sys = stackalloc int[] { 2, 1, 0, 0 };
+        for (var i = 0; i < 4; i++)
+        {
+            nr += sys[i];
+            if (nr < sz[i])
+                return (first[i] + nr / bl[i], (5 * nr) % bl[i]);
+            nr -= sz[i];
+        }
+        return (0, 0);
+    }
+
+    private static (int sectorsPerBlock, bool wordAl) FormatParams(DiskFormat fmt, bool doubleSided)
+    {
+        if (fmt == DiskFormat.D81) return (8, true);   // 2K blocks, 2-byte AL
+        if (fmt == DiskFormat.D71 && doubleSided) return (8, false); // 2K blocks, 1-byte AL
+        return (4, false);                            // 1K blocks, 1-byte AL
+    }
 
     public sealed class CpmImage
     {
@@ -107,12 +147,18 @@ public static class C128Cpm
         public int SectorsPerBlock { get; }
         public int BlockSize => SectorsPerBlock * 256;
         public bool WordAl { get; }
+        public int RecordsPerBlock => BlockSize / 128;
+        public int ExtentsPerEntry { get; }
 
         public CpmImage(byte[] data, DiskFormat fmt)
         {
             Data = data; Format = fmt;
             BlockSectors = BuildBlockMap(data, fmt);
-            (SectorsPerBlock, WordAl) = FormatParams(fmt);
+            var boot = ReadSector(data, 1, 0, fmt);
+            var doubleSided = fmt == DiskFormat.D71 && boot.Length > 255 && boot[0] == (byte)'C'
+                && boot[1] == (byte)'B' && boot[2] == (byte)'M' && boot[255] == 0xFF;
+            (SectorsPerBlock, WordAl) = FormatParams(fmt, doubleSided);
+            ExtentsPerEntry = doubleSided ? 2 : 1; // ctools DPB: C128 DS=2, SS/C64=1
         }
 
         public byte[] ReadBlock(int block)
@@ -251,13 +297,20 @@ public static class C128Cpm
             var totalRecords = 0;
             foreach (var (_, e) in exts)
             {
+                // ctools fcb.cc/file.cc: RC >= 0x80 means the extent is full.
+                // rec_lim = 128 * ExtentsPerEntry (full), else 128*(EX % EPE) + RC.
+                // Records of the whole file = 128*EX + RC (from the final entry).
+                var ex = e[12];
                 var rc = Math.Min((int)e[15], 128);
-                totalRecords += rc;
-                var recsLeft = rc;
+                var recLim = rc >= 0x80
+                    ? 128 * cimg.ExtentsPerEntry
+                    : 128 * (ex % cimg.ExtentsPerEntry) + rc;
+                totalRecords = rc >= 0x80 ? 128 * (ex + 1) : 128 * ex + rc;
+                var recsLeft = recLim;
                 foreach (var b in ExtentBlocks(e, cimg.WordAl))
                 {
                     if (b <= 0 || b >= cimg.TotalBlocks) continue;
-                    var takeRecs = Math.Min(recsLeft, cimg.BlockSize / 128);
+                    var takeRecs = Math.Min(recsLeft, cimg.RecordsPerBlock);
                     if (takeRecs <= 0) break;
                     ms.Write(cimg.ReadBlock(b), 0, takeRecs * 128);
                     recsLeft -= takeRecs;
@@ -426,14 +479,13 @@ public static class C128Cpm
             return offsets;
         }
 
-        // D71/D81: the real C128 CP/M directory starts at track 1 / sector 10 (block 1),
-        // 8 entries per 256-byte sector. Scan the whole track-1 sector range that makes up
-        // the directory rather than a generic block index.
+        // C128 CP/M directory occupies logical blocks 0..1 (ctools dir.cc: ndir entries,
+        // 8 per 256-byte sector). With the correct speed-zone+skew translation, block 0
+        // sector 0 maps to T1/S10 — where real disks store the first directory entry.
         var perBlock = img.BlockSize / 32;
-        var dirStart = opt.DirectoryStartBlock; // 2 by default (generic)
-        // C128 CP/M Plus D71/D81: directory lives at T1/S8..S15 (block 1) on real disks.
-        if (img.Format == DiskFormat.D71 || img.Format == DiskFormat.D81) dirStart = 1;
-        for (var b = dirStart; b < dirStart + opt.DirectoryBlockCount; b++)
+        var dirStart = img.Format == DiskFormat.D71 || img.Format == DiskFormat.D81 ? 0 : 2;
+        var dirBlocks = img.Format == DiskFormat.D71 && img.SectorsPerBlock == 8 ? 2 : opt.DirectoryBlockCount;
+        for (var b = dirStart; b < dirStart + dirBlocks; b++)
         {
             if (b < 0 || b >= img.TotalBlocks) break;
             foreach (var secOff in BlockSectorOffsets(img, b))
@@ -461,12 +513,15 @@ public static class C128Cpm
     public static byte[] FormatBlank(DiskFormat fmt, string volumeLabel = "")
     {
         var img = new byte[BlankImageSize(fmt)];
-        var cimg = new CpmImage(img, fmt);
         var opt = new CpmWriteOptions();
 
         // ---- Boot sector: copy the authentic C128 CP/M Plus boot stub (28-May-87) ----
         var boot = LoadSystemAsset("D64Editor.Core.Assets.BOOT.D71.bin");
         Array.Copy(boot, 0, img, 0, Math.Min(boot.Length, 256));
+
+        // Build the block map AFTER the boot sector is in place — CpmImage detects the
+        // disk type (C64 vs C128 SS/DS) from the "CBM" signature at track 1 / sector 0.
+        var cimg = new CpmImage(img, fmt);
 
         // ---- CPM+.SYS: the CP/M Plus system/reservation file the boot ROM loads ----
         // It occupies the reserved blocks starting at block 2 (the same location as on real
