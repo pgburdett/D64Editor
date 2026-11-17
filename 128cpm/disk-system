@@ -1,0 +1,928 @@
+CPM5.TXT rev 2a 96-11-01
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+      THIS DOCUMENT IS COPYRIGHT (C) 1988, 1996 BY HERNE DATA
+      SYSTEMS LTD.  THE MATERIAL CONTAINED HEREIN MAY BE FREELY
+      USED FOR PERSONAL INFORMATION ONLY.  IF YOU REPRODUCE IT,
+      THIS COPYRIGHT NOTICE MUST NOT BE REMOVED.  THIS MATERIAL
+      MAY NOT BE EXPLOITED FOR COMMERCIAL PURPOSES.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Herne Data Systems Ltd., 
+PO Box 250, Tiverton, ON N0G 2T0 CANADA.  
+Voice/fax 519-366-2732, 
+e-mail herne@herne.com
+internet: http://www.herne.com
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+
+The C-128 CP/M Disk System
+==========================
+
+In order to understand how CP/M disk operations work, a brief
+discussion of the CP/M disk organization would be useful.  Most
+of the following discussion applies to all CP/M based systems,
+not just the C-128.  One of the nicer points about CP/M is that
+once you get beyond the BIOS, which deals with hardware specific
+interfaces, the remainder of the system is virtually hardware
+independent.  That is what makes properly designed CP/M programs
+almost universally  portable.
+
+
+Disk Organization
+
+The CP/M disk is generally divided up into two main areas: the
+"system tracks" and the "data area".   The system tracks, which
+vary in size depending on the computer, are used to contain some
+of the boot code required for initially starting up CP/M.  This
+area is not normally used by CP/M once the system has booted, but
+may be hold flags or other indicators which tell the BDOS which
+of several kinds of disks it may be dealing with. 
+
+The data area is subdivided into the "directory" and the "user
+area".   The user area is where the program and data files are
+kept. 
+
+
+The Directory
+
+The name of the files and their location on the disk is recorded
+in the "directory".  This is a special area set aside on the disk
+which is never used for file storage.    The directory contains
+the maps by which the BDOS can find the specified files amongst
+the large amounts of (at least temporarily) irrelevant data that
+abounds in most sectors of the disk.  The importance of the
+directory cannot be overstated.  Without it (for example if it
+were to become corrupted or overwritten accidentally), data from
+individual files may be lost forever.  Of course, you could try
+to reconstruct the files by searching through the disk for pieces
+of each file (they may or may not occupy adjacent areas on the
+disk), but this is a very tedious task.  Believe me, I know from
+experience!!
+
+Although the exact location on the disk varies according to the
+applicable CP/M disk format, the directory always takes the same
+shape in the form of a series of 32 byte entries which contain
+the following data:
+
+For a User File:
+
+Byte        Meaning
+ 0          0 - F             User Area;   or
+            E5                Scratched or unused entry
+
+1-8         file name         in ASCII capitals, left justified,
+                              padded with ASCII spaces ($20's).  The
+                              high bit of these positions is used to
+                              record file special attributes according
+                              to:
+
+      Bytes 1 to 4            Bit 7=1 for user defined attributes 1 to
+                              4
+      Bytes 5 to 8            Bit 7=1 for system interface attributes
+                              (used by BDOS)
+
+9-11        file type         in ASCII capitals, left justified,
+                              padded with ASCII spaces ($20's).  The
+                              high bit (bit 7) of these positions is
+                              used to record the file's "attributes"
+                              according to the following usage:
+
+      Byte 9                  Bit 7=1 for READ/ONLY file
+      Byte 10                 Bit 7=1 for SYSTEM FILE
+      Byte 11                 Bit 7=1 for ARCHIVE
+
+12                            directory extent
+15                            number of 128 byte records in this
+                              extent (maximum hex $80)
+16-31                         file allocation table.  If there are
+                              less than 257 allocation units on the
+                              disk, then the numbers are treated as 8
+                              bit; while if there are greater than 256
+                              AU's, the numbers are 16 bit in lo/hi
+                              byte format. (numbers of logical AUs
+                              used by file, unused locations set to 0)
+
+For a password entry:
+
+Byte        Meaning
+
+0           $10 + user number
+
+1-11        Filename and extension
+
+12          Protection mode:
+            Bit         Meaning when set
+            7           READ protection
+            6           WRITE protection
+            5           DELETE protection
+
+13          File password XOR mask encryption key.  XOR mask value
+            is calculated from sum of (ASCII code of un-encrypted
+            password character - 32).
+
+16-23       8 byte XOR encrypted password, right justified, padded
+            with leading encrypted spaces in unused locations.
+
+
+For a directory label:
+
+Byte        Meaning
+0           $20   Flag meaning entry is a disk volume label
+
+1-11        directory label in ASCII capitals, left justified,
+            padded with ASCII spaces.
+
+12          label data byte:
+            Bit         Meaning when set
+            7           files require passwords
+            6           perform:    access time stamping
+            5                       update      "     "
+            4                       create      "     "
+            0           label exists
+
+13          Directory password XOR mask encryption key (same as for
+            file passwords)
+
+16-23       8 byte XOR encrypted password, right justified, padded
+            with leading encrypted spaces in unused locations.
+
+24-27       Creation time stamp (same format as time stamps used
+            below)
+
+28-31       Update time stamp.
+
+
+For a Date/Time stamp:
+
+Byte        Meaning
+0           $21   flag for date/time stamp
+1-10        Stamps for entry #1
+11-20       Stamps for entry #2
+21-30       Stamps for entry #3
+
+Stamp sets have following structure:
+Offset      Meaning
+0-3         Create or Access stamp
+4-7         Update stamp
+8           Password mode
+9           (reserved)
+
+For each individual stamp:
+Offset      Meaning
+0 - 1       Date in days since 1 JAN 78, from $58-59 of SCB
+2           Hour in BCD, from $5A of SCB
+3           Minute in BCD, from $5B of SCB
+
+
+CP/M filenames consist of two parts: a 1 to 8 character primary
+name and an optional 0 to 3 character secondary name, usually
+called a file type.  The file type generally is a standard
+combination of three characters, such as BAS for a BASIC program
+source code,  TXT or DOC for a text file, etc.  The conventions
+for naming the extension are not cast in stone but some standards
+are normally followed such as : COM  is used only for an
+executable file; SUB  is used for a SUBMIT batch file;  SYS  is
+used for the CP/M system file; and most CP/M assemblers produce
+files with the extension HEX or OBJ.   In directory listings and
+documentation, the two parts of the filename are usually
+separated by a period (.) in the form of: "FILENAME.EXT" .  Note,
+however, that the period is not included in the actual directory
+entry on the disk.  If either the primary file name or the file
+type contains less than the maximum number of characters, the
+extra locations in the directory entry are padded with ASCII
+space characters (hex $20 or CHR$(32)).  For example, the bytes
+representing the name "FILE.1" would appear in a directory entry
+as (decimal values):
+
+  70  73  76  69  32  32  32  32  49  32  32
+  F   I   L   E   (4 spaces)      1  (2 spaces)
+
+
+Note that the characters in a filename are converted to uppercase
+when they are parsed by the CCP.  However, if you do direct file
+access (i.e. your program uses an external data file), you can
+use lowercase in the filenames.  You can even use non-printing
+control codes or other unusual characters in the name to give a
+small degree of protection to your data.  Such files cannot be
+accessed from the built in CP/M commands, such as TYPE, and are
+difficult to copy with standard copiers, such as PIP, which go
+through the filename parsing routine to convert to uppercase
+before attempting to open the file.  If lowercase is present, no
+filename match will be found.  Some programs, such as older
+versions of MBASIC, allow you to distinguish between upper and
+lower case in filenames.   For example, opening the file "file.1"
+is not the same as "FILE.1".  "FILE.1" can be viewed with the
+TYPE command and copied using, for example, PIP B:=A:FILE.1,
+while "file.1" cannot be accessed by either method.
+
+In addition, if you set the system flag in the name, it will not
+even appear in a normal directory listing.
+
+
+ALLOCATION UNITS
+
+Disk space for files is doled out by the operating system in
+lumps called "blocks" or "allocation units" (AU) of a fixed size,
+typically 1024 bytes (1k) for single sided disks, 2048 bytes (2k)
+for double sided disks, or sometimes 4096 bytes (4k) for large
+capacity 3-1/2 inch or 8 inch disks.   Even if a file contains
+only 1 byte, an entire allocation unit will be required.  Unused
+space in an allocation unit cannot be used by other files, but
+can be used by the file to which it is assigned if more space is
+required for it.  (To complicate matters, the allocation unit
+size does not depend on the physical disk sector size, but
+fortunately none of this is of concern to the casual user).  
+
+The directory always occupies at least AU 0, usually AU 1 as
+well, and possibly more depending on the amount of space that has
+been reserved for the directory.  A 1k AU can hold 32 entries, a
+2k AU 64 entries, and a 4k AU 128.  Although it is by no means
+'cast in stone', two allocation units are normally reserved for
+the directory as a general rule.  This gives 64 entries for a
+normal single sided disk and 128 entries for a double sided.  The
+data area starts immediately after the directory area with the
+next AU number, normally AU  2.
+
+Each allocation unit is further divided into 128 byte chunks
+called "records".  The record is the smallest directly
+addressable part of a file.  As a file grows (such as by editing
+a textfile), records are added as required.  If all space
+currently allocated to a file is taken up, another allocation
+unit is allocated.  (8 records can fit into a 1k byte AU,  16 in
+a 2k AU or 32 in a 4k AU). 
+
+A single CP/M directory entry has space for up to sixteen 8 bit
+allocation units or eight 16 bit AU's.  If more are required to
+hold larger files, extra directory entries or "extents"are
+created for the file, each taking up an additional 32 bytes of
+space in the directory area.  The directory entry keeps track of
+the current record count in the extent so that space can be added
+or deleted as required. 
+
+Each allocation unit is composed of one or more physical disk
+sectors.  The translation between logical allocation units and
+physical sectors is handled by the CP/M BDOS system using a sort
+of "translation table" called the DISK PARAMETER TABLE or DPT.
+This contains the data required to convert logical records and
+allocation units into physical locations on the disk and is
+completely transparent to user programs which see everything in
+terms of standard allocation units and records.  The different
+physical disk formats obviously require different values for the
+translation parameters.  Once these values are set for a given
+disk format, the user need not be concerned what the physical
+disk format is because all disk operations will be adjusted
+automatically.
+
+
+
+The Disk Parameter Table
+
+One of the nicest features of C-128 CP/M mode is its ability to
+read and write many "foreign" disk formats when used with a 1571
+or 1581 disk drive.  This ability is built right into the
+operating system, so no special user programming is required to
+access this feature.  In addition, with a bit of knowledge of
+disk formats, you can easily add support for virtually any CP/M
+disk format. You can even create custom formats of your own to
+keep your data away from prying eyes.  The secret lies in knowing
+how the CP/M operating system recognizes different formats.
+
+************************************************************
+NOTE:
+     The read/write heads on the 1581 3-1/2 inch drive are flipped
+     compared to other computers.  This means that what the 1581
+     thinks is side 0, the other computer takes as side 1, and vice
+     versa.  This makes reading 1581 disks very difficult on
+     machines not equipped with a WD177x floppy disk controller
+     chip (such as the IBM-PC).  It also makes it difficult for a
+     1581 drive to read single sided disks produced on other
+     hardware.
+************************************************************
+
+
+As mentioned above, information on the disk formats is stored in
+an area of the CP/M BIOS  known as the "DISK PARAMETER TABLE" or
+DPT.  The absolute location of the DPT depends on which version
+of the CP/M operating system is being used.  Four official
+versions are currently in general use on the C-128,
+differentiated by the date displayed on the CP/M boot up screen.
+For the "1 Aug 85" version, the DPT is located from $d876 to
+$da75 in BANK 0 RAM.  For the "6 Dec 85", and "8 Dec 85",
+versions, it is located at $d6bd to $d8bc; while for the "28 May
+87" version, it is at $d860 to $da5f.  For the May 87 version
+with VT-100 emulation enabled, the DPT is at $d891 to $da90.  (In
+all cases, the DPT can be located by the vector at $fd46, which
+points to the start of the table.) 
+
+Table 5-1 is a hex dump of the unmodified DPT (from memory).
+Normally, it is difficult to examine this from  CP/M mode because
+it resides in BANK 0, while most programs which allow you to
+examine memory in CP/M mode work in BANK 1.  (Recall that in
+CP/M, BANK 0 is used for the operatingsystem while BANK 1 is
+generally the user work space or "TRANSIENT PROGRAM AREA" (TPA)).
+As you can see, each entry is 32 bytes long and only 9 of the 16
+available spaces are actually used.  The 7 unused spots at the
+end of the table can be identified by the word "None" in the disk
+name field.  These spots (or any of the other spots, if you do
+not wish to keep the disk format that it represents) can be
+filled with custom values.  
+
+Each of the bytes in a disk parameter table entry has a specific
+meaning.  These are outlined below.  Many of the parameters are
+repeated in different forms in a number of spots in each DPT
+entry.  This is for convenience sake as different parts of the
+CP/M operating system use the information indifferent ways.   For
+clarity, I will number the bytes in each entry from 0 to 31.
+Bits are numbered 7 6 5 4 3 2 1 0, with 7 being the high bit
+(MSB) and 0 being the low bit (LSB).
+
+Byte 0      is the root to the "problem" of recognizing a foreign
+            disk format.  It can be called a "media descriptor
+            byte" because it is used to identify the physical
+            format of the disk.  It is this byte which gets
+            examined when a disk is first read.  If two or more
+            entries in the DPT have identical values here, the disk
+            format selection box will appear on the bottom of the
+            screen asking you to choose the correct format. 
+            Although it is perhaps the most important, this byte is
+            also very poorly documented.   Each of the bits in the
+            byte serves a specific function:
+   
+      Bit 7       is a flag which indicates whether or not to skip
+                  track 0 of the disk  during a query.   If it is
+                  set to 0 (the normal value), it means that track 0
+                  of the disk is the same as the rest of the disk.
+                  If it is set to 1, track 0 has a different format
+                  from the rest of the disk.  This may seem strange
+                  at first, but many MFM disks (such as Epson QX-10)
+                  are formatted differently, typically in single
+                  density, on track 0 than on the other tracks to
+                  maintain compatibility with older versions  of
+                  their particular disk systems.
+
+      Bit 6 & 5   indicate the physical sector size of the disk
+                  according to:
+
+                  6  5        Sector size
+
+                  0 0         = 128 bytes
+                  0 1         = 256
+                  1 0         = 512
+                  1 1         = 1024
+
+      Bit 4 - 1   give an indication of the number of sectors per
+                  track.  It is actually the binary representation
+                  of:
+
+                  (#sectors per track) - 4  
+
+                  Some typical values are:      
+
+                  4  3  2  1        sectors per track
+
+                  0  0  0  1        5     =     (1)+4
+                  0  1  0  0        8     =     (4)+4
+                  0  1  0  1        9     =     (4+1)+4
+                  0  1  1  0        10    =     (4+2)+4
+                  1  1  0  0        16    =     (8+4)+4
+                  1  1  1  0        18    =     (8+4+2)+4
+
+
+      Bit 0       gives the minimum sector number on side 0. If the
+                  value is 0, then sectors are numbered starting at
+                  0. If bit 0 is set to 1, the sectors start at 1.
+                  Note that this scheme precludes the C-128 CP/M
+                  mode from reading some oddball types of disks
+                  which start number sectors at 128 or some other
+                  number which is greater than 1.
+
+
+Byte 1      is called the Disk Type Byte.  It gives additional data
+            on the logical structure of a disk.  The bits have the
+            following meaning:
+
+      Bit 7       describes the disk type:  1 = MFM or 0 = GCR.
+                  This is always set to 1 for foreign (I.e. non-
+                  Commodore CP/M) disk types.
+
+      Bit 6       gives insight into how the sectors on side 2 of a
+                  double sided disk are numbered:
+
+            0 = both sides numbered same
+            1 = side 2 sector numbers continue from side 1
+
+                  For single sided disks, the bit should be set to
+                  0.  IBM-8 is an example of bit value set to 0.
+                  The sectors on both sides are numbered from 1 to
+                  8.  Kaypro IV is an example of the second side
+                  continuing from first.  The sectors  on the first
+                  side are numbered from 0 to 9 while the sectors on
+                  the second side are numbered from 10 to 19.  This
+                  numbering scheme is sometimes referred to as a
+                  "long" or "extended" track
+
+      Bit 5 & 4   give the sector size, as outlined above for bits 6
+                  and 5 of byte 0.
+
+      Bit 3 - 1   determine the order in which a double sided disk
+                  is filled.  For a single sided disk, the bits
+                  should all be set to 0.  For double sided disks,
+                  the bits have the following significance:
+
+                  3  2  1    
+                  0  0  0     fill track by track, first side 0 then
+                              side 1 of same track then next track.
+                              This is sometimes called a 'cylinder'
+
+                  0  0  1     fill track by track, even track #'s on
+                              side 0, odd on side 1.  This is a
+                              variation of the cylinder scheme and is
+                              usually interchangeable with it when you
+                              take into account the number of records
+                              per logical track.
+
+                  0  1  0     fill all side 0 then side 1.  This is
+                              sometimes called an 'extended surface'.
+                              For MFM disks of this type, C-128 CP/M
+                              assumes that each side of the disk has
+                              40 tracks.  This may not be true in all
+                              cases as some older types use only 35
+                              tracks per side.
+
+      Bit 0       is a repeat of byte 0, bit 0 as described above.
+
+
+Bytes 2 and 3     are not normally used by many CP/M disk types.
+                  They represent a pointer to a sector skew table.
+                  The native MFM formats supported by C-128 CP/M do
+                  not use a software skew.  Sectors are filled in
+                  numerical order on a given track such as 1, 2, 3,
+                  etc.  In this case, both bytes are set to 0.  If a
+                  skew table were used, bytes 2 and 3 would point to
+                  a table containing the order in which the sectors
+                  are filled such as 0, 3, 6, etc.  The numbering of
+                  the sectors in the skew table always starts at 0,
+                  regardless of how the actual physical sectors are
+                  numbered.   This table is often located in unused
+                  entries in the disk parameter table, but can be
+                  located anywhere in BANK 0 RAM.  It is difficult
+                  to set up without a detailed knowledge of both the
+                  disk organization and a CP/M memory map for the
+                  specific CP/M version that you are using. In
+                  addition, several disk types with the same logical
+                  sector skew may share a single skew table. 
+
+Bytes 4 to 20     represent a standard CP/M+ DPT entry, used by all
+                  versions of CP/M, not just on the C-128.
+
+Bytes 4 and 5     are referred to as the SPT.  This is the total
+                  number of 128 byte records per logical track.  It
+                  is a 16 bit word coded in low byte/high byte
+                  format.  The size of the logical track depends on
+                  both the physical format of the disk and the order
+                  in which it is filled.  For example, a single
+                  sided disk with 8 sectors per track, each 512
+                  bytes, would have 32 records per track.  A double
+                  sided disk of the same physical format may have
+                  either 32 (if the logical track includes only one
+                  side of the disk) or 64 (if the logical track
+                  includes both sides of the disk) records per
+                  logical track, depending on how the disk was
+                  filled (see bits 1 to 3 of the disk type byte).
+
+Byte 6            is called the BSH or block shift factor.  It is
+                  equivalent to the logarithm in base 2 of the
+                  number of 128 byte records in a disk allocation
+                  unit or:
+
+                        LOG 2 (BLS/128). 
+
+                  The values of BSH are given below  with those for
+                  BLM.
+
+Byte 7            is the BLM or block mask.  It is equal to 1 less
+                  than the number of 128 byte records in an
+                  allocation unit or:
+
+                         (BLS/128) - 1. 
+
+                  Values for BSH  and BLM are:
+
+   BLS (Allocation unit size)            BSH       BLM
+
+      1024                                3           7
+      2048                                4           15
+      4096                                5           31     
+      8192 *                              6           63     
+      16384 *                             7           127
+     
+
+Note:       Block sizes marked with * are not normally used in
+            floppy disk systems.  The allocation unit size (BLS) is
+            not a direct entry in the DPT but is calculated by the
+            operating system from the BSH and BLM values.  For
+            disks with capacity of greater than 256 k bytes, a BLS
+            of at least 2048 must be used.
+
+
+Byte 8      is the extent mask or EXM.  This is equal to the
+            maximum number of 16 k file extents that can be coded
+            into a single directory entry.  The maximum values are
+            given below. Values of less than the maximum can be
+            used, but this wastes directory space as some of the
+            available spots in the file allocation table will not
+            be used.  A value of 0 must be used for disk systems
+            which run under very old versions of CP/M.  (For
+            example, if you want to support a disk format than runs
+            on a CP/M 1.4 machine.)
+
+
+            BLS               Typical EXM
+
+                              DSM < 256     DSM > 255
+
+            1024              0                 -
+            2048              1                 0
+            4096              3                 1
+            8192              7                 3
+            16384             15                7
+
+Bytes 9 and 10    are a 16 bit word (DSM) representing the total
+                  number of allocation units on the disk minus 1,
+                  including the directory area, but excluding
+                  reserved system tracks (if any).  The bytes are in
+                  low byte/high byte format.  DSM can be calculated
+                  from:
+
+DSM =             (net # tracks) * (# sectors/track) /
+                  (#sectors/allocation unit)
+
+            where (net # tracks) is the total number of tracks on
+            the disk, minus the reserved system tracks.
+
+Bytes 11 & 12     (DRM) are the total number of directory entries on
+                  the disk minus 1.  For single sided floppy disks,
+                  the number of directory entries is usually 64 and
+                  double sided disks, 128.  Therefore, byte 11 is
+                  usually either $3F (63) or $7F (127) while byte 12
+                  is normally 0.  The minimum number of directory
+                  entries is one AU worth, which is 32 for 1k AU's,
+                  64 for 2k AU's, or 128 for 4k AU's.  In theory,
+                  the maxmum number is 16 AU's worth, although in
+                  practice, except for very large fixed disks (i.e.
+                  many megabytes), this would rarely be used.  For
+                  example, if 16 AU's were assigned to a directory
+                  for a disk with 2k AU size, you would have 1024
+                  directory entries.  While this may seem nice,
+                  consider that each directory entry represents a
+                  file that will occupy at least 2k of disk space
+                  (i.e. 1 AU).  This implies a disk size of at least
+                  2k x 1024 or 2 megabytes!!  Using a directory of
+                  that size for a floppy disk is just a waste of
+                  space (the directory alone would consume 32k disk
+                  space).
+
+
+Bytes 13 & 14     (called AL0 and AL1) give the number of AU's which
+                  are reserved for directory use.  This is an
+                  inverted 16 bit number of the following format:
+
+           <----- Byte 13 ----->  <----- Byte 14 ------>
+     Bit   7  6  5  4  3  2  1  0  7  6  5  4  3  2  1  0
+Position   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+
+      Each position which is set to 1 (starting at position 0)
+      indicates one allocation unit reserved for a directory
+      block. Typically with 2 AU's reserved for the directory,
+      this results in positions 0 and 1 being set, giving a value
+      of $C0 for byte 13 and 0 for byte 14.
+
+
+Bytes 15 & 16     are called the directory checksum vector, CKS.
+                  The 16 bit value, in low byte/high byte order, is
+                  equal to (DRM + 1)/4.  For 64 directory entries,
+                  byte 15 has a value of $10 (16), while for 128
+                  directory entries it has a value of $20 (32).  In
+                  both cases, byte 16 has avalue of 0.   If the disk
+                  does not require check-summing (i.e. it is a 'non-
+                  removable' disk such as a hard disk or a RAM
+                  disk), then byte 16 is set to $80 and byte 15 is
+                  set to 0.
+
+Bytes 17 & 18     give the track number of the first directory
+                  sector (OFF).  This is used for disk partitioning
+                  and to skip reserved system tracks at the
+                  beginning of the disk.  Byte 17 is typically in
+                  the range of 1 to 4, while byte 18 is normally 0.
+                  To create your own custom disk format which uses
+                  all of the disk (i.e. no reserved system tracks),
+                  set both bytes to 0.
+
+Byte 19           is the physical sector shift factor or PSH.  It is
+                  equal to:
+
+                  PSH = LOG 2({sector-size} / 128).  
+
+                  Values are given below with PHM.
+
+Byte 20           is the physical sector mask or PHM.  It is equal
+                  to:
+
+                  PHM = {sector-size} / 128 - 1
+ 
+                  Physical sector size          PSH   PHM
+                  128 bytes                     0     0
+                  256                           1     1
+                  512                           2     3
+                  1024                          3     7
+
+Bytes 21 to 31    are not part of a standard CP/M disk paramter
+                  table but are used by the C-128 version of CP/M.
+                  Byte 21 is the number of sectors on a physical
+                  track.  Bytes 22 to 31 are an ASCII text string
+                  describing the disk name.  This is the name which
+                  pops up in the disk selection box at the bottom of
+                  the screen when the system cannot decide what the
+                  disk  format is.  Otherwise, it is not used.
+
+
+
+Customizing your DPT
+
+What purpose does all of this detailed technical info serve,you
+ask?  Well  by playing with the values, you can get your C-128 to
+read and write the disks from your uncle Fred's ancient CP/M
+machine or you can create your own CP/M disk formats that no-one
+else can read to protect your data.  
+
+The easiest way to change the DPT is by editing the CPM+.SYS file
+with a debugger utility such as SID.COM to load the CPM+.SYS file
+into memory, then change the indivdual bytes, and save the
+modified file.  Each time you boot up CP/M in the future, you
+would have automatic support for these other disk formats.  You
+could also change the parameters in RAM once the computer has
+been booted, but remember they are stored in BANK 0 RAM and will
+require special programming in the common area to do this.  Try
+high RAM location  starting at $fe00 for the location of such a
+program.  This area is normally used as a disk buffer and is free
+for non-disk I/O programs which need common BANK 0/BANK 1 memory.
+Changing the parameters in RAM is only a temporary measure, while
+changing the CPM+.SYS file is permanent. Take your pick.
+
+
+The locations of the seven unused disk parameter table entries in
+the CPM+.SYS file when using SID are as follows:
+
+      AUG         DEC/MAY
+
+      $1976       $1efd
+      $1996       $1f1d
+      $19b6       $1f7d
+      $19d6       $1f9d
+      $1a16       $1fbd
+      $1a36       $1fdd
+      $1a56       $205d
+
+The end of file (EOF) for the AUG version is $5D00, while for the
+DEC versions, it is $6400, $6300 for the MAY version, and $6500
+for the MAY-VT version.  These numbers will be needed later when
+re-writing  the file.  You should always use a backup work disk
+when doing these changes because your CPM+.SYS file will be
+changed permanently. Do not modify your original system disk!!!
+
+The disk parameter table entries begin at the bytes specified
+above,  according to the byte parameters previously described.
+Select an unused  spot then use SID's "D" command to display the
+memory at that location.   For example, d1976 <return> will
+display memory starting at $1976.  If the  display does not
+vaguely resemble the format of Table 5-1, then stop because  you
+do not have the correct memory area.  (Check to see that you have
+the correct version of CP/M then try again).  These locations can
+be changed  using SID's "S" command to the values for the new
+formats that you wish to  support.  Once the file has been
+changed, it can be saved again using SID's  "W" command:
+
+      wcpm+.sys,100,(EOF value)<return>
+
+where (EOF value) is the  one listed above for your CP/M
+version).  In order to use your new  format, you must do a cold
+reset (i.e. push the reset button or  do a <CONTROL>-<ENTER>.
+
+Table 5-2 contains the values for several disk formats which can
+be easily added to your system.  The MAXI-71 and MAXI-81 formats
+are ones which wher developed specifically for the C-128 to take
+adavantage of the full disk capacity (about 396k for the 1571 and
+796k for the 1581).  These two formats use 1024 byte sectors,
+double  sided, 5 sectors per track, numbered 0 to 4.   To create
+disks for these new formats, you will need to use an external
+disk definition program, such as JUGG'LER-128, which provides
+read; write and formatting support for over 140 types of CP/M
+disks. 
+
+
+
+Table 5-1:  The unmodified C-128 CP/M disk parameter table
+
+D876 39 91 00 00 40 00 04 0F 01 97 00 7F 00 C0 00 20:9...@......_.@. 
+D886 00 02 00 01 01 10 45 70 73 6F 6E 20 51 58 31 30:......Epson QX10
+D896 CD A1 00 00 50 00 04 0F 01 BD 00 7F 00 C0 00 20:M!..P....=._.@. 
+D8A6 00 02 00 02 03 0A 45 70 73 6F 6E 20 51 58 31 30:......Epson QX10
+D8B6 49 A5 00 00 20 00 03 07 00 9B 00 3F 00 C0 00 10:I%........?.@..
+D8C6 00 01 00 02 03 08 20 49 42 4D 2D 38 20 53 53 20:......IBM-8 SS 
+D8D6 49 A5 00 00 20 00 04 0F 01 9D 00 3F 00 80 00 10:I%........?....
+D8E6 00 01 00 02 03 08 20 49 42 4D 2D 38 20 44 53 20:......IBM-8 DS 
+D8F6 4C E2 00 00 28 00 04 0F 01 C4 00 7F 00 C0 00 20:Lb..(....D._.@. 
+D906 00 01 00 02 03 0A 4B 61 79 50 72 6F 20 49 56 20:......KayPro IV 
+D916 4C E0 00 00 28 00 03 07 00 C2 00 7F 00 F0 00 20:L@..(....B._.p. 
+D926 00 01 00 02 03 0A 4B 61 79 50 72 6F 20 49 49 20:......KayPro II 
+D936 63 B1 00 00 28 00 03 07 00 B8 00 3F 00 C0 00 10:c1..(....8.?.@..
+D946 00 03 00 03 07 05 4F 73 62 6F 72 6E 65 20 44 44:......Osborne DD
+D956 4B A3 00 00 20 00 04 0F 01 9D 00 3F 00 80 00 10:K#........?....
+D966 00 01 00 02 03 08 20 20 53 6C 69 63 65 72 20 20:...... Slicer  
+D976 39 91 00 00 40 00 04 0F 01 8F 00 7F 00 C0 00 20:9...@......_.@. 
+D986 00 04 00 01 01 10 45 70 73 6F 6E 20 45 75 72 6F:......Epson Euro
+D996 FF 80 00 00 50 00 04 0F 01 BD 00 7F 00 C0 00 20:_...P....=._.@. 
+D9A6 00 02 00 02 03 08 20 20 20 4E 6F 6E 65 20 20 20:......  None   
+D9B6 FF 80 00 00 50 00 04 0F 01 BD 00 7F 00 C0 00 20:_...P....=._.@. 
+D9C6 00 02 00 02 03 08 20 20 20 4E 6F 6E 65 20 20 20:......  None   
+D9D6 FF 80 00 00 50 00 04 0F 01 BD 00 7F 00 C0 00 20:_...P....=._.@. 
+D9E6 00 02 00 02 03 08 20 20 20 4E 6F 6E 65 20 20 20:......  None   
+D9F6 FF 80 00 00 50 00 04 0F 01 BD 00 7F 00 C0 00 20:_...P....=._.@. 
+DA06 00 02 00 02 03 08 20 20 20 4E 6F 6E 65 20 20 20:......  None   
+DA16 FF 80 00 00 50 00 04 0F 01 BD 00 7F 00 C0 00 20:_...P....=._.@. 
+DA26 00 02 00 02 03 08 20 20 20 4E 6F 6E 65 20 20 20:......  None   
+DA36 FF 80 00 00 50 00 04 0F 01 BD 00 7F 00 C0 00 20:_...P....=._.@. 
+DA46 00 02 00 02 03 08 20 20 20 4E 6F 6E 65 20 20 20:......  None   
+DA56 FF 80 00 00 50 00 04 0F 01 BD 00 7F 00 C0 00 20:_...P....=._.@. 
+DA66 00 02 00 02 03 08 20 20 20 4E 6F 6E 65 20 20 20:......  None   
+
+Note:       The address range given above is for the "1 Aug 85" version
+            of the CPM+.SYS file.  The "6 Dec 85" and "8 Dec 85" start at
+            address D6BD, while the "28 May 87" version starts at D860
+            and the MAY-VT version starts at D891.
+
+ Table 5-2: Disk Parameter Table values for selected new disk formats
+         (Note: all values are in hex)
+
+                                                Disk Format
+------+-----------+-------------+-------------+---------+-------þ--+--------+ 
+
+
+      +XEROX 16-8 + OLYMPIA ETX +OLYMPIA EX100+TELEVIDEO+ MAXI-71  + MAXI-81+
+Byte# +   DS      +     SS      +      DS     +   DS    +   DS     +  DS    +
+------+-----------+-------------+-------------+---------+-------þ--+--------+ 
+
+
+0         4b           4b            4b           3d         62        62   
+1         a5           a5            a3           91         b0        b0   
+2          0            0             0            0          0         0   
+3          0            0             0            0          0         0   
+4         24           24            24           48         50        50   
+5          0            0             0            0          0         0   
+6          4            3             4            4          4         4   
+7          f            7             f            f          f         f   
+8          1            0             0            0          1         0   
+9         ae           9b            ae           bd         c8        90   
+10         0            0             0            0          0         1   
+11        3f           3f            7f           7f         7f        7f   
+12         0            0             0            0          0         0   
+13        80           c0            c0           c0         c0        c0   
+14         0            0             0            0          0         0   
+15        10           20            20           20         20        20   
+16         0            0             0            0          0         0   
+17         2            2             2            2          0         0   
+18         0            0             0            0          0         0   
+19         2            2             2            1          3         3   
+20         3            3             3            1          7         7   
+21         9            9             9            12         5         5   
+22        58           65            4f           54         4d        4d   
+23        65           74            2d           65         61        61   
+24        72           78            45           6c         78        78   
+25        6f           20            58           65         69        69   
+26        78           49            20           76         20        20   
+27        20           49            31           69         37        38   
+28        31           20            30           64         31        31   
+29        36           20            30           65         20        20   
+30        2d           20            20           6f         20        20   
+31        38           20            20           20         20        20   
+------+-----------+-------------+-------------+---------+----------+--------+ 
+
+
+Table 2 (con't)
+
+                                                Disk Format
+         +---------+----------+--------+--------+-----------+----------+
+         + NCR -DM +  Zenith  + Zenith + Zenith + TRS-80 IV + LOBO max +
+Byte#    +   DS    +  Z90 SS  + Z100 DS+ Z100 SS+    SS     +    SS    +
+---------+---------+----------+--------+--------+-----------+---þ------+
+0           49        39          49       49       49          3c
+1           a5        91          a3       a1       a1          90
+2            0         0           0        0        0           0
+3            0         0           0        0        0           0
+4           20        20          20       20       20          24
+5            0         0           0        0        0           0
+6            4         3           4        4        3           3
+7            f         7           f        f        7           7
+8            1         0           0        0        0           0
+9           99        97          9b       97       9b          a5
+10           0         0           0        0        0           0
+11          7f        7f          ff       7f       3f          3f
+12           0         0           0        0        0           0
+13          c0        f0          f0       f0       c0          c0
+14           0         0           0        0        0           0
+15          20        20          40       20       10          10
+16           0         0           0        0        0           0
+17           3         2           2        2        1           3
+18           0         0           0        0        0           0
+19           2         1           2        2        2           1
+20           3         1           3        3        3           1
+21           8         10          8        8        8          12
+22          4e         48         48       48       54          4c
+23          43         65         5a       5a       52          6f
+24          52         61         20       20       53          62
+25          20         74         31       31       2d          6f
+26          20         68         30       30       49          20
+27          20         20         30       30       56          20
+28          20         39         20       20       20          20
+29          20         30         44       53       20          20
+30          20         20         53       53       20          20
+31          20         20         20       20       20          20
+---------+---------+----------+--------+--------+-----------+---þ------+ 
+
+
+
+
+The Disk Parameter Header
+
+The other major component of accessing disk drives is the
+extended disk parameter header or XDPH.   This is the working
+area used by the BDOS for actual disk access.  When a disk is
+logged in, the appropriate values are copied from the DPT to the
+XDPH for general use.  The drive table address, which contains
+the vectors to the XDPH for each logical drive can be found at
+BIOS_BASE+D7.  (This is not  a documented vector location,
+however, but merely a point in the BIOS DRVTBL routine which
+happens to contain the address.  The correct method to get the
+drive table address is to use the BIOS DRVTBL function call
+directly.)   The DRVTBL is located at:
+
+CP/M Version            DRVTBL Location
+
+      AUG               FB78
+      DEC               FBD1
+      MAY               FBD1
+
+
+
+The DRVTBL contains a series of address pointers to the disk
+parameter header base address (DPH_BASE) for each logical drive
+(A: to P:).  If a drive is not physically supported (drives F: to
+L: and N: to P:, and M:, when no RAM expander is present),  the
+drive table vector value is 0000.  The default DRVTBL vectors
+are: 
+
+                  Vector points to:
+Drive             AUG         DEC         MAY
+A:                FA6E        FA82        FA82
+B:                FAA5        FAB9        FAB9
+C:                FADC        FAF0        FAF0
+D:                FB13        FB27        FB27
+E:                FB4A        FB5E        FB5E
+F: to L:          <--------------NOT USED---------->
+M:                NOT USED    FB96        FB96
+N: to P:          <--------------NOT USED---------->
+
+
+
+
+For each drive the $37 byte long XDPH has the following format:
+
+DPH_BASE-A        pointer to the sector write routine for this drive
+DPH_BASE-8        pointer to the sector read routine for this drive
+DPH_BASE-6        pointer to the login routine for this drive
+DPH_BASE-4        pointer to the initialization routine for this
+                  drive
+DPH_BASE-2        physical drive assigned to the logical drive.
+DPH_BASE-1        secondary disk type byte from byte 2 of DPT entry.
+DPH_BASE          pointer to logical to physical sector skew table
+                  (0000 if none)
+DPH_BASE+2        9 bytes of scratch pad for use by BDOS
+DPH_BASE+B        media flag: 0 if disk logged in, FF if disk has
+                  been changed
+DPH_BASE+C        pointer to DPB values for this drive (contained
+                  later in entry)
+DPH_BASE+E        pointer to CSV scratch pad area (used to detect
+                  changed disks)
+DPH_BASE+10       pointer to ALV scratch pad area (used to keep
+                  track of drive storage capacity)
+DPH_BASE+12       pointer to directory buffer control block (BCB)
+DPH_BASE+14       pointer to data BCB
+DPH_BASE+16       pointer to the directory hashing table
+DPH_BASE+18       bank for hash table
+DPH_BASE+19       DPT entry for this drive
+DPH_BASE+2A       maximum sector number and MFM lock flag (bit 7 = 1
+                  if locked)
+DPH_BASE+2B       pointer to entry in master MFM DPT table
+

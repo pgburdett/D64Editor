@@ -1,0 +1,2680 @@
+DETAILS.TXT rev 1a 96-11-04
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     THIS DOCUMENT IS COPYRIGHT (C) 1988, 1996 BY HERNE DATA
+     SYSTEMS LTD.  THE MATERIAL CONTAINED HEREIN MAY BE FREELY
+     USED FOR PERSONAL INFORMATION ONLY.  IF YOU REPRODUCE IT,
+     THIS COPYRIGHT NOTICE MUST NOT BE REMOVED.  THIS MATERIAL
+     MAY NOT BE EXPLOITED FOR COMMERCIAL PURPOSES.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+Herne Data Systems Ltd., 
+PO Box 250, Tiverton, ON N0G 2T0 CANADA.  
+Voice/fax 519-366-2732, 
+e-mail herne@herne.com, 
+internet: http://www.herne.com
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+CP/M Disk Format Details
+
+============================================================
+Disk Name: A B C - 80              SS      
+Type: 5 1/4     Total usable space: 152k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 7 14 5 12 3 10 1 8 15 6 13 4 11 2 9
+ 
+ - Allocation unit size is 1024 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 97 00 3F 00 C0 00 10 00 02 00 01 01 
+============================================================
+Disk Name: A B Dick Magna III      DS      
+Type: 5 1/4     Total usable space: 256k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 17 to 32)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 256 AU's per disk
+ - Directory starts at logical track 2;
+     has 256 entries and occupies 32 sectors or 8 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 03 07 00 FF 00 FF 00 FF 00 40 00 02 00 01 01 
+============================================================
+Disk Name: ATR-8000                DS      
+Type: 5 1/4     Total usable space: 380k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 190 AU's per disk
+ - Directory starts at logical track 4;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 BD 00 7F 00 C0 00 20 00 04 00 03 07 
+============================================================
+Disk Name: ATR-8000                SS      
+Type: 5 1/4     Total usable space: 190k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 190 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 2 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 03 07 00 BD 00 3F 00 C0 00 10 00 02 00 03 07 
+============================================================
+Disk Name: Access Matrix           SS      
+Type: 5 1/4     Total usable space: 171k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 1 4 7 2 5 8
+ 
+ - Allocation unit size is 1024 bytes; 171 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 AA 00 3F 00 C0 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Actrix                  DS      
+Type: 5 1/4     Total usable space: 350k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 1 4 7 2 5 8 9 12 15 10 13 16 11 14 17
+ 
+ - Allocation unit size is 2048 bytes; 175 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    48 00 04 0F 01 AE 00 3F 00 80 00 10 00 01 00 02 03 
+============================================================
+Disk Name: Actrix                  SS      
+Type: 5 1/4     Total usable space: 171k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 1 4 7 2 5 8
+ 
+ - Allocation unit size is 1024 bytes; 171 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 AA 00 3F 00 C0 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Adler Textwriter        SS      
+Type: 5 1/4     Total usable space: 160k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 9 12 15 2 5 8 11 14 1 4 7 10 13
+ 
+ - Allocation unit size is 1024 bytes; 160 AU's per disk
+ - Directory starts at logical track 0;
+     has 32 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 9F 00 1F 00 80 00 08 00 00 00 01 01 
+============================================================
+Disk Name: Adv. Digt'l Super-6     DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   4 per track; numbered 1 to 4 (Side 2
+numbered 1 to 4)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 00 9B 00 7F 00 C0 00 20 00 01 00 03 07 
+============================================================
+Disk Name: Adv. Digt'l Super-6     SS      
+Type: 5 1/4     Total usable space: 156k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   4 per track; numbered 1 to 4  
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 78 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 2 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 00 4D 00 3F 00 80 00 10 00 01 00 03 07 
+============================================================
+Disk Name: Adv. Digt'l T-DOS 312k  DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   4 per track; numbered 1 to 4 (Side 2
+numbered 1 to 4)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 01 9B 00 7F 00 C0 00 20 00 01 00 03 07 
+============================================================
+Disk Name: Adv. Digt'l T-DOS 366k  DS      
+Type: 5 1/4     Total usable space: 366k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 183 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 B6 00 7F 00 C0 00 20 00 03 00 03 07 
+============================================================
+Disk Name: Amigo                   DS      
+Type: 5 1/4     Total usable space: 392k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 196 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 00 C3 00 3F 00 80 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Amigo                   SS      
+Type: 5 1/4     Total usable space: 190k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 190 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 03 07 00 BD 00 3F 00 C0 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Ampro                   SS      
+Type: 5 1/4     Total usable space: 190k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10  
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 95 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 5E 00 3F 00 80 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Ampro                   SS      
+Type: 3 1/2     Total usable space: 390k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 1 2 3 4
+ 
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 C2 00 7F 00 C0 00 20 00 02 00 03 07 
+============================================================
+Disk Name: Amstrad PCW             DS      
+Type: 3 1/2     Total usable space: 714k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 357 AU's per disk
+ - Directory starts at logical track 0;
+     has 256 entries and occupies 16 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    48 00 04 0F 00 64 01 FF 00 F0 00 40 00 00 00 02 03 
+============================================================
+Disk Name: Amstrad Vortex          DS      
+Type: 3 1/2     Total usable space: 708k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 1 2 3 4 5 6 7 8
+ 
+ - Allocation unit size is 4096 bytes; 177 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    48 00 05 1F 03 B0 00 7F 00 80 00 20 00 01 00 02 03 
+============================================================
+Disk Name: Archive                 DS      
+Type: 5 1/4     Total usable space: 360k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 180 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 B3 00 3F 00 80 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Arisia                  SS      
+Type: 5 1/4     Total usable space: 148k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 148 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 93 00 7F 00 F0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Avatar                  DS      
+Type: 5 1/4     Total usable space: 384k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 2 6 1 5 9 3 7 
+ 
+ - Allocation unit size is 2048 bytes; 192 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 BF 00 7F 00 C0 00 20 00 03 00 02 03 
+============================================================
+Disk Name: Beehive                 DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 C2 00 7F 00 C0 00 20 00 01 00 02 03 
+============================================================
+Disk Name: Bitelex                 SS      
+Type: 5 1/4     Total usable space: 132k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15 
+ 
+ - Allocation unit size is 1024 bytes; 132 AU's per disk
+ - Directory starts at logical track 2;
+     has 96 entries and occupies 12 sectors or 3 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 83 00 5F 00 E0 00 18 00 02 00 01 01 
+============================================================
+Disk Name: Bondwell 12             SS      
+Type: 5 1/4     Total usable space: 170k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 0 to 17  
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 85 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 54 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Bondwell 14             DS      
+Type: 5 1/4     Total usable space: 350k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 0 to 17 (Side 2
+numbered 0 to 17)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 175 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AE 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Bondwell 2              SS      
+Type: 3 1/2     Total usable space: 350k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 0 to 17  
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 175 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AE 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Burr-Brown              DS      
+Type: 5 1/4     Total usable space: 342k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18 (Side 2
+numbered 1 to 18)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 9 1 10 2 11 3 12 4 13 5 14 6 15 7 16 8 17 
+ 
+ - Allocation unit size is 2048 bytes; 171 AU's per disk
+ - Directory starts at logical track 4;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AA 00 3F 00 80 00 10 00 04 00 01 01 
+============================================================
+Disk Name: C/WP Cortex             SS      
+Type: 5 1/4     Total usable space: 190k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 190 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 03 07 00 BD 00 3F 00 C0 00 10 00 02 00 02 03 
+============================================================
+Disk Name: CCS (1024 byte/sector)  DS      
+Type: 5 1/4     Total usable space: 370k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 1 3 5 7 9 6 8
+ 
+ - Allocation unit size is 2048 bytes; 185 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 2 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 B8 00 3F 00 80 00 10 00 03 00 03 07 
+============================================================
+Disk Name: CCS (256 byte/sector)   DS      
+Type: 5 1/4     Total usable space: 332k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18 (Side 2
+numbered 1 to 18)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 12 16 2 6 10 14 1 5 9 13 17 3 7 11 15 
+ 
+ - Allocation unit size is 2048 bytes; 166 AU's per disk
+ - Directory starts at logical track 6;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 A5 00 3F 00 80 00 10 00 06 00 01 01 
+============================================================
+Disk Name: CCS (512 byte/sector)   DS      
+Type: 5 1/4     Total usable space: 370k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 9 2 5 8 1 4 7 10 13 16 19 12 15 18 11 14 17
+ 
+ - Allocation unit size is 2048 bytes; 185 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 B8 00 3F 00 80 00 10 00 03 00 02 03 
+============================================================
+Disk Name: CDI-5000                DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 1 4 2 
+ 
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 2 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 C2 00 3F 00 80 00 10 00 02 00 03 07 
+============================================================
+Disk Name: Cal PC                  DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 C2 00 7F 00 C0 00 20 00 02 00 03 07 
+============================================================
+Disk Name: Coleco ADAM CP/M        SS    
+Type: 5 1/4     Total usable space: 148k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      2 7 4 1 6 3 0 5
+ 
+ - Allocation unit size is 1024 bytes; 148 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 93 00 3F 00 C0 00 10 00 03 00 02 03 
+============================================================
+Disk Name: Compugraphic MCS 5      SS      
+Type: 5 1/4     Total usable space: 156k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 9B 00 3F 00 C0 00 10 00 01 00 01 01 
+============================================================
+Disk Name: Compustar 30            DS    
+Type: 5 1/4     Total usable space: 340k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 9 
+ 
+ - Allocation unit size is 2048 bytes; 170 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 A9 00 3F 00 80 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Cromemco C-10           DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 11 to 20)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 2 6 1 5 9 3 7 
+ 
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 00 C2 00 7F 00 C0 00 20 00 01 00 02 03 
+============================================================
+Disk Name: Cromemco CDOS           DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 2 6 1 5 9 3 7 
+ 
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 00 C2 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Cromemco CDOS           DSSD    
+Type: 5 1/4     Total usable space: 173k bytes
+  
+Sector information: 
+ - 128 bytes/sector;  18 per track; numbered 1 to 18 (Side 2
+numbered 1 to 18)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 5 10 15 2 7 12 17 4 9 14 1 6 11 16 3 8 13 
+ 
+ - Allocation unit size is 1024 bytes; 173 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    12 00 03 07 00 AC 00 3F 00 C0 00 10 00 03 00 00 00 
+============================================================
+Disk Name: Cromemco CDOS           SS      
+Type: 5 1/4     Total usable space: 190k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10  
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 2 6 1 5 9 3 7 
+ 
+ - Allocation unit size is 1024 bytes; 190 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 03 07 00 BD 00 3F 00 C0 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Cromemco CDOS           SSSD    
+Type: 5 1/4     Total usable space: 83k bytes
+  
+Sector information: 
+ - 128 bytes/sector;  18 per track; numbered 1 to 18  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 5 10 15 2 7 12 17 4 9 14 1 6 11 16 3 8 13 
+ 
+ - Allocation unit size is 1024 bytes; 83 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    12 00 03 07 00 52 00 3F 00 C0 00 10 00 03 00 00 00 
+============================================================
+Disk Name: Cromemco Int'l Term     DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 9 2 5 8 1 4 7 10 13 16 19 12 15 18 11 14 17
+ 
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 C2 00 7F 00 C0 00 20 00 01 00 02 03 
+============================================================
+Disk Name: Cromemco Int'l Term     SS      
+Type: 5 1/4     Total usable space: 190k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10  
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 9 2 5 8 1 4 7 
+ 
+ - Allocation unit size is 2048 bytes; 95 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 5E 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Cykey                   DS      
+Type: 5 1/4     Total usable space: 308k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 12 1 5 9 13 2 6 10 14 3 7 11 15 
+ 
+ - Allocation unit size is 2048 bytes; 154 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 99 00 3F 00 C0 00 10 00 03 00 01 01 
+============================================================
+Disk Name: DEC Robin               SS      
+Type: 5 1/4     Total usable space: 171k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 
+ 
+ - Allocation unit size is 1024 bytes; 171 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 AA 00 3F 00 C0 00 10 00 02 00 02 03 
+============================================================
+Disk Name: DEC VT-180              SS      
+Type: 5 1/4     Total usable space: 171k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 
+ 
+ - Allocation unit size is 1024 bytes; 171 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 AA 00 3F 00 C0 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Digilog                 DS      
+Type: 5 1/4     Total usable space: 334k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 167 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 2 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 A6 00 3F 00 80 00 10 00 03 00 03 07 
+============================================================
+Disk Name: Direct 1025             DS      
+Type: 5 1/4     Total usable space: 306k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 153 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 00 98 00 7F 00 C0 00 20 00 03 00 01 01 
+============================================================
+Disk Name: Epson QX-10 (256)       DS     
+Type: 5 1/4     Total usable space: 304k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 01 97 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Epson QX-10 (256-Euro)  DS     
+Type: 5 1/4     Total usable space: 280k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 140 AU's per disk
+ - Directory starts at logical track 4;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 01 8B 00 3F 00 80 00 10 00 04 00 01 01 
+============================================================
+Disk Name: Epson QX-10 (512)       DS     
+Type: 5 1/4     Total usable space: 380k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 190 AU's per disk
+ - Directory starts at logical track 4;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 BD 00 7F 00 C0 00 20 00 04 00 02 03 
+============================================================
+Disk Name: Formula 1               DS      
+Type: 5 1/4     Total usable space: 346k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18 (Side 2
+numbered 1 to 18)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 1 4 5 8 9 12 13 16 17 2 3 6 7 10 11 14 15 
+ 
+ - Allocation unit size is 2048 bytes; 173 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AC 00 7F 00 C0 00 20 00 03 00 01 01 
+============================================================
+Disk Name: Fujitsu  Micro 8        DS      
+Type: 5 1/4     Total usable space: 304k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 01 97 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Fujitsu Micro 16-s      DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8 (Side 2
+numbered 1 to 8)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 9B 00 3F 00 80 00 10 00 01 00 02 03 
+============================================================
+Disk Name: Gemini                  DS      
+Type: 3 1/2     Total usable space: 780k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 4096 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 05 1F 01 C2 00 7F 00 80 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Glass Typewriter II     DS      
+Type: 5 1/4     Total usable space: 380k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 9 2 5 8 1 4 7 
+ 
+ - Allocation unit size is 2048 bytes; 190 AU's per disk
+ - Directory starts at logical track 4;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 BD 00 7F 00 C0 00 20 00 04 00 02 03 
+============================================================
+Disk Name: Glass Typewrtr          DS      
+Type: 3 1/2     Total usable space: 778k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 9 2 5 8 1 4 7
+ 
+ - Allocation unit size is 2048 bytes; 389 AU's per disk
+ - Directory starts at logical track 4;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 00 84 01 7F 00 C0 00 20 00 04 00 02 03 
+============================================================
+Disk Name: Gnat Sys. 10            DS      
+Type: 5 1/4     Total usable space: 340k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 11 to 20)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 170 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 00 A9 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Heath Magnolia          DS      
+Type: 5 1/4     Total usable space: 346k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 173 AU's per disk
+ - Directory starts at logical track 3;
+     has 96 entries and occupies 6 sectors or 1.5 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AC 00 5F 00 C0 00 18 00 03 00 02 03 
+============================================================
+Disk Name: Heath Magnolia          SS      
+Type: 5 1/4     Total usable space: 166k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9  
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 83 AU's per disk
+ - Directory starts at logical track 3;
+     has 96 entries and occupies 6 sectors or 1.5 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 52 00 5F 00 C0 00 18 00 03 00 02 03 
+============================================================
+Disk Name: Hew.-Pack. 125          SS      
+Type: 3 1/2     Total usable space: 252k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 0 to 15  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 252 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 16 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 FB 00 7F 00 F0 00 20 00 03 00 01 01 
+============================================================
+Disk Name: Hewlett Packard 86, 87  DS      
+Type: 5 1/4     Total usable space: 252k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 0 to 15 (Side 2
+numbered 0 to 15)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 252 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 16 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 FB 00 7F 00 F0 00 20 00 03 00 01 01 
+============================================================
+Disk Name: IBM-PC (CP/M-86)        DS     
+Type: 5 1/4     Total usable space: 316k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8 (Side 2
+numbered 1 to 8)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 158 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 9D 00 3F 00 80 00 10 00 01 00 02 03 
+============================================================
+Disk Name: IBM-PC (CP/M-86)        SS     
+Type: 5 1/4     Total usable space: 156k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 9B 00 3F 00 C0 00 10 00 01 00 02 03 
+============================================================
+Disk Name: ICM Turbo DOS           DS      
+Type: 5 1/4     Total usable space: 396k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 198 AU's per disk
+ - Directory starts at logical track 0;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 C5 00 7F 00 C0 00 20 00 00 00 03 07 
+============================================================
+Disk Name: IMS-5000                DS      
+Type: 5 1/4     Total usable space: 304k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 8 16 24 1 9 17 25 2 10 18 26 3 11 19 27 4 12 20 28 5 13
+21 29 6 14 22 30 7 15 23 31
+ 
+ - Allocation unit size is 2048 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 01 97 00 3F 00 80 00 10 00 02 00 01 01 
+============================================================
+Disk Name: IMS-5000                SS      
+Type: 5 1/4     Total usable space: 148k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 8 1 9 2 10 3 11 4 12 5 13 6 14 7 15 
+ 
+ - Allocation unit size is 1024 bytes; 148 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 93 00 3F 00 C0 00 10 00 03 00 01 01 
+============================================================
+Disk Name: Insight Enter.          DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 9B 00 3F 00 80 00 10 00 02 00 01 01 
+============================================================
+Disk Name: Jet-80                  DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 C2 00 7F 00 C0 00 20 00 02 00 03 07 
+============================================================
+Disk Name: KayPro 4, 10            DS     
+Type: 5 1/4     Total usable space: 394k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 0 to 9 (Side 2
+numbered 10 to 19)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 197 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 C4 00 3F 00 C0 00 10 00 01 00 02 03 
+============================================================
+Disk Name: KayPro II, 2            SS     
+Type: 5 1/4     Total usable space: 195k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 0 to 9  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 195 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 03 07 00 C2 00 3F 00 F0 00 10 00 01 00 02 03 
+============================================================
+Disk Name: L.N.W.-2                SS      
+Type: 5 1/4     Total usable space: 166k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18  
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 5 10 15 2 7 12 17 4 9 14 1 6 11 16 3 8 13 
+ 
+ - Allocation unit size is 2048 bytes; 83 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 52 00 3F 00 80 00 10 00 03 00 01 01 
+============================================================
+Disk Name: Labtam                  DS      
+Type: 3 1/2     Total usable space: 798k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 399 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 00 8E 01 7F 00 C0 00 20 00 02 00 03 07 
+============================================================
+Disk Name: Lexoriter               SS      
+Type: 5 1/4     Total usable space: 160k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 9 12 15 2 5 8 11 14 1 4 7 10 13 
+ 
+ - Allocation unit size is 1024 bytes; 160 AU's per disk
+ - Directory starts at logical track 0;
+     has 32 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 9F 00 1F 00 80 00 0A 00 00 00 01 01 
+============================================================
+Disk Name: Librarian 1571          DS      
+Type: 5 1/4     Total usable space: 402k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 0 to 4 (Side 2
+numbered 0 to 4)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 201 AU's per disk
+ - Directory starts at logical track 0;
+     has 256 entries and occupies 8 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 C8 00 FF 00 F0 00 40 00 00 00 03 07 
+============================================================
+Disk Name: Librarian 1581          DS      
+Type: 3 1/2     Total usable space: 802k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 0 to 4 (Side 2
+numbered 0 to 4)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 401 AU's per disk
+ - Directory starts at logical track 0;
+     has 512 entries and occupies 16 sectors or 8 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 00 90 01 FF 01 FF 00 80 00 00 00 03 07 
+============================================================
+Disk Name: Lobo Max-80 (256 byte)  DS      
+Type: 5 1/4     Total usable space: 346k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 0 to 17 (Side 2
+numbered 0 to 17)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 173 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 00 AC 00 7F 00 C0 00 20 00 03 00 01 01 
+============================================================
+Disk Name: Lobo Max-80 (256 byte)  SS      
+Type: 5 1/4     Total usable space: 166k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 0 to 17  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 166 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 A5 00 3F 00 C0 00 10 00 03 00 01 01 
+============================================================
+Disk Name: Lobo Max-80 (512 byte)  DS      
+Type: 5 1/4     Total usable space: 384k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 0 to 9 (Side 2
+numbered 0 to 9)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 192 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 00 BF 00 7F 00 C0 00 20 00 03 00 02 03 
+============================================================
+Disk Name: MAXI 1571               DS      
+Type: 5 1/4     Total usable space: 402k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 0 to 4 (Side 2
+numbered 0 to 4)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 201 AU's per disk
+ - Directory starts at logical track 0;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 C8 00 7F 00 C0 00 20 00 00 00 03 07 
+============================================================
+Disk Name: MAXI 1581               DS      
+Type: 3 1/2     Total usable space: 802k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 0 to 4 (Side 2
+numbered 0 to 4)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 401 AU's per disk
+ - Directory starts at logical track 0;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 00 90 01 7F 00 C0 00 20 00 00 00 03 07 
+============================================================
+Disk Name: MG 1581                 DS      
+Type: 3 1/2     Total usable space: 782k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 391 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 00 86 01 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Magic                   DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 00 C2 00 3F 00 80 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Mega-88 Turbo DOS       DS      
+Type: 5 1/4     Total usable space: 308k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   4 per track; numbered 1 to 4 (Side 2
+numbered 1 to 4)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 154 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 01 99 00 7F 00 C0 00 20 00 01 00 03 07 
+============================================================
+Disk Name: Micro Source M-6000     DS      
+Type: 5 1/4     Total usable space: 380k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 11 to 20)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 2 6 1 5 9 3 7 10 14 18 12 16 11 15 19 13 17
+ 
+ - Allocation unit size is 2048 bytes; 190 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 BD 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: MicroBee                DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      1 4 7 0 3 6 9 2 5 8 
+ 
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 C2 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Micron Quark            DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   4 per track; numbered 1 to 4 (Side 2
+numbered 1 to 4)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 00 9B 00 7F 00 C0 00 20 00 01 00 03 07 
+============================================================
+Disk Name: Molecular S-9           DS      
+Type: 5 1/4     Total usable space: 360k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 180 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    48 00 04 0F 01 B3 00 7F 00 C0 00 30 00 02 00 02 03 
+============================================================
+Disk Name: Morrow MD2              SS      
+Type: 5 1/4     Total usable space: 190k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 1 4 2 
+ 
+ - Allocation unit size is 2048 bytes; 95 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 5E 00 7F 00 C0 00 20 00 02 00 03 07 
+============================================================
+Disk Name: Morrow MD3,5,11,16,34   DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 1 4 2 
+ 
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 192 entries and occupies 6 sectors or 3 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 C2 00 BF 00 E0 00 30 00 02 00 03 07 
+============================================================
+Disk Name: Morrow Turbo DOS        DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   4 per track; numbered 1 to 4 (Side 2
+numbered 1 to 4)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 00 9B 00 7F 00 C0 00 20 00 01 00 03 07 
+============================================================
+Disk Name: Mountain Control        DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 2 6 1 5 9 3 7 10 14 18 12 16 11 15 19 13 17
+ 
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 C2 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Multiflex               SS      
+Type: 5 1/4     Total usable space: 166k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 1 4 7 2 5 8 
+ 
+ - Allocation unit size is 2048 bytes; 83 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 52 00 3F 00 80 00 10 00 03 00 02 03 
+============================================================
+Disk Name: NCR Decision Mate       DS      
+Type: 5 1/4     Total usable space: 308k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8 (Side 2
+numbered 1 to 8)
+ - Disk is filled all first side, then second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 154 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 99 00 7F 00 C0 00 20 00 03 00 02 03 
+============================================================
+Disk Name: NEC PC-8001             SS      
+Type: 5 1/4     Total usable space: 152k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 97 00 3F 00 C0 00 10 00 02 00 01 01 
+============================================================
+Disk Name: NEC PC-8431             SS      
+Type: 3 1/2     Total usable space: 304k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 152 AU's per disk
+ - Directory starts at logical track 4;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 97 00 7F 00 C0 00 20 00 04 00 01 01 
+============================================================
+Disk Name: NEC PC-8801             DS      
+Type: 5 1/4     Total usable space: 304k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 01 97 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Nelma Persona           SS      
+Type: 5 1/4     Total usable space: 171k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 
+ 
+ - Allocation unit size is 1024 bytes; 171 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 AA 00 3F 00 C0 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Olivetti 240            SS      
+Type: 3 1/2     Total usable space: 320k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15
+ 
+ - Allocation unit size is 2048 bytes; 160 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 9F 00 3F 00 80 00 10 00 01 00 01 01 
+============================================================
+Disk Name: Olivetti ETV-300        SS      
+Type: 5 1/4     Total usable space: 171k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18  
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 10 12 14 16 1 3 5 7 9 11 13 15 17 
+ 
+ - Allocation unit size is 1024 bytes; 171 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 AA 00 3F 00 C0 00 10 00 02 00 01 01 
+============================================================
+Disk Name: Olivetti M20            DS      
+Type: 5 1/4     Total usable space: 256k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 256 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 FF 00 3F 00 C0 00 10 00 03 00 01 01 
+============================================================
+Disk Name: Olympia ETX-II          SS      
+Type: 5 1/4     Total usable space: 171k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 171 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 AA 00 7F 00 F0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Olympia EX-100          DS      
+Type: 5 1/4     Total usable space: 350k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 175 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AE 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Osborne 1               SSSD    
+Type: 5 1/4     Total usable space: 92k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  10 per track; numbered 1 to 10  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 9 
+ 
+ - Allocation unit size is 2048 bytes; 46 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    14 00 04 0F 01 2D 00 3F 00 80 00 10 00 03 00 01 01 
+============================================================
+Disk Name: Osborne 1/Executive     SS     
+Type: 5 1/4     Total usable space: 185k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 185 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 2 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 03 07 00 B8 00 3F 00 C0 00 10 00 03 00 03 07 
+============================================================
+Disk Name: Osborne G2              DS      
+Type: 5 1/4     Total usable space: 380k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 6 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 190 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 00 BD 00 7F 00 C0 00 20 00 02 00 03 07 
+============================================================
+Disk Name: Osborne Nuevo/Vixen     DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 1 3 5 7 9 6 8
+ 
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 C2 00 7F 00 C0 00 20 00 01 00 03 07 
+============================================================
+Disk Name: Otrona Attache          DS      
+Type: 5 1/4     Total usable space: 364k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 182 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 B5 00 7F 00 C0 00 20 00 03 00 02 03 
+============================================================
+Disk Name: PMC MicroMate           DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 C2 00 7F 00 C0 00 20 00 01 00 03 07 
+============================================================
+Disk Name: Panasonic KXE-828       DS      
+Type: 5 1/4     Total usable space: 304k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 01 97 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Pegasus Data Logger     DS      
+Type: 5 1/4     Total usable space: 342k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 1 4 7 2 5 8 9 12 15 10 13 16 11 14 17
+ 
+ - Allocation unit size is 2048 bytes; 171 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    48 00 04 0F 00 AA 00 3F 00 80 00 10 00 03 00 02 03 
+============================================================
+Disk Name: Philips PC-2010         SS      
+Type: 5 1/4     Total usable space: 152k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 10 12 14 1 3 5 7 9 11 13 15 
+ 
+ - Allocation unit size is 1024 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 97 00 3F 00 C0 00 10 00 02 00 01 01 
+============================================================
+Disk Name: Portapak                DS      
+Type: 3 1/2     Total usable space: 778k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 9
+ 
+ - Allocation unit size is 2048 bytes; 389 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 00 84 01 7F 00 C0 00 20 00 03 00 02 03 
+============================================================
+Disk Name: Royal Alphatronic       DS      
+Type: 5 1/4     Total usable space: 304k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 04 0F 01 97 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Sage IV                 DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8 (Side 2
+numbered 1 to 8)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 9B 00 3F 00 80 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Sanyo MBC-1000, 1150    DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 9 12 15 2 5 8 11 14 1 4 7 10 13 
+ 
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 9B 00 3F 00 80 00 10 00 02 00 01 01 
+============================================================
+Disk Name: Seequa Chameleon        DS      
+Type: 5 1/4     Total usable space: 316k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8 (Side 2
+numbered 1 to 8)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 158 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 9D 00 3F 00 80 00 10 00 01 00 02 03 
+============================================================
+Disk Name: Seequa Chameleon        SS      
+Type: 5 1/4     Total usable space: 156k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 9B 00 3F 00 C0 00 10 00 01 00 02 03 
+============================================================
+Disk Name: Sharp MZ-80             DS    
+Type: 5 1/4     Total usable space: 340k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 170 AU's per disk
+ - Directory starts at logical track 1;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 A9 00 7F 00 C0 00 20 00 01 00 02 03 
+============================================================
+Disk Name: Slicer                  DS     
+Type: 5 1/4     Total usable space: 316k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 158 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 9D 00 3F 00 80 00 10 00 01 00 02 03 
+============================================================
+Disk Name: Sony SMC-70             SS      
+Type: 3 1/2     Total usable space: 272k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 3 6 9 12 15 2 5 8 11 14 1 4 7 10 13
+ 
+ - Allocation unit size is 2048 bytes; 136 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 87 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Spectravideo SV-328     DS      
+Type: 5 1/4     Total usable space: 326k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  17 per track; numbered 1 to 17 (Side 2
+numbered 1 to 17)
+ - Disk is filled all first side, then second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 163 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    22 00 04 0F 01 A2 00 3F 00 80 00 10 00 03 00 01 01 
+============================================================
+Disk Name: SuperBrain              DS    
+Type: 5 1/4     Total usable space: 340k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 9 
+ 
+ - Allocation unit size is 2048 bytes; 170 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 A9 00 3F 00 80 00 10 00 02 00 02 03 
+============================================================
+Disk Name: SuperBrain 40 Track     SS    
+Type: 5 1/4     Total usable space: 190k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 9 
+ 
+ - Allocation unit size is 2048 bytes; 95 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 5E 00 3F 00 80 00 10 00 02 00 02 03 
+============================================================
+Disk Name: SuperBrain Jr.          SS    
+Type: 5 1/4     Total usable space: 164k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 9 
+ 
+ - Allocation unit size is 2048 bytes; 82 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 51 00 3F 00 80 00 10 00 02 00 02 03 
+============================================================
+Disk Name: Systel 2                SS      
+Type: 5 1/4     Total usable space: 171k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 171 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 AA 00 7F 00 F0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Systel 3                DS      
+Type: 5 1/4     Total usable space: 350k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 175 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AE 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: TI Pro. CP/M-86         SS      
+Type: 5 1/4     Total usable space: 156k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 9B 00 3F 00 C0 00 10 00 01 00 02 03 
+============================================================
+Disk Name: TRS-80 Color Power II   SS      
+Type: 5 1/4     Total usable space: 171k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 171 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 03 07 00 AA 00 3F 00 C0 00 10 00 02 00 01 01 
+============================================================
+Disk Name: TRS-80 Mod 3/Holmes     DS      
+Type: 5 1/4     Total usable space: 382k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 0 to 9 (Side 2
+numbered 10 to 19)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 191 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 BE 00 3F 00 F0 00 10 00 02 00 02 03 
+============================================================
+Disk Name: TRS-80 Mod 3/M.M.       SS      
+Type: 5 1/4     Total usable space: 190k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10  
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 95 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 5E 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: TRS-80 Mod 4 CP/M+      SS      
+Type: 5 1/4     Total usable space: 156k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8  
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 9B 00 3F 00 C0 00 10 00 01 00 02 03 
+============================================================
+Disk Name: TRS-80 Mod 4/MTZ (256)  DS      
+Type: 5 1/4     Total usable space: 350k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18 (Side 2
+numbered 1 to 18)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 10 12 14 16 1 3 5 7 9 11 13 15 17 
+ 
+ - Allocation unit size is 2048 bytes; 175 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AE 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: TRS-80 Mod 4/MTZ (256)  SS      
+Type: 5 1/4     Total usable space: 170k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 10 12 14 16 1 3 5 7 9 11 13 15 17 
+ 
+ - Allocation unit size is 2048 bytes; 85 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 54 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: TRS-80 Mod 4/MTZ (512)  DS      
+Type: 5 1/4     Total usable space: 400k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 9 
+ 
+ - Allocation unit size is 2048 bytes; 200 AU's per disk
+ - Directory starts at logical track 0;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 C7 00 7F 00 C0 00 20 00 00 00 02 03 
+============================================================
+Disk Name: TRS-80 Mod 4/MTZ (512)  SS      
+Type: 5 1/4     Total usable space: 200k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 2 4 6 8 1 3 5 7 9 
+ 
+ - Allocation unit size is 2048 bytes; 100 AU's per disk
+ - Directory starts at logical track 0;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 63 00 7F 00 C0 00 20 00 00 00 02 03 
+============================================================
+Disk Name: TRS-80 Model 1          SSSD    
+Type: 5 1/4     Total usable space: 101k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  10 per track; numbered 0 to 9  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 101 AU's per disk
+ - Directory starts at logical track 0;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    14 00 03 07 00 64 00 3F 00 C0 00 10 00 00 00 01 01 
+============================================================
+Disk Name: TRS-80 Model 1/Omicron  SSSD    
+Type: 5 1/4     Total usable space: 72k bytes
+  
+Sector information: 
+ - 128 bytes/sector;  18 per track; numbered 1 to 18  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 12 16 2 6 10 14 1 5 9 13 17 3 7 11 15 
+ 
+ - Allocation unit size is 1024 bytes; 72 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    12 00 03 07 00 47 00 3F 00 C0 00 10 00 03 00 00 00 
+============================================================
+Disk Name: Tektronix 4170          DS      
+Type: 5 1/4     Total usable space: 308k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8 (Side 2
+numbered 1 to 8)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 154 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 00 99 00 3F 00 80 00 20 00 01 00 02 03 
+============================================================
+Disk Name: TeleVideo   Turbo DOS   DS      
+Type: 5 1/4     Total usable space: 400k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5 (Side 2
+numbered 1 to 5)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 200 AU's per disk
+ - Directory starts at logical track 0;
+     has 128 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    50 00 04 0F 01 C7 00 7F 00 C0 00 20 00 00 00 03 07 
+============================================================
+Disk Name: TeleVideo 801, 806      DS      
+Type: 5 1/4     Total usable space: 342k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18 (Side 2
+numbered 1 to 18)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 171 AU's per disk
+ - Directory starts at logical track 4;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 00 AA 00 3F 00 80 00 10 00 04 00 01 01 
+============================================================
+Disk Name: Telectronics CP/M 68k   DS      
+Type: 5 1/4     Total usable space: 346k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18 (Side 2
+numbered 1 to 18)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 173 AU's per disk
+ - Directory starts at logical track 4;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AC 00 3F 00 80 00 10 00 04 00 01 01 
+============================================================
+Disk Name: Teletek SystemMaster    DS      
+Type: 5 1/4     Total usable space: 346k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  18 per track; numbered 1 to 18 (Side 2
+numbered 1 to 18)
+ - Disk is filled all first side, then second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 6 12 1 7 13 2 8 14 3 9 15 4 10 16 5 11 17 
+ 
+ - Allocation unit size is 2048 bytes; 173 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AC 00 7F 00 C0 00 20 00 03 00 01 01 
+============================================================
+Disk Name: Tomcat 1800G            DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 2 6 1 5 9 3 7 
+ 
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 00 C2 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Toshiba T-100           DS      
+Type: 5 1/4     Total usable space: 256k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 12 1 5 9 13 2 6 10 14 3 7 11 15 16 20 24 28 17 21 25
+29 18 22 26 30 19 23 27 31
+ 
+ - Allocation unit size is 1024 bytes; 256 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    40 00 03 07 00 FF 00 3F 00 C0 00 10 00 03 00 01 01 
+============================================================
+Disk Name: Toshiba T-200           DS      
+Type: 5 1/4     Total usable space: 256k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 4 8 12 1 5 9 13 2 6 10 14 3 7 11 15 
+ 
+ - Allocation unit size is 1024 bytes; 256 AU's per disk
+ - Directory starts at logical track 6;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 FF 00 3F 00 C0 00 10 00 06 00 01 01 
+============================================================
+Disk Name: Wang-Writer             DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 9B 00 7F 00 C0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Wavemate Bullet         SS      
+Type: 5 1/4     Total usable space: 190k bytes
+  
+Sector information: 
+ - 1024 bytes/sector;   5 per track; numbered 1 to 5  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 190 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 2 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 03 07 00 BD 00 3F 00 C0 00 10 00 02 00 03 07 
+============================================================
+Disk Name: XOR-5                   DS      
+Type: 5 1/4     Total usable space: 384k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 1 to 10)
+ - Disk is filled track 0, first side, then track 0, second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 5 1 6 2 7 3 8 4 9 
+ 
+ - Allocation unit size is 2048 bytes; 192 AU's per disk
+ - Directory starts at logical track 3;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 BF 00 7F 00 C0 00 20 00 03 00 02 03 
+============================================================
+Disk Name: Xerox 16/8              DS      
+Type: 5 1/4     Total usable space: 342k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   9 per track; numbered 1 to 9 (Side 2
+numbered 1 to 9)
+ - Disk is filled all first side, then second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 171 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    24 00 04 0F 01 AA 00 7F 00 C0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Xerox 820               SSSD    
+Type: 5 1/4     Total usable space: 83k bytes
+  
+Sector information: 
+ - 128 bytes/sector;  18 per track; numbered 1 to 18  
+ 
+Logical Layout:
+ - Sector order logical fill table (soft skew): 
+      0 5 10 15 2 7 12 17 4 9 14 1 6 11 16 3 8 13 
+ 
+ - Allocation unit size is 1024 bytes; 83 AU's per disk
+ - Directory starts at logical track 3;
+     has 32 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    12 00 03 07 00 52 00 1F 00 80 00 08 00 03 00 00 00 
+============================================================
+Disk Name: Xerox 820-II            DS      
+Type: 5 1/4     Total usable space: 326k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  17 per track; numbered 1 to 17 (Side 2
+numbered 1 to 17)
+ - Disk is filled all first side, then second side 
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 163 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    22 00 04 0F 01 A2 00 3F 00 C0 00 10 00 03 00 01 01 
+============================================================
+Disk Name: Xerox 820-II            SS      
+Type: 5 1/4     Total usable space: 157k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  17 per track; numbered 1 to 17  
+ - System tracks are formatted differently than data tracks.
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 157 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    22 00 03 07 00 9C 00 3F 00 C0 00 10 00 03 00 01 01 
+============================================================
+Disk Name: Xerox/Sunrise Laptop    SS      
+Type: 5 1/4     Total usable space: 156k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 156 AU's per disk
+ - Directory starts at logical track 1;
+     has 64 entries and occupies 4 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 9B 00 3F 00 C0 00 10 00 01 00 02 03 
+============================================================
+Disk Name: Zenith Z-100            DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8 (Side 2
+numbered 1 to 8)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 2;
+     has 256 entries and occupies 16 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 01 9B 00 FF 00 F0 00 40 00 02 00 02 03 
+============================================================
+Disk Name: Zenith Z-100            SS      
+Type: 5 1/4     Total usable space: 152k bytes
+  
+Sector information: 
+ - 512 bytes/sector;   8 per track; numbered 1 to 8  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 8 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 97 00 7F 00 F0 00 20 00 02 00 02 03 
+============================================================
+Disk Name: Zenith Z-37             SSSD    
+Type: 5 1/4     Total usable space: 92k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  10 per track; numbered 1 to 10  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 92 AU's per disk
+ - Directory starts at logical track 3;
+     has 64 entries and occupies 8 sectors or 2 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    14 00 03 07 00 5B 00 3F 00 C0 00 10 00 03 00 01 01 
+============================================================
+Disk Name: Zenith Z-89/90          DS      
+Type: 5 1/4     Total usable space: 312k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16 (Side 2
+numbered 1 to 16)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 156 AU's per disk
+ - Directory starts at logical track 2;
+     has 256 entries and occupies 32 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 04 0F 00 9B 00 FF 00 F0 00 40 00 02 00 01 01 
+============================================================
+Disk Name: Zenith Z-90             SS      
+Type: 5 1/4     Total usable space: 152k bytes
+  
+Sector information: 
+ - 256 bytes/sector;  16 per track; numbered 1 to 16  
+ 
+Logical Layout:
+ - Allocation unit size is 1024 bytes; 152 AU's per disk
+ - Directory starts at logical track 2;
+     has 128 entries and occupies 16 sectors or 4 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    20 00 03 07 00 97 00 7F 00 F0 00 20 00 02 00 01 01 
+============================================================
+Disk Name: Zorba                   DS      
+Type: 5 1/4     Total usable space: 390k bytes
+  
+Sector information: 
+ - 512 bytes/sector;  10 per track; numbered 1 to 10 (Side 2
+numbered 11 to 20)
+ - Disk is filled track 0, first side, then track 0, second side 
+ 
+Logical Layout:
+ - Allocation unit size is 2048 bytes; 195 AU's per disk
+ - Directory starts at logical track 2;
+     has 64 entries and occupies 4 sectors or 1 AU's
+ 
+Standard disk parameter table entry (values in HEX):
+    28 00 04 0F 01 C2 00 3F 00 80 00 10 00 02 00 02 03 
+
