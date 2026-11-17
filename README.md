@@ -544,6 +544,53 @@ boot code/CCP/BDOS). Mount a known-good CP/M system disk in drive 8 (`A:`), your
 in drive 9 (`B:`), and run files from `B:`. This avoids having to make each data disk bootable.
 Use `--cpm-bootable` if you need a single self-booting image.
 
+### Terminal compatibility: what runs and what doesn't
+
+The C128 CP/M 3.0 **console BIOS handles plain line-oriented text** (read a line, print a
+line) but **does not implement the cursor-addressing escape sequences** that some CP/M 2.2
+full-screen programs emit (home/clear, cursor positioning, inverse-video status lines).
+The practical consequence, verified with several real games:
+
+| Program | Interface | Result on x128 CP/M 3.0 |
+|---------|-----------|--------------------------|
+| **MBASIC / BASIC programs** (e.g. WUMPUS) | line-oriented | ✅ runs to completion |
+| **Infocom Zork I/II/III** (CP/M INTERLOGIC) | line-oriented | ✅ runs, fully interactive |
+| **Nemesis** (SuperSoft, CP/M 2.2) | full-screen cursor positioning | ❌ menus render garbled |
+
+This distinction is a property of the **program's terminal usage**, not of file transfer:
+all three were staged onto D71 images through the same `--ctools create` path, and their
+files extract byte-for-byte. If a game's display looks corrupted, first check whether it's
+a full-screen program — trying a different `TERM.DEF` will not help, because the limit is
+in the console BIOS, not the terminal definition.
+
+**Verified example — Zork II (Infocom INTERLOGIC version):**
+
+```bash
+# The CP/M INTERLOGIC release ships an interpreter (ZORK2.COM), story data (ZORK2.DAT),
+# and terminal-specific configuration programs (2DEFAULT.COM, 2ZENITH.COM, 2ADM3.COM, ...).
+# 2DEFAULT = generic line-oriented terminal, which suits the C128 console.
+# Note: rename 2DEFAULT.COM -> CONF2.COM first if using the app's 8.3 name mapper
+# (CP/M names must start with A-Z, not a digit).
+
+dotnet run --project D64Editor.App -- --ctools create d71 /tmp/zork.d71 \
+    /path/to/ZORK2.COM /path/to/ZORK2.DAT /path/to/CONF2.COM /path/to/MORE.COM
+
+# Boot (system disk A:, Zork disk B:), then at A>:
+#   B:            (drive B:)
+#   CONF2         (patches ZORK2.COM for a plain terminal -> "CONFIGURATION PROGRAM FINISHED")
+#   ZORK2         (starts the game)
+
+# Result:
+#   ZORK II: The Wizard of Frobozz
+#   Release 22 / Serial number 830331
+#   Inside the Barrow
+#   > look  -> fresh room description (fully interactive)
+```
+
+For a quick smoke test of *any* CP/M program, MBASIC (above) is the simplest; for a
+line-oriented adventure, the INTERLOGIC Zork games work well once configured with the
+DEFAULT/terminal-generic config program.
+
 ### Writing to real media
 
 Use OpenCBM to write an image to a real drive:
@@ -691,6 +738,7 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 - REL create/resize verified against synthetic D64 images.
 - CP/M extraction verified byte-for-byte against `ctools`: all 19 files on `MBASIC.d71` and all 10 files on the D64 system disk match exactly (non-strict and strict modes).
 - **End-to-end CP/M verified:** files written from Linux via `--cpm-new d71` (MBASIC.COM + WUMP.BAS), mounted as drive 9 (`B:`) in x128 with a CP/M system disk on drive 8 (`A:`), and run — MBASIC loaded and the WUMPUS game played to completion. See [CP/M Support](#cpm-support-c128-cpm).
+- **Line-oriented CP/M games verified:** Infocom **Zork II** (INTERLOGIC CP/M release: `ZORK2.COM` + `ZORK2.DAT`, configured with the generic `2DEFAULT`/`CONF2` terminal program) staged via `--ctools create d71`, mounted as `B:`, and played interactively in x128 — game banner, room descriptions, and `> look` all worked. This confirms the disk/file pipeline is correct and that only full-screen cursor-positioning programs (e.g. Nemesis) are affected by the console-BIOS terminal limitation. See [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
 - Many behaviors (emulator/OpenCBM/real-drive flows, CP/M `.d81` mapping) remain unverified without external tools/hardware or real images.
 - No automated test suite (no `*Test*`/`*.Tests*` projects); CI runs `dotnet test` for completeness.
 
@@ -714,6 +762,7 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 - OpenCBM transfer requires OpenCBM installed and a real drive.
 - Real CP/M disk verification requires real C128 CP/M images/templates and hardware. For emulator smoke-testing, VICE `x128` is used with two drives (system disk on 8, data disk on 9); see [CP/M Support](#cpm-support-c128-cpm).
 - ctools (recommended for CP/M) and libdsk-enabled cpmtools are external tools you install yourself; the app falls back to its in-process implementation when absent.
+- **CP/M 2.2 full-screen programs** (e.g. SuperSoft Nemesis) render garbled under C128 CP/M 3.0 in x128: the console BIOS does not implement the cursor-addressing escape sequences they emit, and editing `TERM.DEF` does not help. Line-oriented programs (MBASIC, Infocom Zork) and plain BASIC work correctly. This is an emulator/system console limitation, not file corruption — see [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
 - Graphics viewer enhancements (zoom/pan, richer format/export controls) beyond current zoom + BMP save.
 
 ---
