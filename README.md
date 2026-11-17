@@ -102,7 +102,9 @@ D64Editor/
 │   ├── NibImage.cs          # NIB image support
 │   ├── T64Image.cs          # T64 tape archive support
 │   ├── CpmDisk.cs           # CP/M 2.2 directory reader
-│   ├── C128Cpm.cs           # C128 CP/M (D64/D71/D81) support
+│   ├── C128Cpm.cs           # C128 CP/M (D64/D71/D81) support (geometry/extent mapping)
+│   ├── CtoolsCopier.cs      # Authoritative CP/M ops via ctools/cformat (preferred)
+│   ├── CpmToolsCopier.cs    # CP/M ops via cpmtools (mkfs.cpm/cpmcp/cpmls)
 │   ├── CbmImage.cs          # Shared CBM-layout helpers
 │   ├── CbmCatalog.cs        # CBM image info abstraction
 │   ├── CbmScratch.cs        # Scratch/unscratch for CBM layouts
@@ -161,7 +163,7 @@ Beyond the VB6 D64 port, this build carries a format-agnostic layer and a growin
 - **T64** — tape-archive reader + viewer + mutable rebuild/save support (basic native read/write). Verified on a synthetic `.t64`.
 - **D2M / D4M / DHD** — CMD container partition tables; the Parts view lists partitions and opens the selected one (emulated 1541/1571/1581 land in the editor, native DNP opens in its viewer with container write-back).
 - **CP/M 2.2 images + `.LBR`** — best-effort directory catalog (CP/M is DPB-parameterized, so it lists/labels entries and never assumes byte counts).
-- **C128 CP/M (`.d64/.d71/.d81`)** — best-effort, DPB-aware file extraction and template-based image create/copy (all files or subset) via CLI, suitable for writing with OpenCBM. Relies on a compatible bootable template for the target format/layout.
+- **C128 CP/M (`.d64/.d71/.d81`)** — file extraction, from-scratch/template-based image creation, and bootable-image creation (from a donor) via CLI. Reads/writes use the correct C128 speed-zone + skew + extent mapping; CLI prefers `ctools` when installed. See [CP/M Support](#cpm-support-c128-cpm).
 
 Core readers: `D71Image`, `D81Image`, `D80D82Image`, `DnpImage`, `G64Image`, `NibImage`, `T64Image`, `CpmDisk`, `DiskContainers`, `C128Cpm`, plus shared helpers `CbmImage`/`Gcr`/`DiskFormats`/`CbmCatalog`/`ImageCatalog`/`CbmScratch`/`CbmImport`/`RelFile`/`RelReader`/`RelWrite`.
 
@@ -218,7 +220,7 @@ Beyond the VB6 D64 port, this build carries a format-agnostic layer and a growin
 - **T64** — tape-archive reader + viewer + mutable rebuild/save support (basic native read/write). Verified on a synthetic `.t64`.
 - **D2M / D4M / DHD** — CMD container partition tables; the Parts view lists partitions and opens the selected one (emulated 1541/1571/1581 land in the editor, native DNP opens in its viewer with container write-back).
 - **CP/M 2.2 images + `.LBR`** — best-effort directory catalog (CP/M is DPB-parameterized, so it lists/labels entries and never assumes byte counts).
-- **C128 CP/M (`.d64/.d71/.d81`)** — best-effort, DPB-aware file extraction and template-based image create/copy (all files or subset) via CLI, suitable for writing with OpenCBM. Relies on a compatible bootable template for the target format/layout.
+- **C128 CP/M (`.d64/.d71/.d81`)** — file extraction, from-scratch/template-based image creation, and bootable-image creation (from a donor) via CLI. Reads/writes use the correct C128 speed-zone + skew + extent mapping; CLI prefers `ctools` when installed. See [CP/M Support](#cpm-support-c128-cpm).
 
 Core readers: `D71Image`, `D81Image`, `D80D82Image`, `DnpImage`, `G64Image`, `NibImage`, `T64Image`, `CpmDisk`, `C128Cpm`, `DiskContainers`, plus shared helpers `CbmImage`/`Gcr`/`DiskFormats`/`CbmCatalog`/`ImageCatalog`/`CbmScratch`/`CbmImport`/`RelFile`/`RelReader`/`RelWrite`.
 
@@ -261,8 +263,8 @@ Drop a `.d64` onto the main window to open it, or drop any other file (including
 - Native DNP partition editing with write-back to CMD containers (D2M/D4M/DHD).
 
 ### CP/M Editing
-- Template-based create/copy (all files or subset) for C128 CP/M disks.
-- DPB-aware extraction and template-based formatting (directory clear).
+- C128 CP/M (`.d64/.d71/.d81`): file extraction, from-scratch/template create/copy, directory import, and bootable-image creation from a donor.
+- Correct C128 speed-zone sector translation, interleave skew, and EX/RC extent encoding; CLI prefers `ctools` for authoritative results. See [CP/M Support](#cpm-support-c128-cpm).
 
 ---
 
@@ -349,6 +351,10 @@ D64Editor --geos-info <d64> <file>
 D64Editor --run-script <script.txt> [workdir]
 D64Editor --to-gcr <d64> <out.g64|out.nib>
 D64Editor --cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]
+D64Editor --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]
+D64Editor --cpm-import-dir <donor|new:d64|new:d71|new:d81> <srcdir> <out>
+D64Editor --ctools <format|create|import|list|extract> ...
+D64Editor --cpm-cpmtools <format|create|import-dir|list> ...
 D64Editor <image>          (opens in GUI)
 D64Editor                  (no args: starts GUI)
 ```
@@ -363,7 +369,7 @@ D64Editor                  (no args: starts GUI)
 | `--export <image> <dir>` / `-e` | Export files from D64/T64/D71/D81/D80/D82/DNP to a directory |
 | `--info <image>` / `-i` | Show image/format information |
 | `--validate <image>` / `-v` | Validate/report cross-links and basic issues (D64) |
-| `--cpm-extract <img> <dir> [--strict]` | Extract CP/M files (best-effort DPB-aware; `--strict` scans only known directory slots) |
+| `--cpm-extract <img> <dir> [--strict]` | Extract CP/M files (uses `ctools` when available; `--strict` narrows in-process scan) |
 | `--cpm-copy <tmpl> <out> [--all\|--files A,B]` | Create CP/M image from template (keep all or subset) |
 | `--cpm-format <tmpl> <out>` | Create empty CP/M image from template (clears directory; template-based) |
 | `--extract-archive <zip\|tar\|tar.gz\|tgz> <dir> [--images-only]` | Extract archive contents |
@@ -371,7 +377,11 @@ D64Editor                  (no args: starts GUI)
 | `--geos-info <d64> <file>` | Show GEOS/REL metadata and best-effort VLIR info for a file (D64) |
 | `--run-script <script.txt> [workdir]` | Run a headless automation script over the Core engine (see Scripting section) |
 | `--to-gcr <d64> <out.g64\|out.nib>` | Encode a D64 into a G64/NIB image (native GCR write-back; byte-exact round-trip) |
-| `--cpm-new <d64\|d71\|d81> <out> [NAME.EXT=hostfile ...]` | From-scratch C128 CP/M image (best-effort spec-derived layout) |
+| `--cpm-new <d64\|d71\|d81> <out> [NAME.EXT=hostfile ...]` | Create CP/M image with files (uses `ctools` when available) |
+| `--cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]` | Bootable CP/M image from a system-disk donor |
+| `--cpm-import-dir <donor\|new:*> <srcdir> <out>` | Import a whole host directory with 8.3 name mapping |
+| `--ctools <format\|create\|import\|list\|extract> ...` | ctools-backed CBM CP/M operations (authoritative) |
+| `--cpm-cpmtools <format\|create\|import-dir\|list>` | cpmtools-backed CP/M operations |
 
 ---
 
@@ -407,66 +417,148 @@ D64Editor                  (no args: starts GUI)
 
 ## CP/M Support (C128 CP/M)
 
-### Overview
-- C128 CP/M (CP/M 3.0 / CP/M Plus) on Commodore disk images uses 128-byte logical sectors, allocation blocks (1K for 1541, 2K for 1571/1581), and DPB-defined parameters.
-- C128 CP/M uses 7-bit ASCII (not PETSCII) for names and text.
-- CP/M-on-`.d64` cases are detected and opened in the CP/M viewer.
+This section is a practical guide to **creating, reading, and writing C128 CP/M disk images**
+(`.d64` / `.d71` / `.d81`) and testing them in an emulator. C128 CP/M is CP/M 3.0 ("CP/M Plus");
+its names and text are **7-bit ASCII**, not PETSCII.
 
-### DPB-Aware Extraction
-- `C128Cpm.ExtractFiles` provides best-effort, format-appropriate file extraction:
-  - `.d64` (1541): linear 35-track sector map, 1K blocks (4 sectors), 1-byte allocation pointers.
-  - `.d71` (1571): linear 70-track map, 2K blocks (8 sectors), 1-byte AL.
-  - `.d81` (1581): linear 80-track × 40-sector map, 2K blocks (8 sectors), 2-byte AL.
-- CLI: `--cpm-extract <image> <outdir>`.
+### Why this is tricky (background)
 
-### Template-Based Create/Copy
-- Uses a known-good, bootable C128 CP/M image of the same format as a template (preserves boot/system/BAM-header/layout).
-- Keeps all files (`--all`) or a subset (`--files NAME.EXT,NAME2.EXT,...`).
-- Unselected directory extents are marked unused (0xE5); data blocks become unreferenced.
-- CLI: `--cpm-copy <template> <out> [--all|--files A,B]`.
-- `--cpm-format <template> <out>`: creates an empty CP/M image from template (clears directory; template-based).
+A CBM disk image is not a linear array of CP/M blocks. The C128 CP/M BIOS maps logical
+allocation blocks onto the physical 1541/1571 track/sector layout using:
 
-### From-Scratch Formatting (no template)
-- `C128Cpm.FormatBlank(fmt)` / `WriteFiles(...)` / `FormatAndWrite(...)` create a fresh
-  C128 CP/M `.d64/.d71/.d81` with boot signature, directory (all slots `0xE5`) and
-  a simple allocation bitmap, then write 8.3 files (multi-extent aware, 1-byte AL for
-  D64/D71, 2-byte LE for D81). CLI: `--cpm-new <fmt> <out> [NAME.EXT=hostfile ...]`;
-  script: `cpmnew`. Extraction round-trips verified for all three formats.
-  The D64 directory is placed in the **real interleaved track-1 sectors** (3,4,9,10,14,15,19,20)
-  observed on the reference C128 CP/M system disk (8 entries per sector); the allocation
-  vector sits in sector 2 to avoid clashing with directory sector 4.
-- **Caveat / emulator-verified:** booting a from-scratch `--cpm-new` image in **x128** produces a
-  black screen — it is **not bootable** (the formatter writes a harmless boot stub, not real CP/M
-  boot code/CCP/BDOS). The reference image boots to the CP/M 3.0 `A>` prompt. For a **bootable**
-  image, use `--cpm-bootable <donor.d64> <out> ...`, which clones a known-good CP/M system disk
-  (boot code + CCP/BDOS + system tracks) and writes new files into its directory; verified in
-  x128 to reach the CP/M 3.0 prompt with the added file present. (D71/D81 from-scratch use a
-  self-consistent block-based directory, no real reference image available.)
+- **Speed zones** — tracks 1–17 have 21 sectors, 18–24 have 19, 25–30 have 18, 31–35 have 17
+  (repeated on side 2 for `.d71`). Some sectors at the start of a zone are reserved for the BAM.
+- **Interleave skew** — the physical sector for logical sector number `nr` is
+  `sec = (5 * nr) % sectors_per_track`. A linear 1:1 mapping produces corrupt files.
+- **Extent encoding** — a directory entry's `EX`/`RC` bytes encode the *total* record count of
+  a file (`records = RC >= 0x80 ? 128*(EX+1) : 128*EX + RC`, with `EX` modulo the DPB's
+  extents-per-entry). Reading only `RC` records truncates any file larger than one extent.
+- **DPB variants** — C64 (544 logical sectors, 1K blocks, 1 extent/entry), C128 single-sided
+  (680 sectors, 1K blocks), C128 double-sided (1360 sectors, 2K blocks, 2 extents/entry).
+  The disk type is detected from the boot sector at track 1/sector 0: `"CBM"` + byte 255
+  `== 0xFF` means double-sided.
 
-### Importing a Whole Linux/Host Directory
-- CLI: `--cpm-import-dir <donor.d64|new:d64|new:d71|new:d81> <srcdir> <out>`; script: `cpmimportdir`.
-  Use a bootable system-disk **donor** for a bootable result, or `new:d64`/`new:d71`/`new:d81`
-  for a fresh data-only image (no donor, no free-space limit from a full system disk).
-- Every regular file in `<srcdir>` is read and mapped to a legal CP/M **8.3** name: uppercased,
-  split at the last `.` (name ≤ 8, ext ≤ 3), invalid characters replaced with `X`, first character
-  forced A–Z. Long names are truncated (e.g. `averylongfilename.ext` → `AVERYLON.EXT`).
-- **Collisions** (two host files mapping to the same 8.3 name) get a numeric suffix on the name
-  (`FOOXBAR.TXT`, `FOOXBAR1.TXT`, …). The importer prints each host→CP/M name mapping and any skips.
-- CP/M files are padded to 128-byte records (a 14-byte file extracts as 128 bytes with the exact
-  prefix preserved). A donor disk must have enough free data blocks for the imported files;
-  a full system disk may reject a large directory — use `new:...` for bulk data-only imports. Template-based copy/format remains available for known-good images.
-  CP/M stores record counts, so non-128-aligned files extract padded to 128-byte records.
+Our in-process `C128Cpm` now implements this translation correctly (verified byte-for-byte).
+For authoritative results, the CLI **prefers external tools** when installed; those tools
+handle CP/M DPB/skew natively and are the recommended path.
 
-### Writing to Real Media
-- Use OpenCBM for writing to real floppy drives:
-  ```bash
-  d64copy -2 c128-cpm-new.d64 8
-  ```
+### Tools (install once)
+
+**Recommended: `ctools`** (natively handles C64/C128 CP/M geometry, including `.d71`):
+
+```bash
+git clone https://github.com/mist64/ctools.git
+cd ctools/src && make
+sudo cp ctools cformat d64dump biosdump /usr/local/bin/
+```
+
+`ctools` provides `cformat` (create blank CP/M image), `ctools <image> d` (list),
+`ctools <image> g <file>` (extract), `ctools <image> p <file>` (put). See `doc/*.1` in
+that repo for full usage.
+
+**Alternative: `cpmtools` with libdsk** (generic CP/M tools; needs a diskdef and libdsk
+for the variable-sector geometry):
+
+```bash
+# Arch (AUR):
+paru -S libdsk
+# Rebuild cpmtools with libdsk support (default AUR build omits it):
+cd ~/.cache/paru/clone/cpmtools
+tar xzf cpmtools-2.23.tar.gz && cd cpmtools-2.23
+./configure --prefix=/usr --with-libdsk=/usr && make
+sudo make BINDIR=/usr/bin MANDIR=/usr/share/man prefix=/usr install
+```
+
+A C128 1571 double-sided diskdef (add to your `diskdefs`; the `libdsk:format` line references
+a `d71cpm` geometry that must also be defined in `~/.libdskrc`):
+
+```
+diskdef c1571cpm
+  seclen 256
+  tracks 70
+  sectrk 21
+  blocksize 1024
+  maxdir 64
+  skew 1
+  boottrk 0
+  os 3
+  libdsk:format d71cpm
+end
+```
+
+> **Note:** `ctools` is the tested, recommended path — the worked example below uses it.
+> The `cpmtools` route needs a correctly configured diskdef *and* matching libdsk geometry;
+> it is provided as an alternative and is not verified end-to-end here.
+
+The app detects these tools on `PATH` and uses `ctools` automatically for `.d64`/`.d71`;
+everything still works without them via the in-process implementation.
+
+### CLI commands (CP/M)
+
+| Command | Description |
+|---------|-------------|
+| `--cpm-extract <img> <dir> [--strict]` | Extract files. Uses `ctools` when available (authoritative); `--strict` narrows in-process directory scanning. |
+| `--cpm-new <d64\|d71\|d81> <out> [NAME.EXT=hostfile ...]` | Create a data image with files. Uses `ctools` when available. |
+| `--cpm-copy <tmpl> <out> [--all\|--files A,B]` | Clone a bootable template, keep all files or a subset. |
+| `--cpm-format <tmpl> <out>` | Empty CP/M image from a template (template-based). |
+| `--cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]` | Bootable image cloned from a known-good system-disk donor. |
+| `--cpm-import-dir <donor\|new:d64\|new:d71\|new:d81> <srcdir> <out>` | Import a whole host directory with 8.3 name mapping. |
+| `--ctools format <d64\|d71> <out>` | Blank CP/M image via `cformat`. |
+| `--ctools create <d64\|d71> <out> <hostfiles...>` | Create image and import files via `ctools`. |
+| `--ctools import <image> <hostfiles...>` | Import files into an existing image. |
+| `--ctools list <image>` | List the CP/M directory. |
+| `--ctools extract <image> <outdir> [files...]` | Extract files by ctools pattern (default `*.*`). |
+| `--cpm-cpmtools <format\|create\|import-dir\|list>` | Equivalent operations via `cpmtools`. |
+
+Script equivalents: `cpmextract`, `cpmcopy`, `cpmformat`, `cpmnew`, `cpmbootable`,
+`cpmimportdir`.
+
+### Worked example — put a file on a CP/M disk and run it
+
+This exact flow was verified: MBASIC.COM + WUMP.BAS written from Linux, booted in x128,
+and the WUMPUS game played to completion.
+
+```bash
+# 1. Build the app
+dotnet build
+
+# 2. Create a double-sided (1571) CP/M image with two files from the host
+dotnet run --project D64Editor.App -- --cpm-new d71 /tmp/mbasic.d71 \
+    MBASIC.COM=/path/to/mbasic.com WUMP.BAS=/path/to/wump.bas
+
+# 3. Verify the directory and extract back (byte-exact)
+dotnet run --project D64Editor.App -- --ctools list /tmp/mbasic.d71
+dotnet run --project D64Editor.App -- --cpm-extract /tmp/mbasic.d71 /tmp/verify
+cmp /tmp/verify/mbasic.com /path/to/mbasic.com   # -> identical
+
+# 4. Boot in VICE x128: system disk on A: (drive 8), data disk on B: (drive 9)
+x128 -8 /path/to/c128-cpm-system.d64 -9 /tmp/mbasic.d71
+
+# 5. At the A> prompt:
+#    B:               (select drive B:)
+#    MBASIC WUMP.BAS  (run the program)
+```
+
+**Two-drive tip:** a data disk created with `--cpm-new` is not bootable (it has no CP/M
+boot code/CCP/BDOS). Mount a known-good CP/M system disk in drive 8 (`A:`), your data disk
+in drive 9 (`B:`), and run files from `B:`. This avoids having to make each data disk bootable.
+Use `--cpm-bootable` if you need a single self-booting image.
+
+### Writing to real media
+
+Use OpenCBM to write an image to a real drive:
+
+```bash
+d64copy -2 c128-cpm-new.d64 8     # .d64 to device 8
+```
 
 ### Limitations
-- Template-based, not a from-scratch formatter. Relies on a compatible template for boot/system/BAM-header, directory location, allocation/skew, AL width, etc.
-- `.d71`/`.d81` mappings and DPB params are best-effort and need validation against real C128 CP/M 1571/1581 images/templates.
-- Full from-scratch formatting/writing for all variants remains incomplete.
+- `.d81` (1581) writing is in-process only; `ctools` covers `.d64`/`.d71`, and `cpmtools`
+  needs a matching diskdef/libdsk geometry. The in-process D81 map is self-consistent but not
+  verified against real 1581 CP/M media.
+- From-scratch data disks are **not bootable**; use a system-disk donor (`--cpm-bootable`) or
+  the two-drive setup above.
+- A bootable donor must have enough free directory/data blocks for the imported files.
 
 ---
 
@@ -566,6 +658,7 @@ log every command and its result, stop on the first error, and propagate an exit
 | `togcr <d64> <out.g64\|nib>` | Encode a D64 into a G64/NIB container (GCR write-back) |
 | `cpmnew <d64\|d71\|d81> <out> [NAME.EXT=host ...]` | From-scratch CP/M image (best-effort, not bootable) |
 | `cpmbootable <donor.d64> <out> [NAME.EXT=host ...]` | Bootable CP/M image from a system-disk donor |
+| `cpmimportdir <donor\|new:*> <srcdir> <out>` | Import a whole host directory into a CP/M image |
 | `exit [code]` | Stop with an exit code |
 
 Example (`scripts/example-basic.d64script`):
@@ -596,8 +689,9 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 - All new format readers were verified by generating synthetic images of each format (with a matching GCR encoder for G64/NIB) and byte-comparing the parsed results.
 - Synthetic verification covers: D64, D71, D81, D80, D82, DNP, D2M/D4M/DHD, G64, NIB, T64, CP/M 2.2, C128 CP/M (D64).
 - REL create/resize verified against synthetic D64 images.
-- CP/M extraction verified against `c128-cpm.system.6228129311-9283de.d64` (9 files extracted).
-- Many behaviors (emulator/OpenCBM/real-drive flows, CP/M `.d71/.d81` mappings) remain unverified without external tools/hardware or real images.
+- CP/M extraction verified byte-for-byte against `ctools`: all 19 files on `MBASIC.d71` and all 10 files on the D64 system disk match exactly (non-strict and strict modes).
+- **End-to-end CP/M verified:** files written from Linux via `--cpm-new d71` (MBASIC.COM + WUMP.BAS), mounted as drive 9 (`B:`) in x128 with a CP/M system disk on drive 8 (`A:`), and run — MBASIC loaded and the WUMPUS game played to completion. See [CP/M Support](#cpm-support-c128-cpm).
+- Many behaviors (emulator/OpenCBM/real-drive flows, CP/M `.d81` mapping) remain unverified without external tools/hardware or real images.
 - No automated test suite (no `*Test*`/`*.Tests*` projects); CI runs `dotnet test` for completeness.
 
 ---
@@ -607,7 +701,7 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 ### Not Yet Implemented
 - **G64/NIB native GCR-level editing/save** back to original `.g64/.nib` format (requires GCR re-encoding with correct sync/timing/track rebuilding).
 - **T64/DNP/CMD deeper native read/write:** T64 has basic mutable save/rebuild; DNP supports in-image edits/save and native DNP container write-back. CMD container-level write-back for emulated partitions (D64/D71/D81) still limited.
-- **C128 CP/M bootability** — from-scratch `--cpm-new` images are data-only (verified non-bootable in x128). Use `--cpm-bootable` with a known-good system-disk donor for bootable media; DPB/skew/bitmap of the from-scratch layout remain unverified.
+- **Bootable CP/M media** — from-scratch `--cpm-new` images are data-only (no CP/M boot code/CCP/BDOS). Use `--cpm-bootable` with a known-good system-disk donor, or mount a system disk in drive 8 (`A:`) and your data disk in drive 9 (`B:`). The from-scratch file *layout* is correct (byte-exact extraction verified), but it does not contain bootable system tracks.
 - **Broader inter-tab/window disk-to-disk drag-and-drop** (OS drag in/out works; inter-tab drag remains limited).
 - **More comprehensive undo/redo** coverage across all edit paths (basic for common D64 ops now).
 - **Deeper GEOS disk/application-data/VLIR workflows** beyond best-effort index/chain inspection and metadata editing.
@@ -618,7 +712,8 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 ### Platform/Hardware-Dependent
 - Emulator launch requires an emulator (VICE/x64sc, x128, etc.) installed.
 - OpenCBM transfer requires OpenCBM installed and a real drive.
-- Real CP/M disk verification requires real C128 CP/M images/templates and hardware.
+- Real CP/M disk verification requires real C128 CP/M images/templates and hardware. For emulator smoke-testing, VICE `x128` is used with two drives (system disk on 8, data disk on 9); see [CP/M Support](#cpm-support-c128-cpm).
+- ctools (recommended for CP/M) and libdsk-enabled cpmtools are external tools you install yourself; the app falls back to its in-process implementation when absent.
 - Graphics viewer enhancements (zoom/pan, richer format/export controls) beyond current zoom + BMP save.
 
 ---

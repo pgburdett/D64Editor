@@ -40,7 +40,9 @@
 - `D64Editor.Core/RelReader.cs` — REL side-sector chain reader.
 - `D64Editor.Core/RelWrite.cs` — REL file create and resize (grow/shrink record count).
 - `D64Editor.Core/T64Image.cs` — T64 tape archive reader/writer (mutable, rebuild/save).
-- `D64Editor.Core/C128Cpm.cs` — C128 CP/M extraction, template-based create/copy/format.
+- `D64Editor.Core/C128Cpm.cs` — C128 CP/M extraction, creation, template copy/format. Implements correct C128 speed-zone + interleave-skew sector translation (ctools `bios.cc`) and EX/RC extent record encoding (ctools `fcb.cc`). In-process fallback; CLI prefers ctools when available.
+- `D64Editor.Core/CtoolsCopier.cs` — wrapper for `cformat`/`ctools` (authoritative CBM CP/M filesystem ops; preferred path when installed). `FormatImage`, `PutFiles`, `GetFiles`, `GetFilesAll`, `ListFiles`, `CreateAndPopulate`.
+- `D64Editor.Core/CpmToolsCopier.cs` — wrapper for `mkfs.cpm`/`cpmcp`/`cpmls` (needs a valid C128 diskdef + libdsk for variable geometry).
 - `D64Editor.Core/DnpImage.cs` — DNP reader/writer with container slice support.
 - `D64Editor.Core/DiskContainers.cs` — D2M/D4M/DHD partition table parsing.
 - `D64Editor.Core/G64Image.cs` / `NibImage.cs` — GCR image parsing and D64 conversion.
@@ -60,9 +62,14 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--export <image> <dir>` / `-e` — Export files from D64/T64/D71/D81/D80/D82/DNP to a directory.
 - `--info <image>` / `-i` — Show image/format information.
 - `--validate <image>` / `-v` — Validate/report cross-links and basic issues (D64).
-- `--cpm-extract <img> <dir>` — Extract CP/M files (best-effort DPB-aware, .d64/.d71/.d81).
+- `--cpm-extract <img> <dir> [--strict]` — Extract CP/M files (uses ctools when available; `--strict` narrows in-process directory scanning).
 - `--cpm-copy <tmpl> <out> [--all|--files A,B]` — Create CP/M image from template (keep all or subset).
 - `--cpm-format <tmpl> <out>` — Create empty CP/M image from template (clears directory; template-based).
+- `--cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]` — Create CP/M image with files (uses ctools when available).
+- `--cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]` — Bootable CP/M image from a system-disk donor.
+- `--cpm-import-dir <donor|new:*> <srcdir> <out>` — Import a whole host directory with 8.3 name mapping.
+- `--ctools <format|create|import|list|extract> ...` — ctools-backed CBM CP/M operations (authoritative).
+- `--cpm-cpmtools <format|create|import-dir|list> ...` — cpmtools-backed CP/M operations.
 - `--extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]` — Extract archive contents.
 - `--print-dir <image>` — Print directory listing (text, D64).
 - `--geos-info <d64> <file>` — Show GEOS/REL metadata and best-effort VLIR info for a file (D64).
@@ -78,8 +85,11 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 ## CP/M support notes
 - C128 CP/M uses 7-bit ASCII (not PETSCII) for names and text.
 - CP/M-on-`.d64` cases are detected (boot signature `CBM`) and opened in the CP/M viewer.
-- Template-based create/copy/format: relies on compatible bootable template; not a from-scratch formatter.
-- `.d71`/`.d81` mappings and DPB params are best-effort; need validation against real images/templates.
+- **Geometry (critical):** logical CP/M blocks map to physical sectors through 4 speed zones with interleave `sec = (5*nr) % sectrk` (source: ctools `bios.cc`). Disk type is detected from boot sector at T1/S0: `"CBM"` + byte 255 `== 0xFF` = double-sided (D71, 2K blocks, 2 extents/entry); otherwise C128 SS (1K blocks) or C64 (1K blocks). Directory occupies logical blocks 0..1 (8 entries/sector, 32-byte entries). `EX`/`RC` encode total record count: `RC>=0x80 ? 128*(EX+1) : 128*EX + RC`, EX modulo extents-per-entry (ctools `fcb.cc`).
+- **Tools:** CLI prefers `ctools` (install from https://github.com/mist64/ctools; `cformat`/`ctools` on PATH) for authoritative CP/M ops; falls back to the in-process `C128Cpm`. `cpmtools` integration (`CpmToolsCopier`) needs a valid C128 diskdef + libdsk-enabled build. Full install/how-to guide is in README's "CP/M Support" section.
+- **Verified end-to-end:** `--cpm-new d71` (MBASIC.COM + WUMP.BAS) written on Linux, mounted as drive 9 (`B:`) in x128 with a system disk on drive 8 (`A:`), `MBASIC WUMP.BAS` ran WUMPUS to completion. Byte-exact extraction against ctools on both D71 (19 files) and D64 (10 files).
+- Template-based create/copy/format: relies on compatible bootable template. From-scratch images are data-only (no boot code/CCP/BDOS); use `--cpm-bootable` with a donor or the two-drive emulator setup.
+- `.d81` mapping is in-process only; `ctools` covers `.d64`/`.d71`.
 
 ## Emulator integration notes
 - Template placeholders: `{disk}`, `{image}`, `{appdir}`, `{app}`, `{cwd}`.
@@ -110,12 +120,13 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `Gcr.EncodeTrack(d64, track, speedZone)` builds raw GCR track bytes; `G64Image.ToG64Bytes`/`FromD64` and `NibImage.ToNibBytes`/`FromD64` build containers. Round-trip D64→G64/NIB→D64 is byte-exact (verified 683/683 sectors). Half-track/copy-protected data is preserved verbatim, not re-encoded.
 - Container-backed images: `D64Image`/`D71Image`/`D81Image`/`DnpImage` all have `TryLoadFromContainer` + `ContainerPath/Offset/Size`; `Save()` writes back into the container. `CbmCatalog.Open{D64,D71,D81,Dnp}FromContainer` and `PartitionsWindow` open partitions directly with write-back.
 - `C128Cpm.ReadHostDirectory`/`HostNameToCpm83`/`ImportDirectoryFromBootDonor` import a whole host dir to CP/M with 8.3 name mapping and collision suffixes; `CpmImportReport` logs mappings/skips.
-- `C128Cpm.FormatBlank`/`WriteFiles`/`FormatAndWrite` create CP/M images from scratch (no template). D64 directory uses the real interleaved track-1 sectors (3,4,9,10,14,15,19,20) from the reference system disk; bitmap in sector 2. D71/D81 use a self-consistent block-based directory. Bootability still not verified against real media.
+- `C128Cpm.FormatBlank`/`WriteFiles`/`FormatAndWrite` create CP/M data images from scratch. The block map uses ctools speed-zone+skew translation (built after writing the boot sector so disk-type detection sees `"CBM"`); directory at logical blocks 0..1. Byte-exact round-trips verified against ctools, but images are data-only (no boot tracks). The embedded `Assets/CPM.SYS` + `Assets/BOOT.D71.bin` are an earlier experimental boot attempt that did not yield a bootable image; prefer `--cpm-bootable` with a donor.
+- `--ctools`/`--cpm-cpmtools` delegate to external tools when installed; CLI `--cpm-extract`/`--cpm-new` auto-prefer ctools for D64/D71 and fall back to in-process.
 
 ## Known limitations
 - G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.
 - CMD container write-back works for all partition types; richer in-container editing workflows remain incremental.
-- From-scratch CP/M (`--cpm-new`) is data-only (not bootable, emulator-verified); use `--cpm-bootable` with a system-disk donor for bootable images. From-scratch DPB/skew/bitmap remain unverified.
+- From-scratch CP/M (`--cpm-new`) is data-only (no boot code/CCP/BDOS). File layout is correct (byte-exact extraction verified vs ctools); use `--cpm-bootable` with a system-disk donor or the two-drive x128 setup (system disk on 8, data disk on 9) for running files. `.d81` writing is in-process only (ctools covers `.d64`/`.d71`).
 - Legacy CP/M 2.2 games (Nemesis/Zork) import byte-exact and boot to CP/M 3.0 but may hang under a mismatched BDOS/terminal/two-drive environment — an emulator/system compatibility issue, not file corruption.
 - Broader inter-tab/window disk-to-disk drag-and-drop not fully implemented.
 - Undo/redo coverage not comprehensive across all edit paths.
