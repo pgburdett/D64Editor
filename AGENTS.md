@@ -92,6 +92,11 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - Template-based create/copy/format: relies on compatible bootable template. From-scratch images are data-only (no boot code/CCP/BDOS); use `--cpm-bootable` with a donor or the two-drive emulator setup.
 - `.d81` mapping is in-process only; `ctools` covers `.d64`/`.d71`.
 
+## OpenCBM integration notes
+- `D64Editor.App/OpenCbmWindow.axaml(.cs)` — structured whole-disk transfer via `d64copy` (image-level), with D64/D71 (`-2`) selection, device number, transfer mode, live command preview, PATH tool detection, and confirmation for destructive writes. Arguments passed via `ProcessStartInfo.ArgumentList` (no shell). Reads are non-destructive. Old version was a generic `bash -c` command-template runner with a wrong `cbmcopy` default (that tool is for files, not images).
+- Setup: OpenCBM is AUR `opencbm` on Arch; its PKGBUILD renames `/etc/opencbm.conf` to `.sample` (copy back + `opencbm_plugin_helper_tools rebuild`); USB cable udev rules need a replug or `udevadm trigger`; verify with `cbmctrl detect` / `cbmctrl status 8`. Harmless `keyctl` warning from libudev can be ignored.
+- CP/M real-media: `d64copy -2 image.d71 8` to write a D71 CP/M image to a real 1571; `d64copy -2 8 image.d71` to read back (non-destructive).
+
 ## Emulator integration notes
 - Template placeholders: `{disk}`, `{image}`, `{appdir}`, `{app}`, `{cwd}`.
 - Substitution handles whole quoted tokens and inside-quoted arguments.

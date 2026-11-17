@@ -403,8 +403,10 @@ D64Editor                  (no args: starts GUI)
 
 ## OpenCBM Integration
 
-- **CBM → OpenCBM Transfer…** detects `cbmcopy`/`cbmctrl` on `PATH` and runs a command with `{device}/{disk}/{out}` substituted.
-- Requires OpenCBM installed and a real drive to do anything.
+- **CBM → OpenCBM Transfer…** opens a structured whole-disk transfer dialog using OpenCBM's `d64copy` (image-level read/write), with D64 vs D71 (1571 `-2`) format selection, IEC device number, transfer mode (original/serial1/serial2/parallel), a live command preview, tool detection on `PATH`, and a confirmation prompt before the destructive image→drive direction. Arguments are passed directly to the process (no shell quoting).
+- Reads (drive → image) are non-destructive; writes (image → drive) overwrite the disk. Requires OpenCBM installed, a supported cable (e.g. ZoomFloppy/XUM1541, XU1541, XM1541) and a real 1541/1571 drive.
+- For CP/M work this is the path to put a generated `.d71` onto a real 1571: `d64copy -2 image.d71 8` (drive 8). See [Writing to real media](#writing-to-real-media) in the CP/M section.
+- **Setup notes (Arch Linux):** OpenCBM is in the AUR (`paru -S opencbm`). The packaged PKGBUILD renames `/etc/opencbm.conf` to `.sample`; copy it back and run `opencbm_plugin_helper_tools rebuild`. For USB cables, ensure the udev rules (installed by the package) have been applied — replug the cable or run `udevadm control --reload-rules && udevadm trigger`. Verify with `cbmctrl detect` (e.g. `8: 1571`) and `cbmctrl status 8`. The harmless `undefined symbol: keyctl` warning from libudev can be ignored.
 
 ---
 
@@ -593,11 +595,16 @@ DEFAULT/terminal-generic config program.
 
 ### Writing to real media
 
-Use OpenCBM to write an image to a real drive:
+Use OpenCBM (installed separately) to write an image to a real drive. From the app, use
+**CBM → OpenCBM Transfer…** (see [OpenCBM Integration](#opencbm-integration)) — choose D71
+and device 8, and confirm the write. On the command line:
 
 ```bash
-d64copy -2 c128-cpm-new.d64 8     # .d64 to device 8
+d64copy -2 image.d71 8     # two-sided .d71 (1571) to device 8
+d64copy    image.d64 8     # single-sided .d64 (1541/1571) to device 8
 ```
+
+Reading a real disk is non-destructive: `d64copy -2 8 image.d71` (device first).
 
 ### Limitations
 - `.d81` (1581) writing is in-process only; `ctools` covers `.d64`/`.d71`, and `cpmtools`

@@ -2,32 +2,54 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="D64Editor.App.OpenCbmWindow"
         Title="OpenCBM Transfer"
-        Width="520" Height="320"
+        Width="560" Height="470"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
 
-    <StackPanel Margin="16" Spacing="10">
+    <StackPanel Margin="16" Spacing="9">
         <TextBlock Name="DetectLabel" TextWrapping="Wrap" />
 
-        <TextBlock Text="OpenCBM tool (cbmcopy / cbmctrl):" />
-        <TextBox Name="ToolBox" />
+        <TextBlock Text="Disk image:" FontWeight="Bold" />
+        <Grid ColumnDefinitions="*,Auto">
+            <TextBox Grid.Column="0" Name="DiskPathBox" Watermark="/path/to/image.d64 or .d71" />
+            <Button Grid.Column="1" Content="Browse..." Click="OnBrowseClicked" Margin="8,0,0,0" />
+        </Grid>
+
+        <TextBlock Text="Image format:" FontWeight="Bold" />
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <RadioButton Name="AutoFormatRadio" GroupName="fmt" Content="Auto (extension/size)" IsChecked="True" />
+            <RadioButton Name="D64Radio" GroupName="fmt" Content="D64 (1541)" />
+            <RadioButton Name="D71Radio" GroupName="fmt" Content="D71 (1571)" />
+        </StackPanel>
 
         <Grid ColumnDefinitions="Auto,8,120">
             <TextBlock Grid.Column="0" Text="IEC device #:" VerticalAlignment="Center" />
             <NumericUpDown Grid.Column="2" Name="DeviceBox" Minimum="4" Maximum="30" Value="8" ShowButtonSpinner="False" />
         </Grid>
 
-        <TextBlock Text="Action:" />
+        <TextBlock Text="Action:" FontWeight="Bold" />
         <StackPanel Orientation="Horizontal" Spacing="10">
-            <RadioButton Name="PullRadio" GroupName="dir" Content="Pull disk → D64" IsChecked="True" />
-            <RadioButton Name="PushRadio" GroupName="dir" Content="Push D64 → disk" />
+            <RadioButton Name="PullRadio" GroupName="dir" Content="Read drive → image (safe)" IsChecked="True" />
+            <RadioButton Name="PushRadio" GroupName="dir" Content="Write image → drive (overwrites!)" />
         </StackPanel>
 
+        <TextBlock Text="Transfer mode:" FontWeight="Bold" />
+        <ComboBox Name="ModeCombo" SelectedIndex="0" HorizontalAlignment="Stretch">
+            <ComboBoxItem>original (slowest, most reliable)</ComboBoxItem>
+            <ComboBoxItem>serial1</ComboBoxItem>
+            <ComboBoxItem>serial2</ComboBoxItem>
+            <ComboBoxItem>parallel (needs XP1541/1571 cable)</ComboBoxItem>
+        </ComboBox>
+
+        <TextBlock Text="Command preview:" FontWeight="Bold" />
+        <TextBox Name="CommandBox" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" Height="52" />
+
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Refresh" Click="OnRefreshClicked" />
             <Button Content="Run Transfer" Click="OnRunClicked" />
             <Button Content="Close" Click="OnCloseClicked" />
         </StackPanel>
 
-        <TextBlock Name="StatusLabel" TextWrapping="Wrap" MinHeight="40" />
+        <TextBlock Name="StatusLabel" TextWrapping="Wrap" MinHeight="56" />
     </StackPanel>
 </Window>
