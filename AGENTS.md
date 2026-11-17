@@ -133,6 +133,6 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - Native OS print dialog and built-in updater/installer not implemented (platform-dependent).
 - Deeper GEOS disk/application-data/VLIR workflows remain best-effort.
 
-## Local artifacts (do not commit)
-- `c128-cpm.system.6228129311-9283de.d64`, `c128-cpm-new.d64`, `Epyx_FastLoad_1984_v2-b11b3b.crt` — untracked test artifacts.
-- `bin/`, `obj/`, `.idea/`, `*.user`, `d64editor-build-archives/` — build artifacts.
+## Local artifacts
+- **Committed fixtures:** `128cpm/` (CP/M reference images + docs used for verification), `D64Editor.Core/Assets/` (CPM.SYS, BOOT.D71.bin — required embedded resources), and `Epyx_FastLoad_1984_v2-b11b3b.crt` (test cartridge) are tracked in the repo. Treat them as test/reference data, not source of truth for format behavior.
+- **Ignored build artifacts (do not commit):** `bin/`, `obj/`, `.idea/`, `*.user`, `d64editor-build-archives/`.
