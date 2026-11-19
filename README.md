@@ -620,7 +620,10 @@ Verified with a **ZoomFloppy (XUM1541)**, a real **1571** on device 8, VICE 3.10
 D64Editor's in-process CP/M engine: build a bootable CP/M image, stage files, boot it from an
 image, write it to the real disk with warp and **no `-t`**, byte-verify the readback, then
 boot straight from the physical drive over OpenCBM passthrough. A standalone copy of this
-procedure is in [HARDWARE_WORKFLOW.md](HARDWARE_WORKFLOW.md).
+procedure is in [HARDWARE_WORKFLOW.md](HARDWARE_WORKFLOW.md), including the diagnosed
+VICE 3.10 OpenCBM filename bug, the source fix in
+[`patches/vice-3.10-opencbm-filename.patch`](patches/vice-3.10-opencbm-filename.patch), and the
+fast-loader limitation when loading programs from a real drive.
 
 #### Applications and exact parameters used
 

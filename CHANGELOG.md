@@ -3,6 +3,16 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — VICE OpenCBM Diagnosis, Source Patch & Fast-Loader Finding
+
+### Added
+- `patches/vice-3.10-opencbm-filename.patch`: VICE 3.10 real-device backend fix — buffer the filename bytes written after OPEN and pass them to `cbm_open()` at UNLISTEN instead of `NULL, 0`.
+- `HARDWARE_WORKFLOW.md`: build instructions for the patched VICE, gdb/XUM1541 tracing procedure, and the uploaded fast-loader analysis.
+
+### Notes
+- gdb traces proved the stock VICE calls `cbm_open(8,0,"",0)`, then reads endlessly after `TALK`; direct libopencbm tests confirmed EOI works when the filename is passed correctly.
+- The test disk used a custom fast loader (1,280 bytes of 6502 code uploaded to drive RAM `$0300–$07FF` with `M-W`, executed with `M-E`, bit-banging VIA `$1800`), which is outside the high-level OpenCBM backend; patch validation needs a plain `LOAD"NAME",8` disk.
+
 ## [Unreleased] — VICE Real-Drive Launch Builder & Hardware Verification
 
 ### Added

@@ -191,6 +191,30 @@ cbmctrl status 8
   - To reproduce the trace: launch x64sc with `-logfile`, `-verbose -debug -loglimit 255`, set
     `XUM1541_DEBUG=1`, and attach `gdb` (needs root/`ptrace_scope`) with breakpoints on
     `opencbm_plugin_{open,talk,raw_read,raw_write,get_eoi,unlisten}`.
+
+### Patched VICE build and the fast-loader limitation
+
+- The source fix is preserved as [`patches/vice-3.10-opencbm-filename.patch`](patches/vice-3.10-opencbm-filename.patch).
+  It changes `src/serial/realdevice.c` so the filename bytes sent after OPEN are buffered and
+  passed to `cbm_open()` at UNLISTEN instead of calling it with `NULL, 0`.
+- To build it: fetch `vice-3.10.tar.gz` from <https://vice-emu.sourceforge.io/>, install the `xa`
+  assembler (`pacman -S xa`), apply the patch, then:
+  ```bash
+  ./configure --prefix=<private-prefix> --enable-gtk3ui --disable-sdl1ui --disable-sdl2ui \
+              --without-alsa --without-pulse --disable-desktop-files
+  make -j$(nproc) && make install
+  ```
+  A build from this session was at `/tmp/opencode/vice-patched/bin/x64sc` (system VICE untouched).
+- **Patch validation is still outstanding.** The disk used for the test loads through a custom
+  **fast loader**, which a high-level OpenCBM backend cannot emulate. The trace showed 40
+  `M-W` commands uploading 32 bytes each to drive RAM **$0300–$07FF (1,280 bytes of 6502 code)**.
+  The routine disables interrupts, installs a `JMP $04CC` stub at `$07E0`/`$07E3`, rotates its
+  own first 22 bytes (`ROR $0300,x`) to hide the stub, then bit-bangs VIA1 at `$1800` and decodes
+  nibbles through a table at `$0413`. It runs its own transfer loop on the drive CPU, bypassing
+  the IEC protocol level that `cbm_open`/`cbm_talk`/`cbm_raw_read` operate at. Reconstructed
+  binary/disassembly were `/tmp/opencode/fastloader.bin` and `/tmp/opencode/fastloader.asm`.
+  Retest the patch with a plain `LOAD"NAME",8` disk that does not use a fast loader.
+
 - **One owner of the bus:** VICE uses OpenCBM, so stop VICE before any `cbmctrl`/`d64copy`
   command, and finish those before launching VICE.
 - **Never use `-t original`** for these transfers — it is slow and can time out; warp is the

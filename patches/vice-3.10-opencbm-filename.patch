@@ -1,0 +1,80 @@
+--- a/src/serial/realdevice.c
++++ b/src/serial/realdevice.c
+@@ -53,6 +53,28 @@
+ 
+ static opencbmlib_t opencbmlib;
+ 
++/* PATCH: VICE 3.10 calls cbm_open(..., NULL, 0) and sends the filename afterwards
++   as raw WRITE bytes, so the drive never sees a valid file name at OPEN time.
++   Buffer those bytes and issue the real cbm_open with the name at UNLISTEN. */
++static uint8_t rd_pending_name[256];
++static unsigned int rd_pending_len;
++static unsigned int rd_pending_device;
++static uint8_t rd_pending_secondary;
++static int rd_pending_open;
++
++static void realdevice_flush_open(void)
++{
++    if (!rd_pending_open) {
++        return;
++    }
++    assert(opencbmlib.p_cbm_open != NULL);
++    (*opencbmlib.p_cbm_open)(realdevice_fd, (uint8_t)(rd_pending_device & 0x0f),
++                             (uint8_t)(rd_pending_secondary & 0x0f),
++                             rd_pending_name, rd_pending_len);
++    rd_pending_open = 0;
++    rd_pending_len = 0;
++}
++
+ 
+ void realdevice_open(unsigned int device, uint8_t secondary, void (*st_func)(uint8_t))
+ {
+@@ -62,10 +84,10 @@
+     log_debug(LOG_DEFAULT, "realdevice: OPEN FD:%p DEVICE:%u SECONDARY:%i",
+         (void*)realdevice_fd, device & 0x0f, secondary & 0x0f);
+ #endif
+-    assert(opencbmlib.p_cbm_open != NULL);
+-    (*opencbmlib.p_cbm_open)(realdevice_fd, (uint8_t)(device & 0x0f),
+-                             (uint8_t)(secondary & 0x0f),
+-                             NULL, 0);
++    rd_pending_device = device & 0x0f;
++    rd_pending_secondary = secondary & 0x0f;
++    rd_pending_len = 0;
++    rd_pending_open = 1;
+ }
+ 
+ void realdevice_close(unsigned int device, uint8_t secondary, void (*st_func)(uint8_t))
+@@ -76,6 +98,8 @@
+     log_debug(LOG_DEFAULT, "realdevice: CLOSE FD:%p DEVICE:%u SECONDARY:%i",
+         (void*)realdevice_fd, device & 0x0f, secondary & 0x0f);
+ #endif
++    /* PATCH: flush a still-pending OPEN before closing it. */
++    realdevice_flush_open();
+     assert(opencbmlib.p_cbm_close != NULL);
+     assert(realdevice_fd != NULL);
+     (*opencbmlib.p_cbm_close)(realdevice_fd, (uint8_t)(device & 0x0f),
+@@ -117,6 +141,8 @@
+ #ifdef DEBUG_RD
+     log_debug(LOG_DEFAULT, "realdevice: UNLISTEN FD:%p", (void*)realdevice_fd);
+ #endif
++    /* PATCH: complete a deferred OPEN now that the filename bytes have arrived. */
++    realdevice_flush_open();
+     assert(opencbmlib.p_cbm_unlisten != NULL);
+     assert(realdevice_fd != NULL);
+     (*opencbmlib.p_cbm_unlisten)(realdevice_fd);
+@@ -147,6 +173,15 @@
+ #ifdef DEBUG_RD
+     log_debug(LOG_DEFAULT, "realdevice: WRITE FD:%p DATA:%02x", (void*)realdevice_fd, mydata);
+ #endif
++    /* PATCH: bytes written right after OPEN are the file name. Save them for
++       cbm_open() at UNLISTEN instead of sending them as raw data. */
++    if (rd_pending_open) {
++        if (rd_pending_len < sizeof(rd_pending_name) - 1) {
++            rd_pending_name[rd_pending_len++] = data;
++        }
++        st_func(0);
++        return;
++    }
+     assert(opencbmlib.p_cbm_raw_write != NULL);
+     assert(realdevice_fd != NULL);
+     st = ((*opencbmlib.p_cbm_raw_write)(realdevice_fd, &data, 1) == 1)

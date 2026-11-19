@@ -105,6 +105,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - VICE-compatible lowercase filename mapping via `DirectoryFormatter.PetsciiToEmulatorName`.
 - BASIC programs ($0801) get `-autostartprgmode 1` appended.
 - Cartridge paths use `-cartcrt` (not `-cartepyx`) for `.crt` files.
+- VICE 3.10's real-device backend calls `cbm_open(..., NULL, 0)` and sends the filename as later raw writes, so LOAD from a real drive hangs in `raw_read`/`get_eoi`. Source fix: `patches/vice-3.10-opencbm-filename.patch` (buffer name bytes, pass them to `cbm_open` at UNLISTEN); EOI/reads themselves verified working via direct libopencbm tests. Custom fast loaders (drive code uploaded with `M-W` and executed with `M-E`, bit-banging VIA at `$1800`) remain unsupported by the high-level backend. See `HARDWARE_WORKFLOW.md`.
 - Real-drive passthrough (VICE 3.10+ with OpenCBM): `x128 -80col -devicebackend8 2 -busdevice8 -sounddev dummy` boots CP/M from the physical disk; add `-9 <data.d64>` for a local B: drive. D64Editor builds this via `--cbm vice command|start|stop` (options: `--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); only one process may own the IEC bus, so stop VICE before `cbmctrl`/`d64copy` and vice versa. On this Xwayland session VICE GTK3 startup is flaky: use `--softgl` (`LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe`) and retry; capture with `spectacle -b -o ...` (X11 root capture is black), send keys with `xdotool type --window ...`, wait for the `A>` prompt first.
 
 ## Graphics viewers
