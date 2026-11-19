@@ -73,6 +73,9 @@ internal static class Cli
             case "--ctools":
                 return Ctools(args);
 
+            case "--cbm":
+                return CbmHardware(args);
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -383,24 +386,10 @@ internal static class Cli
         if (!File.Exists(path)) { Console.Error.WriteLine($"Image not found: {path}"); return true; }
         Directory.CreateDirectory(outDir);
 
-        // Prefer ctools when available — it handles CBM CP/M geometry, skew and extent
-        // encoding authoritatively (verified: extracted files byte-exact, MBASIC runs).
-        var fmt0 = DiskFormats.FromExtension(path);
-        if (CtoolsCopier.IsAvailable() && (fmt0 == DiskFormat.D64 || fmt0 == DiskFormat.D71))
-        {
-            try
-            {
-                CtoolsCopier.GetFilesAll(path, outDir);
-                var count = Directory.GetFiles(outDir).Length;
-                Console.WriteLine($"Extracted {count} CP/M file(s) to {outDir} via ctools (authoritative).");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"ctools extraction failed ({ex.Message}); falling back to in-process reader.");
-            }
-        }
-
+        // Use the in-process C128Cpm reader — it implements the C128 speed-zone +
+        // skew translation and EX/RC extent encoding (verified byte-exact against
+        // ctools and against real-hardware readbacks). Use --ctools explicitly for
+        // the external tool.
         try
         {
             var img = File.ReadAllBytes(path);
@@ -754,34 +743,7 @@ internal static class Cli
             var ext = dot < 0 ? "" : name[(dot + 1)..];
             files.Add((baseName, ext, File.ReadAllBytes(host)));
         }
-        // Prefer ctools for authoritative geometry when available (D64/D71 only).
-        if (CtoolsCopier.IsAvailable() && (fmt == DiskFormat.D64 || fmt == DiskFormat.D71))
-        {
-            var stageDir = Path.Combine(Path.GetTempPath(), "d64e-cpm-" + Guid.NewGuid().ToString("N"));
-            try
-            {
-                Directory.CreateDirectory(stageDir);
-                var staged = new List<string>();
-                foreach (var (name, ext, data) in files)
-                {
-                    // ctools takes the CP/M 8.3 name from the host filename in its cwd.
-                    var leaf = string.IsNullOrEmpty(ext) ? name.TrimEnd() : $"{name.TrimEnd()}.{ext.TrimEnd()}";
-                    var dst = Path.Combine(stageDir, leaf.ToLowerInvariant());
-                    File.WriteAllBytes(dst, data);
-                    staged.Add(dst);
-                }
-                CtoolsCopier.FormatImage(output, fmt);
-                CtoolsCopier.PutFiles(output, staged, stageDir);
-                Console.WriteLine($"Created {fmt} CP/M image: {output} ({files.Count} file(s)) via ctools (authoritative).");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"ctools creation failed ({ex.Message}); falling back to in-process writer.");
-            }
-            finally { if (Directory.Exists(stageDir)) Directory.Delete(stageDir, recursive: true); }
-        }
-
+        // Use the in-process writer (correct C128 geometry + extent encoding).
         try
         {
             var path = C128Cpm.FormatAndWrite(fmt, output, files);
@@ -994,6 +956,221 @@ internal static class Cli
         return true;
     }
 
+    private sealed record ViceLaunch(
+        string Emu, int Device, string? DataImage, bool EightyColumn,
+        string SoundDevice, bool SoftwareGl, string? LogFile);
+
+    private static string VicePidPath => Path.Combine(Path.GetTempPath(), "d64editor-vice.pid");
+
+    /// <summary>Builds the verified VICE 3.10+ OpenCBM-passthrough command line (no shell involved).</summary>
+    private static List<string> ViceArgs(ViceLaunch v)
+    {
+        var a = new List<string>();
+        if (v.EightyColumn) a.Add("-80col");
+        a.Add($"-devicebackend{v.Device}");
+        a.Add("2");                       // 2 = OpenCBM real-device backend
+        a.Add($"-busdevice{v.Device}");   // route the emulated IEC bus to that drive
+        if (!string.IsNullOrEmpty(v.DataImage)) { a.Add("-9"); a.Add(v.DataImage); }
+        if (!string.IsNullOrEmpty(v.SoundDevice)) { a.Add("-sounddev"); a.Add(v.SoundDevice); }
+        if (!string.IsNullOrEmpty(v.LogFile)) { a.Add("-logfile"); a.Add(v.LogFile); }
+        return a;
+    }
+
+    private static string ViceCommandLine(ViceLaunch v)
+    {
+        var prefix = v.SoftwareGl ? "LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe " : "";
+        return prefix + v.Emu + " " + string.Join(' ', ViceArgs(v).Select(x =>
+            x.Contains(' ') ? $"\"{x}\"" : x));
+    }
+
+    /// <summary>
+    ///     OpenCBM real-hardware operations: --cbm &lt;detect|status|dir|command|format|read|write|verify|vice|boot&gt; ...
+    ///     All image creation/verification is done in-process by C128Cpm; OpenCBM is used
+    ///     only for the physical disk I/O against a real 1541/1571.
+    /// </summary>
+    private static bool CbmHardware(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --cbm <command> [args...]");
+            Console.Error.WriteLine("  detect                  List devices on the IEC bus (e.g. '8: 1571')");
+            Console.Error.WriteLine("  status [dev]            Drive status string");
+            Console.Error.WriteLine("  dir [dev]               Drive directory (read-only)");
+            Console.Error.WriteLine("  command <dev> <cmd>     Raw DOS command (e.g. 'U0>M1' native 1571, 'N0:NAME,ID' format)");
+            Console.Error.WriteLine("  format <name> <id> [dev]  Format native 1571 (U0>M1 + N0:)");
+            Console.Error.WriteLine("  read <dev> <image> [--d71]  Read real disk -> image (non-destructive)");
+            Console.Error.WriteLine("  write <image> <dev> [--d71] Write image -> real disk (DESTRUCTIVE)");
+            Console.Error.WriteLine("  verify <image> <dev> [--d71] Write image, read back, byte-compare");
+            Console.Error.WriteLine("  vice <command|start|stop> [options]  Build/launch/stop the VICE OpenCBM-passthrough command");
+            Console.Error.WriteLine("    --dev N        real IEC device (default 8); --data IMG  mount IMG on drive 9 (B:)");
+            Console.Error.WriteLine("    --emu PATH     emulator binary (default x128); --40col  40-column mode");
+            Console.Error.WriteLine("    --sound DEV    sound device (default dummy); --log FILE  VICE log file");
+            Console.Error.WriteLine("    --softgl       set LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe");
+            Console.Error.WriteLine("    --dry-run      print the command line only (no process started)");
+            Console.Error.WriteLine("  boot <image> <dev>       Legacy alias: vice start --data <image> --dev <dev>");
+            return true;
+        }
+
+        if (!OpenCbm.IsAvailable())
+        {
+            Console.Error.WriteLine("OpenCBM not found on PATH (need cbmctrl + d64copy). Install from https://github.com/OpenCBM/OpenCBM.");
+            return true;
+        }
+
+        var cmd = args[1].ToLowerInvariant();
+        // parse trailing [dev] or --d71
+        int ArgDev(int start) { for (var i = start; i < args.Length; i++) if (int.TryParse(args[i], out var d)) return d; return 8; }
+        bool HasD71() => args.Any(x => x == "--d71");
+
+        try
+        {
+            switch (cmd)
+            {
+                case "detect":
+                {
+                    var r = OpenCbm.Detect();
+                    Console.Write(r.Output + r.Error);
+                    break;
+                }
+                case "status":
+                {
+                    var r = OpenCbm.Status(ArgDev(2));
+                    Console.Write(r.Output + r.Error);
+                    break;
+                }
+                case "dir":
+                {
+                    var r = OpenCbm.Directory(ArgDev(2));
+                    Console.Write(r.Output + r.Error);
+                    break;
+                }
+                case "command":
+                {
+                    if (args.Length < 4) { Console.Error.WriteLine("Usage: --cbm command <dev> <cmd>"); return true; }
+                    var r = OpenCbm.Command(int.Parse(args[2]), args[3]);
+                    Console.Write(r.Output + r.Error);
+                    break;
+                }
+                case "format":
+                {
+                    if (args.Length < 4) { Console.Error.WriteLine("Usage: --cbm format <name> <id> [dev]"); return true; }
+                    var r = OpenCbm.FormatNative1571(args[2], args[3], ArgDev(4));
+                    Console.WriteLine(r.Success ? "Format OK (native 1571)" : "Format failed: " + r.Error);
+                    break;
+                }
+                case "read":
+                {
+                    if (args.Length < 4) { Console.Error.WriteLine("Usage: --cbm read <dev> <image> [--d71]"); return true; }
+                    var r = OpenCbm.ReadDisk(args[3], int.Parse(args[2]), HasD71());
+                    Console.WriteLine(r.Success ? $"Read {args[3]} OK" : "Read failed: " + r.Error);
+                    break;
+                }
+                case "write":
+                {
+                    if (args.Length < 4) { Console.Error.WriteLine("Usage: --cbm write <image> <dev> [--d71]"); return true; }
+                    var r = OpenCbm.WriteDisk(args[2], int.Parse(args[3]), HasD71());
+                    Console.WriteLine(r.Success ? $"Wrote {args[2]} OK" : "Write failed: " + r.Error);
+                    break;
+                }
+                case "verify":
+                {
+                    if (args.Length < 4) { Console.Error.WriteLine("Usage: --cbm verify <image> <dev> [--d71]"); return true; }
+                    var verifyPath = args[2] + ".readback";
+                    var (ok, detail) = OpenCbm.WriteAndVerify(args[2], verifyPath, int.Parse(args[3]), HasD71());
+                    Console.WriteLine((ok ? "VERIFY OK: " : "VERIFY FAILED: ") + detail);
+                    break;
+                }
+                case "vice":
+                {
+                    if (args.Length < 3)
+                    {
+                        Console.Error.WriteLine("Usage: --cbm vice <command|start|stop> [options]");
+                        return true;
+                    }
+                    var action = args[2].ToLowerInvariant();
+                    var v = new ViceLaunch("x128", 8, null, true, "dummy", false, null);
+                    var dryRun = false;
+                    for (var i = 3; i < args.Length; i++)
+                    {
+                        var next = () => i + 1 < args.Length ? args[++i] : throw new ArgumentException($"Missing value for {args[i]}");
+                        switch (args[i])
+                        {
+                            case "--dev": v = v with { Device = int.Parse(next()) }; break;
+                            case "--data": v = v with { DataImage = next() }; break;
+                            case "--emu": v = v with { Emu = next() }; break;
+                            case "--40col": v = v with { EightyColumn = false }; break;
+                            case "--sound": v = v with { SoundDevice = next() }; break;
+                            case "--log": v = v with { LogFile = next() }; break;
+                            case "--softgl": v = v with { SoftwareGl = true }; break;
+                            case "--dry-run": dryRun = true; break;
+                            default: Console.Error.WriteLine($"Unknown VICE option: {args[i]}"); return true;
+                        }
+                    }
+
+                    if (action == "command")
+                    {
+                        Console.WriteLine(ViceCommandLine(v));
+                        break;
+                    }
+                    if (action == "stop")
+                    {
+                        if (!File.Exists(VicePidPath)) { Console.WriteLine("No VICE process started by D64Editor."); break; }
+                        var pid = int.Parse(File.ReadAllText(VicePidPath).Trim());
+                        File.Delete(VicePidPath);
+                        try
+                        {
+                            using var p = System.Diagnostics.Process.GetProcessById(pid);
+                            var name = p.ProcessName.ToLowerInvariant();
+                            if (!name.Contains("x128") && !name.Contains("x64") && !name.Contains("vice"))
+                                throw new InvalidOperationException($"PID {pid} is not a VICE process ({name}).");
+                            p.Kill(entireProcessTree: true);
+                            Console.WriteLine($"Stopped VICE (PID {pid}).");
+                        }
+                        catch (ArgumentException) { Console.WriteLine("VICE process already exited."); }
+                        break;
+                    }
+                    if (action != "start") { Console.Error.WriteLine($"Unknown vice action: {action}"); return true; }
+
+                    Console.WriteLine("Launching: " + ViceCommandLine(v));
+                    if (dryRun) break;
+                    var psi = new System.Diagnostics.ProcessStartInfo(v.Emu)
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = false,
+                        RedirectStandardError = false
+                    };
+                    foreach (var a in ViceArgs(v)) psi.ArgumentList.Add(a);
+                    if (v.SoftwareGl)
+                    {
+                        psi.Environment["LIBGL_ALWAYS_SOFTWARE"] = "1";
+                        psi.Environment["GALLIUM_DRIVER"] = "llvmpipe";
+                    }
+                    using (var proc = System.Diagnostics.Process.Start(psi))
+                        File.WriteAllText(VicePidPath, proc!.Id.ToString());
+                    Console.WriteLine($"VICE PID written to {VicePidPath} (stop with --cbm vice stop).");
+                    break;
+                }
+                case "boot":
+                {
+                    // Legacy alias: mount the supplied disk on drive 9 (B:) while drive N is the real one.
+                    if (args.Length < 4) { Console.Error.WriteLine("Usage: --cbm boot <image> <dev>"); return true; }
+                    var legacy = new ViceLaunch("x128", int.Parse(args[3]), args[2], true, "dummy", false, null);
+                    Console.WriteLine("Launching: " + ViceCommandLine(legacy));
+                    var psi = new System.Diagnostics.ProcessStartInfo(legacy.Emu) { UseShellExecute = false };
+                    foreach (var a in ViceArgs(legacy)) psi.ArgumentList.Add(a);
+                    using (var proc = System.Diagnostics.Process.Start(psi))
+                        File.WriteAllText(VicePidPath, proc!.Id.ToString());
+                    break;
+                }
+                default:
+                    Console.Error.WriteLine($"Unknown --cbm command: {cmd}");
+                    return true;
+            }
+        }
+        catch (Exception ex) { Console.Error.WriteLine("--cbm error: " + ex.Message); }
+        return true;
+    }
+
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
@@ -1014,7 +1191,9 @@ internal static class Cli
         Console.WriteLine("  --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]  Bootable CP/M image from a system-disk donor");
         Console.WriteLine("  --cpm-import-dir <donor.d64> <srcdir> <out>  Import a whole host directory into a bootable CP/M image");
         Console.WriteLine("  --cpm-cpmtools <cmd>   cpmtools-backed CP/M ops (format/create/import-dir/list) when available");
-        Console.WriteLine("  --ctools <cmd>         ctools-backed CBM CP/M ops (format/create/import/list/extract)");
+        Console.WriteLine("  --ctools <cmd>         ctools-backed CBM CP/M ops (explicit opt-in; in-process is default)");
+        Console.WriteLine("  --cbm <cmd>            OpenCBM hardware: detect/status/dir/command/format/read/write/verify/");
+        Console.WriteLine("                         vice <command|start|stop> [options] / boot <image> <dev>");
         Console.WriteLine("  --help                 Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");

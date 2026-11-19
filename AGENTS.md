@@ -40,8 +40,8 @@
 - `D64Editor.Core/RelReader.cs` — REL side-sector chain reader.
 - `D64Editor.Core/RelWrite.cs` — REL file create and resize (grow/shrink record count).
 - `D64Editor.Core/T64Image.cs` — T64 tape archive reader/writer (mutable, rebuild/save).
-- `D64Editor.Core/C128Cpm.cs` — C128 CP/M extraction, creation, template copy/format. Implements correct C128 speed-zone + interleave-skew sector translation (ctools `bios.cc`) and EX/RC extent record encoding (ctools `fcb.cc`). In-process fallback; CLI prefers ctools when available.
-- `D64Editor.Core/CtoolsCopier.cs` — wrapper for `cformat`/`ctools` (authoritative CBM CP/M filesystem ops; preferred path when installed). `FormatImage`, `PutFiles`, `GetFiles`, `GetFilesAll`, `ListFiles`, `CreateAndPopulate`.
+- `D64Editor.Core/C128Cpm.cs` — C128 CP/M extraction, creation, template copy/format. Implements correct C128 speed-zone + interleave-skew sector translation (ctools `bios.cc`) and EX/RC extent record encoding (ctools `fcb.cc`). **In-process by default for all CP/M operations**; no external tool is used by the `--cpm-*` CLI verbs or `cpm*` script commands.
+- `D64Editor.Core/CtoolsCopier.cs` — optional wrapper for `cformat`/`ctools` used only by the explicit `--ctools` verb (kept for cross-checking). `FormatImage`, `PutFiles`, `GetFiles`, `GetFilesAll`, `ListFiles`, `CreateAndPopulate`.
 - `D64Editor.Core/CpmToolsCopier.cs` — wrapper for `mkfs.cpm`/`cpmcp`/`cpmls` (needs a valid C128 diskdef + libdsk for variable geometry).
 - `D64Editor.Core/DnpImage.cs` — DNP reader/writer with container slice support.
 - `D64Editor.Core/DiskContainers.cs` — D2M/D4M/DHD partition table parsing.
@@ -62,14 +62,15 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--export <image> <dir>` / `-e` — Export files from D64/T64/D71/D81/D80/D82/DNP to a directory.
 - `--info <image>` / `-i` — Show image/format information.
 - `--validate <image>` / `-v` — Validate/report cross-links and basic issues (D64).
-- `--cpm-extract <img> <dir> [--strict]` — Extract CP/M files (uses ctools when available; `--strict` narrows in-process directory scanning).
+- `--cpm-extract <img> <dir> [--strict]` — Extract CP/M files in-process (`--strict` narrows scanning to real directory slots).
 - `--cpm-copy <tmpl> <out> [--all|--files A,B]` — Create CP/M image from template (keep all or subset).
 - `--cpm-format <tmpl> <out>` — Create empty CP/M image from template (clears directory; template-based).
-- `--cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]` — Create CP/M image with files (uses ctools when available).
+- `--cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]` — Create CP/M image with files, in-process.
 - `--cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]` — Bootable CP/M image from a system-disk donor.
 - `--cpm-import-dir <donor|new:*> <srcdir> <out>` — Import a whole host directory with 8.3 name mapping.
-- `--ctools <format|create|import|list|extract> ...` — ctools-backed CBM CP/M operations (authoritative).
+- `--ctools <format|create|import|list|extract> ...` — Optional external ctools-backed CP/M operations (explicit opt-in; kept for cross-checking).
 - `--cpm-cpmtools <format|create|import-dir|list> ...` — cpmtools-backed CP/M operations.
+- `--cbm <detect|status|dir|command|format|read|write|verify|vice|boot> ...` — OpenCBM real-hardware operations. `vice <command|start|stop>` builds/prints, launches or stops the VICE passthrough command (`--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); PID saved in `/tmp/d64editor-vice.pid`.
 - `--extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]` — Extract archive contents.
 - `--print-dir <image>` — Print directory listing (text, D64).
 - `--geos-info <d64> <file>` — Show GEOS/REL metadata and best-effort VLIR info for a file (D64).
@@ -86,16 +87,17 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - C128 CP/M uses 7-bit ASCII (not PETSCII) for names and text.
 - CP/M-on-`.d64` cases are detected (boot signature `CBM`) and opened in the CP/M viewer.
 - **Geometry (critical):** logical CP/M blocks map to physical sectors through 4 speed zones with interleave `sec = (5*nr) % sectrk` (source: ctools `bios.cc`). Disk type is detected from boot sector at T1/S0: `"CBM"` + byte 255 `== 0xFF` = double-sided (D71, 2K blocks, 2 extents/entry); otherwise C128 SS (1K blocks) or C64 (1K blocks). Directory occupies logical blocks 0..1 (8 entries/sector, 32-byte entries). `EX`/`RC` encode total record count: `RC>=0x80 ? 128*(EX+1) : 128*EX + RC`, EX modulo extents-per-entry (ctools `fcb.cc`).
-- **Tools:** CLI prefers `ctools` (install from https://github.com/mist64/ctools; `cformat`/`ctools` on PATH) for authoritative CP/M ops; falls back to the in-process `C128Cpm`. `cpmtools` integration (`CpmToolsCopier`) needs a valid C128 diskdef + libdsk-enabled build. Full install/how-to guide is in README's "CP/M Support" section.
+- **Tools:** All `--cpm-*` CLI verbs and `cpm*` script commands use the in-process `C128Cpm` directly — no external tool is required for CP/M disk access. `ctools` (`https://github.com/mist64/ctools`) and `cpmtools` (`CpmToolsCopier`, needs a valid C128 diskdef + libdsk-enabled build) are optional, reachable only through the explicit `--ctools`/`--cpm-cpmtools` verbs for cross-checking. Full install/how-to guide is in README's "CP/M Support" section.
 - **Verified end-to-end:** `--cpm-new d71` (MBASIC.COM + WUMP.BAS) written on Linux, mounted as drive 9 (`B:`) in x128 with a system disk on drive 8 (`A:`), `MBASIC WUMP.BAS` ran WUMPUS to completion. Byte-exact extraction against ctools on both D71 (19 files) and D64 (10 files).
 - **Terminal compatibility (verified):** line-oriented CP/M programs run fine under x128 CP/M 3.0 — MBASIC/WUMPUS and Infocom **Zork II** (INTERLOGIC `ZORK2.COM`+`ZORK2.DAT`, configured with generic `2DEFAULT`/`CONF2` config program) were staged via `--ctools create d71` and played interactively. Full-screen cursor-positioning programs (SuperSoft **Nemesis**, CP/M 2.2) render garbled menus: the C128 CP/M console BIOS lacks the cursor-addressing escape sequences they emit, and patching `TERM.DEF` does not help. This is a console-BIOS limitation, not file corruption — all games staged through the same verified path and extract byte-exact. Legacy CP/M 2.2 full-screen games remain an environment limitation.
 - Template-based create/copy/format: relies on compatible bootable template. From-scratch images are data-only (no boot code/CCP/BDOS); use `--cpm-bootable` with a donor or the two-drive emulator setup.
-- `.d81` mapping is in-process only; `ctools` covers `.d64`/`.d71`.
+- `.d81` CP/M mapping is in-process only; the optional external `ctools`/`cpmtools` paths cover `.d64`/`.d71`.
 
 ## OpenCBM integration notes
 - `D64Editor.App/OpenCbmWindow.axaml(.cs)` — structured whole-disk transfer via `d64copy` (image-level), with D64/D71 (`-2`) selection, device number, transfer mode, live command preview, PATH tool detection, and confirmation for destructive writes. Arguments passed via `ProcessStartInfo.ArgumentList` (no shell). Reads are non-destructive. Old version was a generic `bash -c` command-template runner with a wrong `cbmcopy` default (that tool is for files, not images).
 - Setup: OpenCBM is AUR `opencbm` on Arch; its PKGBUILD renames `/etc/opencbm.conf` to `.sample` (copy back + `opencbm_plugin_helper_tools rebuild`); USB cable udev rules need a replug or `udevadm trigger`; verify with `cbmctrl detect` / `cbmctrl status 8`. Harmless `keyctl` warning from libudev can be ignored.
-- CP/M real-media: `d64copy -2 image.d71 8` to write a D71 CP/M image to a real 1571; `d64copy -2 8 image.d71` to read back (non-destructive).
+- CP/M real-media: `d64copy -2 image.d71 8` writes a D71 CP/M image to a real 1571; `d64copy -2 8 image.d71` reads back (non-destructive). Verified warp/no-`-t` writes: `cbmctrl command 8 'U0>M0'` then `d64copy --no-progress -w image.d64 8` (D64), and `cbmctrl command 8 'U0>M1'` then `d64copy --no-progress -w -2 image.d71 8` (D71, true two-sided mode). `-w` is implicit for `.d71`. Readback with the matching `-2`/no-`-2` and `cmp` must be byte-exact. `cbmctrl reset` (no device argument) resets all drives on the IEC bus before/after emulator use.
+- Bootable CP/M image build: a full donor system disk is too full for new files — use `--cpm-copy <donor> <base> --files CPM+.SYS,CCP.COM,DIR.COM,PIP.COM` to free blocks, then `--cpm-bootable <base> <out> NAME.EXT=hostfile ...`. Never drop `CCP.COM` (CP/M Plus will not boot). Both D64 and a 349,696-byte D71 container (single-sided payload on side 1, blank side 2) were verified byte-exact on real media.
 
 ## Emulator integration notes
 - Template placeholders: `{disk}`, `{image}`, `{appdir}`, `{app}`, `{cwd}`.
@@ -103,6 +105,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - VICE-compatible lowercase filename mapping via `DirectoryFormatter.PetsciiToEmulatorName`.
 - BASIC programs ($0801) get `-autostartprgmode 1` appended.
 - Cartridge paths use `-cartcrt` (not `-cartepyx`) for `.crt` files.
+- Real-drive passthrough (VICE 3.10+ with OpenCBM): `x128 -80col -devicebackend8 2 -busdevice8 -sounddev dummy` boots CP/M from the physical disk; add `-9 <data.d64>` for a local B: drive. D64Editor builds this via `--cbm vice command|start|stop` (options: `--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); only one process may own the IEC bus, so stop VICE before `cbmctrl`/`d64copy` and vice versa. On this Xwayland session VICE GTK3 startup is flaky: use `--softgl` (`LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe`) and retry; capture with `spectacle -b -o ...` (X11 root capture is black), send keys with `xdotool type --window ...`, wait for the `A>` prompt first.
 
 ## Graphics viewers
 - `GfxViewerWindow` (charset/sprite) and `PictureViewerWindow` (Koala/Art Studio hi-res) support zoom and BMP save/export.
@@ -127,12 +130,12 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - Container-backed images: `D64Image`/`D71Image`/`D81Image`/`DnpImage` all have `TryLoadFromContainer` + `ContainerPath/Offset/Size`; `Save()` writes back into the container. `CbmCatalog.Open{D64,D71,D81,Dnp}FromContainer` and `PartitionsWindow` open partitions directly with write-back.
 - `C128Cpm.ReadHostDirectory`/`HostNameToCpm83`/`ImportDirectoryFromBootDonor` import a whole host dir to CP/M with 8.3 name mapping and collision suffixes; `CpmImportReport` logs mappings/skips.
 - `C128Cpm.FormatBlank`/`WriteFiles`/`FormatAndWrite` create CP/M data images from scratch. The block map uses ctools speed-zone+skew translation (built after writing the boot sector so disk-type detection sees `"CBM"`); directory at logical blocks 0..1. Byte-exact round-trips verified against ctools, but images are data-only (no boot tracks). The embedded `Assets/CPM.SYS` + `Assets/BOOT.D71.bin` are an earlier experimental boot attempt that did not yield a bootable image; prefer `--cpm-bootable` with a donor.
-- `--ctools`/`--cpm-cpmtools` delegate to external tools when installed; CLI `--cpm-extract`/`--cpm-new` auto-prefer ctools for D64/D71 and fall back to in-process.
+- `--ctools`/`--cpm-cpmtools` are explicit opt-in verbs that delegate to external tools; all default `--cpm-*` CLI paths (and `cpm*` script commands) are in-process via `C128Cpm`.
 
 ## Known limitations
 - G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.
 - CMD container write-back works for all partition types; richer in-container editing workflows remain incremental.
-- From-scratch CP/M (`--cpm-new`) is data-only (no boot code/CCP/BDOS). File layout is correct (byte-exact extraction verified vs ctools); use `--cpm-bootable` with a system-disk donor or the two-drive x128 setup (system disk on 8, data disk on 9) for running files. `.d81` writing is in-process only (ctools covers `.d64`/`.d71`).
+- From-scratch CP/M (`--cpm-new`) is data-only (no boot code/CCP/BDOS). File layout is correct (byte-exact extraction verified vs ctools as a cross-check); use `--cpm-bootable` with a system-disk donor or the two-drive x128 setup (system disk on 8, data disk on 9) for running files. `.d81` writing is in-process only.
 - Legacy CP/M 2.2 games (Nemesis/Zork) import byte-exact and boot to CP/M 3.0 but may hang under a mismatched BDOS/terminal/two-drive environment — an emulator/system compatibility issue, not file corruption.
 - Broader inter-tab/window disk-to-disk drag-and-drop not fully implemented.
 - Undo/redo coverage not comprehensive across all edit paths.

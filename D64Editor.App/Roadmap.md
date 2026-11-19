@@ -34,6 +34,7 @@ disk editors, implemented incrementally.
 - [x] G64/NIB: native GCR-level write-back — `Gcr.EncodeTrack` + `G64Image.ToG64Bytes`/`FromD64` and `NibImage.ToNibBytes`/`FromD64`; CLI `--to-gcr` and script `togcr`. Byte-exact D64->G64/NIB->D64 round-trip verified (683/683 sectors). Half-track/copy-protected data preserved verbatim
 - [x] T64/DNP/CMD: deeper native read/write — T64 mutable save/rebuild; DNP + emulated D64/D71/D81 partitions all open directly from D2M/D4M/DHD containers with Save() writing back into the container (`TryLoadFromContainer`, `CbmCatalog.Open*FromContainer`, PartitionsWindow opens directly). Verified container slice edit/save-back
 - [x] C128 CP/M (.d64/.d71/.d81): from-scratch formatting/writing — `C128Cpm.FormatBlank`/`WriteFiles`/`FormatAndWrite` (multi-extent 8.3 files, 1-/2-byte AL) + CLI `--cpm-new` and script `cpmnew`. Extraction round-trip verified for d64/d71/d81. D64 directory aligned to the real interleaved track-1 sectors (3,4,9,10,14,15,19,20) from the reference system disk; bitmap moved to sector 2. NOTE: from-scratch images are NOT bootable (verified in x128: black screen); `--cpm-bootable` clones a known-good system-disk donor and produces a bootable image (verified to CP/M 3.0 A> prompt). From-scratch DPB/skew/bitmap remain unverified
+- [x] C128 CP/M: in-process by default — every `--cpm-*` CLI verb and `cpm*` script command runs through `C128Cpm`; no external tool is needed for CP/M disk access (`ctools`/`cpmtools` remain explicit opt-in cross-checks)
 
 ## Phase 3 — Directory Editing Enhancements
 - [x] Rename file (dialog)
@@ -79,6 +80,7 @@ disk editors, implemented incrementally.
 ## Phase 8 — Platform Integration
 - [x] Emulator launch (template `{disk}`/`{image}`, drive-8 mount, selection/`*` or `disk:NAME`, `$0801` → `-autostartprgmode 1`, safe quoting)
 - [x] OpenCBM transfer (detects tools on PATH; `{device}/{disk}/{out}` template)
+- [x] VICE real-device launch builder: `--cbm vice <command|start|stop>` prints/launches/stops `-devicebackend8 2 -busdevice8` x128 commands (options `--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); verified CP/M boot from a real 1571 via ZoomFloppy for both D64 and D71 (`-2`) images written with warp and no `-t`
 - [x] File associations (Linux .desktop + MIME, Windows .reg)
 - [x] "Check for Updates" reads a version-feed URL and opens the releases page in the default browser (best-effort)
 - [x] Printable directory export (text) with best-effort open-in-default-handler for OS printing

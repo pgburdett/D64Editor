@@ -686,11 +686,13 @@ public static class C128Cpm
         const int recordsPerExtent = 128;
 
         // Collect live file names and every block already referenced by the directory.
+        // IMPORTANT: scan ONLY the real CP/M directory area. Scanning the whole image
+        // (ScanDirectorySlots) finds false-positive "entries" inside embedded system
+        // data (e.g. CPM.SYS contains bytes that look like "BNKBDOS3.SPR"), which makes
+        // SkipExisting wrongly drop real files.
         var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var used = new HashSet<int>();
-        var entryOffsets = options.ScanAllForFreeSlots
-            ? ScanRealDirectorySlots(imageBytes)
-            : ScanDirectorySlots(imageBytes).Select(x => (long)x.Offset).ToList();
+        var entryOffsets = DirectorySlotOffsets(cimg, options);
         foreach (var off in entryOffsets)
         {
             if (off < 0 || off + 32 > imageBytes.Length) continue;

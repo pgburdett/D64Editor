@@ -3,6 +3,27 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — VICE Real-Drive Launch Builder & Hardware Verification
+
+### Added
+- `--cbm vice <command|start|stop>` builds, prints, launches or stops the verified VICE 3.10+ OpenCBM passthrough command line. Options: `--dev`, `--data` (drive 9 / B:), `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`. The PID of a launched VICE is recorded in `/tmp/d64editor-vice.pid` so `vice stop` kills only that process. `--cbm boot <image> <dev>` remains a legacy alias.
+
+### Verified
+- Built a bootable CP/M 3.0 D64 from the reference donor (`--cpm-copy --files` to free blocks, then `--cpm-bootable`) with `CCP.COM`, `CPM+.SYS`, `PIP.COM`, `DIR.COM`, `MBASIC.COM` and `WUMP.BAS`; booted to `A>` and `DIR` listed all files in x128.
+- Wrote both D64 (1541 mode) and D71 (native 1571 mode, `-2`) images to a real 1571 via ZoomFloppy using warp (`-w`) and no `-t original`; readback byte-for-byte identical for both.
+- Booted both images directly from the physical drive with `x128 -80col -devicebackend8 2 -busdevice8 -sounddev dummy`; CP/M Plus loaded from the real disk with no OpenCBM errors.
+- README/AGENTS/Roadmap document the full toolchain, parameters, USB/IEC reset, and VICE start/stop procedure (including the software-GL workaround for flaky GTK3 startup on this Xwayland session).
+
+## [Unreleased] — CP/M Disk Access Fully In-Process
+
+### Changed
+- All default CP/M disk operations now run in-process via `C128Cpm`: `--cpm-extract` and `--cpm-new` no longer auto-prefer `ctools`; `--cpm-copy`, `--cpm-format`, `--cpm-bootable`, `--cpm-import-dir` and the `cpm*` script commands were already in-process. No external tool is required for CP/M disk access.
+- `ctools`/`cpmtools` are now explicit opt-ins (`--ctools`, `--cpm-cpmtools`) kept only for cross-checking; their code is unchanged.
+- `C128Cpm.WriteFiles` now collects existing entries/used blocks only from the real CP/M directory area, avoiding false-positive "files" from embedded system data (e.g. `BNKBDOS3.SPR` inside `CPM.SYS`) that could suppress real imports.
+
+### Docs
+- README, AGENTS and Roadmap updated to describe the in-process default and the opt-in role of the external tools.
+
 ## [Unreleased] — CP/M D71 Mapping Fix & Strict Extraction (found via Nemesis/Zork import testing)
 
 ### Fixed

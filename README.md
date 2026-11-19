@@ -103,7 +103,7 @@ D64Editor/
 │   ├── T64Image.cs          # T64 tape archive support
 │   ├── CpmDisk.cs           # CP/M 2.2 directory reader
 │   ├── C128Cpm.cs           # C128 CP/M (D64/D71/D81) support (geometry/extent mapping)
-│   ├── CtoolsCopier.cs      # Authoritative CP/M ops via ctools/cformat (preferred)
+│   ├── CtoolsCopier.cs      # Optional external CP/M ops via ctools/cformat (explicit --ctools opt-in)
 │   ├── CpmToolsCopier.cs    # CP/M ops via cpmtools (mkfs.cpm/cpmcp/cpmls)
 │   ├── CbmImage.cs          # Shared CBM-layout helpers
 │   ├── CbmCatalog.cs        # CBM image info abstraction
@@ -163,7 +163,7 @@ Beyond the VB6 D64 port, this build carries a format-agnostic layer and a growin
 - **T64** — tape-archive reader + viewer + mutable rebuild/save support (basic native read/write). Verified on a synthetic `.t64`.
 - **D2M / D4M / DHD** — CMD container partition tables; the Parts view lists partitions and opens the selected one (emulated 1541/1571/1581 land in the editor, native DNP opens in its viewer with container write-back).
 - **CP/M 2.2 images + `.LBR`** — best-effort directory catalog (CP/M is DPB-parameterized, so it lists/labels entries and never assumes byte counts).
-- **C128 CP/M (`.d64/.d71/.d81`)** — file extraction, from-scratch/template-based image creation, and bootable-image creation (from a donor) via CLI. Reads/writes use the correct C128 speed-zone + skew + extent mapping; CLI prefers `ctools` when installed. See [CP/M Support](#cpm-support-c128-cpm).
+- **C128 CP/M (`.d64/.d71/.d81`)** — file extraction, from-scratch/template-based image creation, and bootable-image creation (from a donor) via CLI. Reads/writes are done in-process by `C128Cpm` using the correct C128 speed-zone + skew + extent mapping; `ctools`/`cpmtools` are only used through the explicit opt-in commands. See [CP/M Support](#cpm-support-c128-cpm).
 
 Core readers: `D71Image`, `D81Image`, `D80D82Image`, `DnpImage`, `G64Image`, `NibImage`, `T64Image`, `CpmDisk`, `DiskContainers`, `C128Cpm`, plus shared helpers `CbmImage`/`Gcr`/`DiskFormats`/`CbmCatalog`/`ImageCatalog`/`CbmScratch`/`CbmImport`/`RelFile`/`RelReader`/`RelWrite`.
 
@@ -220,7 +220,7 @@ Beyond the VB6 D64 port, this build carries a format-agnostic layer and a growin
 - **T64** — tape-archive reader + viewer + mutable rebuild/save support (basic native read/write). Verified on a synthetic `.t64`.
 - **D2M / D4M / DHD** — CMD container partition tables; the Parts view lists partitions and opens the selected one (emulated 1541/1571/1581 land in the editor, native DNP opens in its viewer with container write-back).
 - **CP/M 2.2 images + `.LBR`** — best-effort directory catalog (CP/M is DPB-parameterized, so it lists/labels entries and never assumes byte counts).
-- **C128 CP/M (`.d64/.d71/.d81`)** — file extraction, from-scratch/template-based image creation, and bootable-image creation (from a donor) via CLI. Reads/writes use the correct C128 speed-zone + skew + extent mapping; CLI prefers `ctools` when installed. See [CP/M Support](#cpm-support-c128-cpm).
+- **C128 CP/M (`.d64/.d71/.d81`)** — file extraction, from-scratch/template-based image creation, and bootable-image creation (from a donor) via CLI. Reads/writes are done in-process by `C128Cpm` using the correct C128 speed-zone + skew + extent mapping; `ctools`/`cpmtools` are only used through the explicit opt-in commands. See [CP/M Support](#cpm-support-c128-cpm).
 
 Core readers: `D71Image`, `D81Image`, `D80D82Image`, `DnpImage`, `G64Image`, `NibImage`, `T64Image`, `CpmDisk`, `C128Cpm`, `DiskContainers`, plus shared helpers `CbmImage`/`Gcr`/`DiskFormats`/`CbmCatalog`/`ImageCatalog`/`CbmScratch`/`CbmImport`/`RelFile`/`RelReader`/`RelWrite`.
 
@@ -264,7 +264,7 @@ Drop a `.d64` onto the main window to open it, or drop any other file (including
 
 ### CP/M Editing
 - C128 CP/M (`.d64/.d71/.d81`): file extraction, from-scratch/template create/copy, directory import, and bootable-image creation from a donor.
-- Correct C128 speed-zone sector translation, interleave skew, and EX/RC extent encoding; CLI prefers `ctools` for authoritative results. See [CP/M Support](#cpm-support-c128-cpm).
+- Correct C128 speed-zone sector translation, interleave skew, and EX/RC extent encoding; all `--cpm-*` CLI commands and `cpm*` script commands run in-process via `C128Cpm`. See [CP/M Support](#cpm-support-c128-cpm).
 
 ---
 
@@ -355,6 +355,8 @@ D64Editor --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]
 D64Editor --cpm-import-dir <donor|new:d64|new:d71|new:d81> <srcdir> <out>
 D64Editor --ctools <format|create|import|list|extract> ...
 D64Editor --cpm-cpmtools <format|create|import-dir|list> ...
+D64Editor --cbm <detect|status|dir|command|format|read|write|verify|vice|boot> ...
+D64Editor --cbm vice <command|start|stop> [--dev N] [--data IMG] [--softgl] [--dry-run]
 D64Editor <image>          (opens in GUI)
 D64Editor                  (no args: starts GUI)
 ```
@@ -369,7 +371,7 @@ D64Editor                  (no args: starts GUI)
 | `--export <image> <dir>` / `-e` | Export files from D64/T64/D71/D81/D80/D82/DNP to a directory |
 | `--info <image>` / `-i` | Show image/format information |
 | `--validate <image>` / `-v` | Validate/report cross-links and basic issues (D64) |
-| `--cpm-extract <img> <dir> [--strict]` | Extract CP/M files (uses `ctools` when available; `--strict` narrows in-process scan) |
+| `--cpm-extract <img> <dir> [--strict]` | Extract CP/M files in-process (`--strict` limits scanning to real directory slots) |
 | `--cpm-copy <tmpl> <out> [--all\|--files A,B]` | Create CP/M image from template (keep all or subset) |
 | `--cpm-format <tmpl> <out>` | Create empty CP/M image from template (clears directory; template-based) |
 | `--extract-archive <zip\|tar\|tar.gz\|tgz> <dir> [--images-only]` | Extract archive contents |
@@ -377,11 +379,13 @@ D64Editor                  (no args: starts GUI)
 | `--geos-info <d64> <file>` | Show GEOS/REL metadata and best-effort VLIR info for a file (D64) |
 | `--run-script <script.txt> [workdir]` | Run a headless automation script over the Core engine (see Scripting section) |
 | `--to-gcr <d64> <out.g64\|out.nib>` | Encode a D64 into a G64/NIB image (native GCR write-back; byte-exact round-trip) |
-| `--cpm-new <d64\|d71\|d81> <out> [NAME.EXT=hostfile ...]` | Create CP/M image with files (uses `ctools` when available) |
+| `--cpm-new <d64\|d71\|d81> <out> [NAME.EXT=hostfile ...]` | Create CP/M image with files in-process |
 | `--cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]` | Bootable CP/M image from a system-disk donor |
 | `--cpm-import-dir <donor\|new:*> <srcdir> <out>` | Import a whole host directory with 8.3 name mapping |
-| `--ctools <format\|create\|import\|list\|extract> ...` | ctools-backed CBM CP/M operations (authoritative) |
+| `--ctools <format\|create\|import\|list\|extract> ...` | Optional external ctools-based CP/M operations (explicit opt-in; not needed for the in-process paths) |
 | `--cpm-cpmtools <format\|create\|import-dir\|list>` | cpmtools-backed CP/M operations |
+| `--cbm <detect\|status\|dir\|command\|format\|read\|write\|verify>` | OpenCBM real-hardware operations (image I/O via `d64copy`) |
+| `--cbm vice <command\|start\|stop> [options]` | Build/print, launch or stop the VICE OpenCBM-passthrough command (`--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`) |
 
 ---
 
@@ -440,13 +444,16 @@ allocation blocks onto the physical 1541/1571 track/sector layout using:
   The disk type is detected from the boot sector at track 1/sector 0: `"CBM"` + byte 255
   `== 0xFF` means double-sided.
 
-Our in-process `C128Cpm` now implements this translation correctly (verified byte-for-byte).
-For authoritative results, the CLI **prefers external tools** when installed; those tools
-handle CP/M DPB/skew natively and are the recommended path.
+Our in-process `C128Cpm` implements this translation correctly (verified byte-for-byte
+against reference images). All `--cpm-*` CLI commands and the `cpm*` script commands use it
+directly — no external tool is needed for CP/M disk access. The `--ctools` and
+`--cpm-cpmtools` verbs remain available as explicit opt-ins for cross-checking.
 
-### Tools (install once)
+### Optional external tools (for cross-checking only)
 
-**Recommended: `ctools`** (natively handles C64/C128 CP/M geometry, including `.d71`):
+**Optional (external): `ctools`** (natively handles C64/C128 CP/M geometry, including `.d71`).
+Not required — the in-process implementation is the default. Build it only if you want an
+external tool to cross-check against:
 
 ```bash
 git clone https://github.com/mist64/ctools.git
@@ -488,19 +495,20 @@ diskdef c1571cpm
 end
 ```
 
-> **Note:** `ctools` is the tested, recommended path — the worked example below uses it.
-> The `cpmtools` route needs a correctly configured diskdef *and* matching libdsk geometry;
-> it is provided as an alternative and is not verified end-to-end here.
+> **Note:** CP/M disk access in D64Editor is handled in-process by `C128Cpm`; the worked
+> example below uses the `--cpm-*` commands. `ctools`/`cpmtools` are optional external
+> tools exposed only through the explicit `--ctools`/`--cpm-cpmtools` verbs. The `cpmtools`
+> route needs a correctly configured diskdef *and* matching libdsk geometry and is not
+> verified end-to-end here.
 
-The app detects these tools on `PATH` and uses `ctools` automatically for `.d64`/`.d71`;
-everything still works without them via the in-process implementation.
+The in-process path needs no tools on `PATH` and works for `.d64`, `.d71` and `.d81`.
 
 ### CLI commands (CP/M)
 
 | Command | Description |
 |---------|-------------|
-| `--cpm-extract <img> <dir> [--strict]` | Extract files. Uses `ctools` when available (authoritative); `--strict` narrows in-process directory scanning. |
-| `--cpm-new <d64\|d71\|d81> <out> [NAME.EXT=hostfile ...]` | Create a data image with files. Uses `ctools` when available. |
+| `--cpm-extract <img> <dir> [--strict]` | Extract files in-process; `--strict` narrows scanning to real directory slots. |
+| `--cpm-new <d64\|d71\|d81> <out> [NAME.EXT=hostfile ...]` | Create a data image with files, in-process. |
 | `--cpm-copy <tmpl> <out> [--all\|--files A,B]` | Clone a bootable template, keep all files or a subset. |
 | `--cpm-format <tmpl> <out>` | Empty CP/M image from a template (template-based). |
 | `--cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]` | Bootable image cloned from a known-good system-disk donor. |
@@ -528,8 +536,7 @@ dotnet build
 dotnet run --project D64Editor.App -- --cpm-new d71 /tmp/mbasic.d71 \
     MBASIC.COM=/path/to/mbasic.com WUMP.BAS=/path/to/wump.bas
 
-# 3. Verify the directory and extract back (byte-exact)
-dotnet run --project D64Editor.App -- --ctools list /tmp/mbasic.d71
+# 3. Verify by extracting back (byte-exact) — all in-process
 dotnet run --project D64Editor.App -- --cpm-extract /tmp/mbasic.d71 /tmp/verify
 cmp /tmp/verify/mbasic.com /path/to/mbasic.com   # -> identical
 
@@ -560,7 +567,7 @@ The practical consequence, verified with several real games:
 | **Nemesis** (SuperSoft, CP/M 2.2) | full-screen cursor positioning | ❌ menus render garbled |
 
 This distinction is a property of the **program's terminal usage**, not of file transfer:
-all three were staged onto D71 images through the same `--ctools create` path, and their
+all three were staged onto D71 images through the same CP/M image-creation path, and their
 files extract byte-for-byte. If a game's display looks corrupted, first check whether it's
 a full-screen program — trying a different `TERM.DEF` will not help, because the limit is
 in the console BIOS, not the terminal definition.
@@ -571,11 +578,12 @@ in the console BIOS, not the terminal definition.
 # The CP/M INTERLOGIC release ships an interpreter (ZORK2.COM), story data (ZORK2.DAT),
 # and terminal-specific configuration programs (2DEFAULT.COM, 2ZENITH.COM, 2ADM3.COM, ...).
 # 2DEFAULT = generic line-oriented terminal, which suits the C128 console.
-# Note: rename 2DEFAULT.COM -> CONF2.COM first if using the app's 8.3 name mapper
-# (CP/M names must start with A-Z, not a digit).
+# With --cpm-new you supply explicit 8.3 names, so no host-side rename is needed
+# (CP/M names must start with A-Z, hence CONF2.COM for 2DEFAULT.COM).
 
-dotnet run --project D64Editor.App -- --ctools create d71 /tmp/zork.d71 \
-    /path/to/ZORK2.COM /path/to/ZORK2.DAT /path/to/CONF2.COM /path/to/MORE.COM
+dotnet run --project D64Editor.App -- --cpm-new d71 /tmp/zork.d71 \
+    ZORK2.COM=/path/to/ZORK2.COM ZORK2.DAT=/path/to/ZORK2.DAT \
+    CONF2.COM=/path/to/2DEFAULT.COM MORE.COM=/path/to/MORE.COM
 
 # Boot (system disk A:, Zork disk B:), then at A>:
 #   B:            (drive B:)
@@ -606,10 +614,146 @@ d64copy    image.d64 8     # single-sided .d64 (1541/1571) to device 8
 
 Reading a real disk is non-destructive: `d64copy -2 8 image.d71` (device first).
 
+### Complete real-hardware workflow (verified end-to-end)
+
+Verified with a **ZoomFloppy (XUM1541)**, a real **1571** on device 8, VICE 3.10 `x128` and
+D64Editor's in-process CP/M engine: build a bootable CP/M image, stage files, boot it from an
+image, write it to the real disk with warp and **no `-t`**, byte-verify the readback, then
+boot straight from the physical drive over OpenCBM passthrough.
+
+#### Applications and exact parameters used
+
+| Application | Parameters | Purpose |
+|-------------|------------|---------|
+| `dotnet run --project D64Editor.App --` | `--cpm-extract 128cpm/MBASIC.d71 /tmp/opencode/cpm-stage --strict` | Extract `MBASIC.COM`/`WUMP.BAS` from the reference D71 with D64Editor |
+| D64Editor | `--cpm-copy <system.d64> <base.d64> --files CPM+.SYS,CCP.COM,DIR.COM,PIP.COM` | Keep system files, free data blocks by dropping `HELP.HLP` etc. |
+| D64Editor | `--cpm-bootable <base.d64> <bootable.d64> MBASIC.COM=... WUMP.BAS=...` | Clone boot code/CCP/BDOS from donor and add files in-process |
+| D64Editor | `--cpm-extract <bootable.d64> <dir> --strict` | Byte-exact content check before writing to hardware |
+| `cbmctrl` | `detect`, `status 8`, `command 8 'U0>M0'`, `command 8 'U0>M1'`, `reset` (no device arg) | Bus/detection, drive status, 1541 vs native 1571 mode, USB/IEC bus reset |
+| `d64copy` | `--no-progress -w <image.d64> 8` | Write D64 in warp mode (no `-t original`) |
+| `d64copy` | `--no-progress -w -2 <image.d71> 8` | Write D71 in true 1571 mode (`-2`); d64copy reports `-w` is implicit for `.d71` |
+| `d64copy` | `--no-progress -w 8 <readback.img>` / `--no-progress -2 8 <readback.img>` | Non-destructive readback for `cmp` byte comparison |
+| `cmp` | `<image> <readback.img>` | Byte-for-byte write verification |
+| `x128` | `-80col -8 <image.d64> -sounddev dummy -logfile <file>` | Boot the image locally before touching hardware |
+| `x128` | `-80col -devicebackend8 2 -busdevice8 -sounddev dummy` | Boot the **real** drive via OpenCBM passthrough (no image on drive 8) |
+| `x128` | `-9 <data.d64>` (optional, added to the above) | Mount a local data disk as drive 9 (`B:`) in the two-drive setup |
+| `xdotool` | `search --onlyvisible --class x128`, `windowactivate --sync`, `type --delay 100 'DIR'`, `key Return` | Send CP/M commands to the emulator window |
+| `spectacle` | `-b -o /tmp/opencode/vice-real-d71-dir.png` | Capture the desktop (X11 root capture via `import`/`ffmpeg` is black on this Xwayland session) |
+
+#### 0. Hardware setup and bus reset
+
+```bash
+paru -S opencbm
+# if /etc/opencbm.conf is missing: copy /etc/opencbm.conf.sample to it, then:
+sudo opencbm_plugin_helper_tools rebuild
+# USB cable udev rules need applying if the device was plugged in before install:
+sudo udevadm control --reload-rules && sudo udevadm trigger
+cbmctrl detect          # e.g. " 8: 1571"
+cbmctrl status 8        # e.g. "73,cbm dos v3.0 1571,00,00"
+# (a harmless "undefined symbol: keyctl" warning from libudev can be ignored)
+
+# Release/reset the USB-to-IEC line and confirm the drive is alive again:
+cbmctrl reset          # resets all drives on the IEC bus (takes no device argument)
+cbmctrl status 8
+```
+
+To format from scratch (DESTRUCTIVE): `cbmforng -v -s -x -c -o 8 "CPM BOOT","C1"`
+(`-x` 40-track extended, `-c` clear, `-o` original sector pattern, `-v` verify, `-s` status),
+or `cbmformat -v -s -p 8 "CPM BOOT","C1"`.
+
+#### 1. Build the bootable image (in-process, no ctools)
+
+```bash
+dotnet run --project D64Editor.App -- --cpm-extract 128cpm/MBASIC.d71 /tmp/opencode/cpm-stage --strict
+dotnet run --project D64Editor.App -- --cpm-copy 128cpm/c128-cpm.system.6228129311-9283de.d64 \
+    /tmp/opencode/boot-base.d64 --files CPM+.SYS,CCP.COM,DIR.COM,PIP.COM
+dotnet run --project D64Editor.App -- --cpm-bootable /tmp/opencode/boot-base.d64 \
+    /tmp/opencode/bootable.d64 MBASIC.COM=/tmp/opencode/cpm-stage/MBASIC.COM \
+    WUMP.BAS=/tmp/opencode/cpm-stage/WUMP.BAS
+dotnet run --project D64Editor.App -- --cpm-extract /tmp/opencode/bootable.d64 /tmp/opencode/cpm-verify --strict
+```
+
+`--cpm-bootable` directly on the full system disk fails with *"No free CP/M data blocks left"*
+— the donor is full, so the `--cpm-copy --files` step is required. Omitting `CCP.COM` makes
+CP/M Plus fail to boot ("no ccp.com"), so keep the system files.
+
+#### 2. Boot the image first (before writing hardware)
+
+```bash
+x128 -80col -8 /tmp/opencode/bootable.d64 -sounddev dummy -logfile /tmp/opencode/x128-boot.log
+# At A>: type DIR -> CPM+.SYS, CCP.COM, PIP.COM, DIR.COM, MBASIC.COM, WUMP.BAS
+```
+
+#### 3. Write both formats to the real 1571 (warp, no `-t`)
+
+```bash
+# D64: single-sided (1541) mode
+cbmctrl command 8 'U0>M0'
+d64copy --no-progress -w /tmp/opencode/bootable.d64 8
+d64copy --no-progress -w 8 /tmp/opencode/d64-readback.img
+cmp /tmp/opencode/bootable.d64 /tmp/opencode/d64-readback.img   # byte-for-byte identical
+
+# D71: true 1571 mode (two-sided, -2)
+cbmctrl command 8 'U0>M1'
+d64copy --no-progress -w -2 /tmp/opencode/bootable.d71 8
+d64copy --no-progress -2 8 /tmp/opencode/d71-readback.img
+cmp /tmp/opencode/bootable.d71 /tmp/opencode/d71-readback.img   # byte-for-byte identical
+```
+
+The D71 used here is a 349,696-byte container with the same single-sided CP/M payload on side 1
+and a blank side 2; `-2` still writes it as a true two-sided 1571 disk. A genuine double-sided
+2K-block CP/M system disk would require a real D71 boot donor.
+
+#### 4. Boot from the physical drive
+
+```bash
+x128 -80col -devicebackend8 2 -busdevice8 -sounddev dummy
+# VICE log: "Real Device: libusb/xum1541:1/19 opened"
+# CP/M 3.0 loads DATA TABLES / COMMON CODE / BANKED CODE -> 59K TPA
+```
+
+#### 5. Starting and stopping VICE (and building the command in D64Editor)
+
+D64Editor can build, print, start and stop this command line for you — no hand-written quoting:
+
+```bash
+# Print the exact command (add --data IMG to mount it on drive 9/B:):
+dotnet run --project D64Editor.App -- --cbm vice command
+# x128 -80col -devicebackend8 2 -busdevice8 -sounddev dummy
+
+# Print with software-GL workaround and a log file:
+dotnet run --project D64Editor.App -- --cbm vice command \
+    --dev 8 --data /tmp/opencode/bootable.d71 --softgl --log /tmp/opencode/vice.log
+# LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe x128 -80col \
+#   -devicebackend8 2 -busdevice8 -9 /tmp/opencode/bootable.d71 -sounddev dummy \
+#   -logfile /tmp/opencode/vice.log
+
+# Start / stop (PID is recorded in /tmp/d64editor-vice.pid; stop kills only that process):
+dotnet run --project D64Editor.App -- --cbm vice start --softgl --log /tmp/opencode/vice.log
+dotnet run --project D64Editor.App -- --cbm vice stop
+# --dry-run prints the command without starting anything.
+```
+
+Options: `--dev N` (real IEC device, default 8), `--data IMG` (drive 9 / `B:`), `--emu PATH`
+(default `x128`), `--40col`, `--sound DEV` (default `dummy`), `--log FILE`, `--softgl`,
+`--dry-run`. `--cbm boot <image> <dev>` is kept as a legacy alias for `vice start --data`.
+
+**Environment notes:** VICE 3.10's GTK3 build segfaults intermittently on this Xwayland
+session; use `--softgl` (or `LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe`) and retry.
+After startup, wait for the `A>` prompt before sending keys; use
+`xdotool windowactivate --sync $(xdotool search --onlyvisible --class x128 | tail -1)` and
+`xdotool type --delay 100 'DIR'`. To stop a VICE you launched manually, use
+`pkill -f '^x128 '`.
+
+**Bus ownership:** VICE talks to the real drive through OpenCBM, so only one process may own
+the bus at a time — close `cbmctrl`/`d64copy` before launching VICE, and stop VICE before any
+`cbmctrl`/`d64copy` command. The CP/M image occupies 35 tracks; formatting 40-track extended
+(`-x`) is harmless (extra tracks are unused by CP/M).
+
 ### Limitations
-- `.d81` (1581) writing is in-process only; `ctools` covers `.d64`/`.d71`, and `cpmtools`
-  needs a matching diskdef/libdsk geometry. The in-process D81 map is self-consistent but not
-  verified against real 1581 CP/M media.
+- `.d81` (1581) CP/M writing is in-process only (the optional external `ctools`/`cpmtools`
+  paths cover `.d64`/`.d71`). The in-process D81 map is self-consistent but not verified
+  against real 1581 CP/M media.
 - From-scratch data disks are **not bootable**; use a system-disk donor (`--cpm-bootable`) or
   the two-drive setup above.
 - A bootable donor must have enough free directory/data blocks for the imported files.
@@ -768,7 +912,7 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 - Emulator launch requires an emulator (VICE/x64sc, x128, etc.) installed.
 - OpenCBM transfer requires OpenCBM installed and a real drive.
 - Real CP/M disk verification requires real C128 CP/M images/templates and hardware. For emulator smoke-testing, VICE `x128` is used with two drives (system disk on 8, data disk on 9); see [CP/M Support](#cpm-support-c128-cpm).
-- ctools (recommended for CP/M) and libdsk-enabled cpmtools are external tools you install yourself; the app falls back to its in-process implementation when absent.
+- ctools and libdsk-enabled cpmtools are optional external tools you install yourself; they are used only by the explicit `--ctools`/`--cpm-cpmtools` verbs. All default `--cpm-*` commands and `cpm*` script commands run in-process and need no external tools.
 - **CP/M 2.2 full-screen programs** (e.g. SuperSoft Nemesis) render garbled under C128 CP/M 3.0 in x128: the console BIOS does not implement the cursor-addressing escape sequences they emit, and editing `TERM.DEF` does not help. Line-oriented programs (MBASIC, Infocom Zork) and plain BASIC work correctly. This is an emulator/system console limitation, not file corruption — see [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
 - Graphics viewer enhancements (zoom/pan, richer format/export controls) beyond current zoom + BMP save.
 
