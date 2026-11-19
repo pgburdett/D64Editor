@@ -739,6 +739,10 @@ Options: `--dev N` (real IEC device, default 8), `--data IMG` (drive 9 / `B:`), 
 (default `x128`), `--40col`, `--sound DEV` (default `dummy`), `--log FILE`, `--softgl`,
 `--dry-run`. `--cbm boot <image> <dev>` is kept as a legacy alias for `vice start --data`.
 
+For a C64C/NTSC session in `x64sc` with the real drive attached, the verified display settings
+(`-model c64c -ntsc -power60 -VICIIaspectmode 0 -windowwidth 1400 -windowheight 900`) are
+recorded in [HARDWARE_WORKFLOW.md](HARDWARE_WORKFLOW.md#c64-x64sc-with-the-real-drive--verified-display-settings).
+
 **Environment notes:** VICE 3.10's GTK3 build segfaults intermittently on this Xwayland
 session; use `--softgl` (or `LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe`) and retry.
 After startup, wait for the `A>` prompt before sending keys; use

@@ -129,6 +129,33 @@ Options: `--dev N` (real IEC device, default 8), `--data IMG` (drive 9/`B:`), `-
 
 To stop a manually launched VICE: `pkill -f '^x128 '`.
 
+### C64 (`x64sc`) with the real drive — verified display settings
+
+For a C64C/NTSC session with the real 1571 attached as device 8, this is the verified launch
+(command line from the successful session; drive must be in 1541 mode, `U0>M0`):
+
+```bash
+LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe x64sc \
+    -model c64c -ntsc -power60 \
+    -VICIIaspectmode 0 -windowwidth 1400 -windowheight 900 \
+    -devicebackend8 2 -busdevice8 -sounddev dummy \
+    -logfile /tmp/opencode/x64sc-real.log
+```
+
+- `-model c64c -ntsc -power60` → C64C, NTSC (VIC-II 8562), 60 Hz power grid.
+- `-VICIIaspectmode 0` → square pixels; removes the grey pillarboxes VICE otherwise adds for
+  aspect-ratio correction.
+- `-windowwidth 1400 -windowheight 900` → the preferred 2× screen size; the C64 border fills
+  the window width with no grey side bars. If the window is resized live, VICE scales the
+  rendered screen to fill it:
+  ```bash
+  wid=$(xdotool search --onlyvisible --class x64sc | tail -1)
+  xdotool windowsize "$wid" 1400 900
+  ```
+- Software GL (`LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe`) works around the intermittent
+  GTK3 startup segfault on this Xwayland session; retry the launch until one instance stays up.
+- Stop with `pkill -f '^x64sc '`, then `cbmctrl reset` to release the IEC bus.
+
 ## 5. Observing and cleaning up
 
 ```bash
