@@ -175,6 +175,22 @@ cbmctrl status 8
 
 ## Notes and troubleshooting
 
+- **`x64sc` LOAD from the real drive hangs (VICE 3.10 + OpenCBM 0.4.99):** diagnosed with a
+  gdb trace of the OpenCBM plugin calls. VICE issues `cbm_open(dev=8, sec=0, name="", len=0)`,
+  then sends the filename (`*`) as a separate `cbm_raw_write`, `UNLISTEN`, `cbm_talk(8,0)`, and
+  then loops forever on `cbm_raw_read(1)` + `cbm_get_eoi()` — EOI never arrives and no data is
+  returned. The drive-side error is the empty filename at OPEN time.
+  - Verified directly against libopencbm: `cbm_open(f,8,0,"$",1)` → `cbm_talk` →
+    `cbm_raw_read`+`cbm_get_eoi` returns the 128-byte directory with EOI at byte 127;
+    `cbm_open(f,8,0,"*",1)` reads a 337-byte PRG with EOI at the last byte. Replicating VICE's
+    empty-name-then-write sequence returns `n=0, eoi=1` immediately (no data).
+  - So the XUM1541 plugin and EOI handling are fine; VICE 3.10's real-device backend is not
+    passing the filename through `cbm_open` correctly for this OpenCBM version. Workarounds:
+    use a VICE build where this is fixed, or use the emulated filesystem backend (`.d64`/`.d71`
+    image on drive 8/9) for program loading while keeping the real drive for CP/M boot writes.
+  - To reproduce the trace: launch x64sc with `-logfile`, `-verbose -debug -loglimit 255`, set
+    `XUM1541_DEBUG=1`, and attach `gdb` (needs root/`ptrace_scope`) with breakpoints on
+    `opencbm_plugin_{open,talk,raw_read,raw_write,get_eoi,unlisten}`.
 - **One owner of the bus:** VICE uses OpenCBM, so stop VICE before any `cbmctrl`/`d64copy`
   command, and finish those before launching VICE.
 - **Never use `-t original`** for these transfers — it is slow and can time out; warp is the
