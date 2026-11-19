@@ -10,7 +10,10 @@
 
         <Border Background="#001100" Padding="6">
             <ListBox Name="FilesList" Background="Transparent" Foreground="#33FF66"
-                     FontFamily="{x:Static local:Fonts.Petscii},Consolas,Monospace" FontSize="13">
+                     FontSize="13">
+                <ListBox.FontFamily>
+                    <x:Static Member="local:Fonts.Petscii" />
+                </ListBox.FontFamily>
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="local:CpmFileRow">
                         <TextBlock Text="{Binding Summary}" />
