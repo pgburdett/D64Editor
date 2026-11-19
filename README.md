@@ -619,7 +619,8 @@ Reading a real disk is non-destructive: `d64copy -2 8 image.d71` (device first).
 Verified with a **ZoomFloppy (XUM1541)**, a real **1571** on device 8, VICE 3.10 `x128` and
 D64Editor's in-process CP/M engine: build a bootable CP/M image, stage files, boot it from an
 image, write it to the real disk with warp and **no `-t`**, byte-verify the readback, then
-boot straight from the physical drive over OpenCBM passthrough.
+boot straight from the physical drive over OpenCBM passthrough. A standalone copy of this
+procedure is in [HARDWARE_WORKFLOW.md](HARDWARE_WORKFLOW.md).
 
 #### Applications and exact parameters used
 
