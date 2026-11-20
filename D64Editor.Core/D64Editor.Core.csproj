@@ -13,6 +13,7 @@
         <EmbeddedResource Include="Assets\BOOT.D71.bin" LogicalName="D64Editor.Core.Assets.BOOT.D71.bin" />
         <EmbeddedResource Include="Assets\gcrsampler.bin" LogicalName="D64Editor.Core.Assets.gcrsampler.bin" />
         <EmbeddedResource Include="Assets\tailgap.bin" LogicalName="D64Editor.Core.Assets.tailgap.bin" />
+        <EmbeddedResource Include="Assets\rawwriter.bin" LogicalName="D64Editor.Core.Assets.rawwriter.bin" />
     </ItemGroup>
 
 </Project>

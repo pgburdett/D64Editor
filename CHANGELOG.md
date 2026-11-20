@@ -3,6 +3,12 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Serial Raw-Track Writer (code complete, untested)
+
+### Added
+- `Core/RawWriter.cs`, `Assets/RawWriter.s/.bin` and `--writeraw <dev> <track> <hexpattern> <count>`: drive-side 6502 routine writes raw GCR patterns via VIA2 in write mode over the plain IEC serial cable (no parallel nibbler).
+- Documented VIA2 write sequence and explicit safety warning: DESTRUCTIVE, blank test disk only, not run on hardware.
+
 ## [Unreleased] — Protected-Track Reproduction
 
 ### Added

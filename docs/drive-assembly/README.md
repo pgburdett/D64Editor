@@ -455,7 +455,38 @@ dotnet run --project D64Editor.App -- --cbm gaps /tmp/repro.g64
 
 `--cbm gaps` confirms the reproduction: T2 has 0 sync/0 sectors, T36 has 468 sync runs/0
 sectors, T37-40 have 33/0 — i.e. the same anomaly signature as the original preservation G64.
-This reproduces the **protection pattern**; the base D64 used here was decoded from the G64 with
-106 undecodable sectors, so the game data itself is not a fully faithful source. Writing these
-raw tracks to real media would require a raw-track-capable nibbler (an XP1541/XP1571 parallel
-cable); OpenCBM/XUM1541 can only write sector images.
+This reproduces the **protection pattern** in a G64. Writing it to real media needs a raw-track
+writer — the serial-cable version is described below.
+
+## 12. Serial raw-track writer (hardware, DESTRUCTIVE)
+
+`RawWriter.s/.bin` and `Core/RawWriter.cs` implement raw GCR writing over the **plain IEC
+serial cable** — no parallel nibbler required. The 93-byte drive routine generates the pattern
+on the drive itself, so the host never has to stream 6 KB in real time:
+
+1. host seeks the target track with an FDC SEEK job;
+2. uploads a power-of-two pattern to `$0400`, byte count to `$03F0/$03F1`, pattern mask to
+   `$03F2`, status `$00` to `$03F3`, and the routine to `$0500`;
+3. launches it with M-E `$0500`;
+4. polls `$03F3` for `$A5`.
+
+Drive-side VIA2 sequence (from *Inside Commodore DOS* §9.8):
+- `LDA #$FF / STA $1C03` — Port A is an output.
+- `LDA $1C0C / AND #$1F / ORA #$C0 / STA $1C0C` — CB2 low = **write mode**.
+- For each byte: `BVC` (wait for byte-ready, the 6502 SO pin), `CLV`,
+  `LDA pattern,y / STA $1C01` — the byte goes to the 74LS165 shift register and is clocked
+  out to the head; the pattern index wraps with the uploaded mask.
+- After the count expires: wait one final `BVC`, then `LDA $1C0C / ORA #$E0 / STA $1C0C`
+  (read mode), `LDA #$00 / STA $1C03` (Port A input), set status `$A5`, RTS.
+
+CLI (DESTRUCTIVE — use a blank test disk, never an original):
+
+```bash
+dotnet run --project D64Editor.App -- --writeraw 8 2 CCAD 3333
+# pattern must be a power-of-two number of hex bytes; count = number of bytes written
+```
+
+**Status: code complete, NOT run on hardware.** The disk currently in drive 8 is the original
+EA disk, so no write test has been attempted. Tracks above 35 cannot be reached with a SEEK job
+(no header to find); they need a drive-side stepper routine before a full reproduction can be
+written to real media.

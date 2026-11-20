@@ -58,6 +58,27 @@ internal static class Cli
             case "--to-gcr":
                 return ToGcr(args);
 
+            case "--writeraw":
+            {
+                if (args.Length < 5 ||
+                    !int.TryParse(args[1], out var dev) ||
+                    !int.TryParse(args[2], out var track) ||
+                    !int.TryParse(args[4], out var count))
+                {
+                    Console.Error.WriteLine("Usage: D64Editor --writeraw <dev> <track> <hexpattern> <count>");
+                    Console.Error.WriteLine("  DESTRUCTIVE: writes raw GCR bytes to the selected track. Use a blank test disk.");
+                    return true;
+                }
+                try
+                {
+                    var pattern = System.Convert.FromHexString(args[3]);
+                    var r = RawWriter.Write(dev, track, pattern, count);
+                    Console.WriteLine((r.Ok ? "RAW WRITE OK: " : "RAW WRITE FAILED: ") + r.Detail);
+                }
+                catch (Exception ex) { Console.Error.WriteLine("Raw write failed: " + ex.Message); }
+                return true;
+            }
+
             case "--protect":
             {
                 if (args.Length < 3) { Console.Error.WriteLine("Usage: D64Editor --protect <base.d64> <out.g64>"); return true; }
