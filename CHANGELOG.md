@@ -3,15 +3,15 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased] — Drive-Side Raw GCR Sampler (code complete, untested)
+## [Unreleased] — Drive-Side Raw GCR Sampler (current track only)
 
 ### Added
-- `--cbm gcrscan <dev> <track> [outfile]` and `Core/GcrScan.cs`: uploads a 6502 sampler to drive RAM, delta-steps to the target track, reads 256 raw GCR bytes from VIA2, and downloads them for anomaly analysis.
+- `--cbm gcrscan <dev> [outfile]` and `Core/GcrScan.cs`: uploads a 6502 sampler to drive RAM, reads 256 raw GCR bytes from VIA2 on the CURRENT track, and downloads them for anomaly analysis. The sampler cannot move the head.
 - Embedded 6502 source/binary: `Core/Assets/GcrSampler.s` / `gcrsampler.bin`.
-- Safe stepping per *Inside Commodore DOS*: two VIA phase changes per track, zone bits set from target track, delta capped at 17 tracks, no end-stop homing, parameters in unused RAM (`$03F0`/`$03F1`) rather than zero page. Status/phase at `$0300`/`$0301` are verified.
+- `docs/inside-commodore-dos.txt`: extracted reference text with provenance in `docs/README.md`.
 
 ### Notes
-- Code builds cleanly but has NOT been run on hardware since the stepper fix; a supervised single-track test is required before trusting results.
+- All stepper experiments were reverted after they caused head clatter. The correct VIA rules (two phase changes per track, speed zones, no ROM disk routines via M-E) are documented in `HARDWARE_WORKFLOW.md` but are not implemented in drive code.
 
 ## [Unreleased] — VICE OpenCBM Diagnosis, Source Patch & Fast-Loader Finding
 
