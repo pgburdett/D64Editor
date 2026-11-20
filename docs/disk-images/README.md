@@ -36,5 +36,8 @@ dotnet run --project D64Editor.App --no-build -- \
   --convert 'arcticfox[ea_1986](!).g64' af-g64.d64
 ```
 
+Generated images (e.g. `generated/protected-repro.g64`) are documented in
+[`generated/README.md`](generated/README.md).
+
 See `tools/diagnostics/README.md` for the VICE launchers and binary-monitor clients that use
 these images.

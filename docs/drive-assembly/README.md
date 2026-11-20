@@ -419,6 +419,9 @@ host to drive the serial lines — the exact boundary where custom fastloader ti
 emulated bus. With both CPUs emulated and `-drive8truedrive`, the handshake completes and the
 game loads.
 
+Captured raw samples and generated images are indexed in [`samples/README.md`](samples/README.md)
+and [`../disk-images/generated/README.md`](../disk-images/generated/README.md).
+
 See `tools/diagnostics/README.md` for the full script list and a reproducible trace session.
 
 ## 10. Raw contents of the protected tracks (Arctic Fox G64)
