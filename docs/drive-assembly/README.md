@@ -486,7 +486,11 @@ dotnet run --project D64Editor.App -- --writeraw 8 2 CCAD 3333
 # pattern must be a power-of-two number of hex bytes; count = number of bytes written
 ```
 
+For tracks **36–40**, `RawWriter` first SEEKs to track 35, then runs the 82-byte
+`Stepper.s/.bin` routine at `$0600`: delta at `$03F7`, two VIA phase increments per track
+(documented inward sequence), a ~20 ms per-phase delay, zone bits cleared with `AND #$9F`,
+status `$A5` at `$03F8`. No end-stop homing and no zero-page writes.
+
 **Status: code complete, NOT run on hardware.** The disk currently in drive 8 is the original
-EA disk, so no write test has been attempted. Tracks above 35 cannot be reached with a SEEK job
-(no header to find); they need a drive-side stepper routine before a full reproduction can be
-written to real media.
+EA disk, so no write test has been attempted. A blank test disk is required before any
+`--writeraw` invocation.

@@ -27,6 +27,35 @@ public static class RawWriter
         return ms.ToArray();
     }
 
+    private static byte[] LoadStepper()
+    {
+        using var stream = typeof(RawWriter).Assembly.GetManifestResourceStream("D64Editor.Core.Assets.stepper.bin")
+            ?? throw new InvalidOperationException("Missing embedded stepper asset.");
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        return ms.ToArray();
+    }
+
+    /// <summary>Short inward step from track 35; no end-stop homing.</summary>
+    private static Result StepTo(int device, int delta, int timeoutMs = 10000)
+    {
+        var d = OpenCbm.UploadMemory(device, 0x03F7, new[] { (byte)delta });
+        var s = OpenCbm.UploadMemory(device, 0x03F8, new byte[] { 0 });
+        var u = OpenCbm.UploadMemory(device, 0x0600, LoadStepper());
+        if (!d.Success || !s.Success || !u.Success) return new Result(false, "stepper upload failed");
+        var exec = OpenCbm.Execute(device, 0x0600);
+        if (!exec.Success) return new Result(false, "stepper M-E failed: " + exec.Error.Trim());
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMs)
+        {
+            var st = OpenCbm.DownloadMemory(device, 0x03F8, 1, out var b);
+            if (st.Success && b.Length == 1 && b[0] == DoneMarker)
+                return new Result(true, $"stepped {delta} track(s) inward");
+            Thread.Sleep(50);
+        }
+        return new Result(false, "stepper did not finish");
+    }
+
     public static Result Write(int device, int track, byte[] pattern, int count, int timeoutMs = 60000)
     {
         if (track is < 1 or > 40) return new Result(false, "track must be 1..40");
@@ -34,8 +63,14 @@ public static class RawWriter
             return new Result(false, "pattern length must be a power of two");
         if (count <= 0 || count > 0xFFFF) return new Result(false, "count must be 1..65535");
 
-        var seek = SectorRead.Seek(device, track);
+        var seekTrack = track > 35 ? 35 : track;
+        var seek = SectorRead.Seek(device, seekTrack);
         if (!seek.Ok) return new Result(false, "SEEK failed: " + seek.Detail);
+        if (track > 35)
+        {
+            var step = StepTo(device, track - 35);
+            if (!step.Ok) return new Result(false, "stepper failed: " + step.Detail);
+        }
 
         var p = OpenCbm.UploadMemory(device, PatternAddress, pattern);
         if (!p.Success) return new Result(false, "pattern upload failed: " + p.Error.Trim());
