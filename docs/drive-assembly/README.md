@@ -420,3 +420,18 @@ emulated bus. With both CPUs emulated and `-drive8truedrive`, the handshake comp
 game loads.
 
 See `tools/diagnostics/README.md` for the full script list and a reproducible trace session.
+
+## 10. Raw contents of the protected tracks (Arctic Fox G64)
+
+Byte histograms of the G64 raw track data explain why the DOS reads fail:
+
+| Track | Bytes | Dominant bytes | Interpretation |
+|---|---|---|---|
+| 2 | 6,666 | `AF`×2736, `5B`×1028, `99`×1024, `AD`×813, `CC`×810, `00`×206 | No `$FF` sync bytes at all. A repeating GCR pattern (`CC AD ...`), so the FDC reports "no sync character" for every sector. A copier that reformats this as a blank track would insert sync and fail the original-media check. |
+| 36 | 7,015 | `$FF`×2252, `6F`×617, `55`×460, `AA`×270 | 469 `$FF` sync runs but zero decodable sector headers — a track largely made of sync marks and filler. |
+| 37-40 | ~6,249 | `6F`/`DE`/`BD`/`ED` repeating | Structured GCR noise with occasional sync, but no valid headers/data blocks. |
+
+These are not random damaged tracks: they carry deliberately constructed GCR patterns. Together
+with the voided track 2, they form the physical-media signature the loader can verify with
+drive-side code but a D64/NIB sector copy cannot reproduce. The `--cbm gaps` analyzer reports
+these as sync/sector-count anomalies.
