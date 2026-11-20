@@ -1,5 +1,44 @@
 # 6502 drive-code reference (detailed)
 
+## Background: EA PRODOS / PirateSlayer protection
+
+The Arctic Fox (EA/Dynamix, 1986) disk uses **PRODOS**, Electronic Arts' early proprietary
+copy-protection scheme that later evolved into **PirateSlayer**. Unlike standard CBM DOS, it
+relies on custom track layouts and gap manipulation:
+
+- **Non-standard tracks/gaps:** protected tracks replace normal `$55` intersector gaps and
+  sector framing with sync-less streams, altered gap lengths and custom GCR markers, defeating
+  sector-based copiers.
+- **Custom drive code:** the loader uploads 6502 code to drive RAM `$0300-$07FF`, bypassing the
+  drive ROM and reading raw GCR from VIA2 `$1C01`, checking timing/patterns in gaps and between
+  blocks.
+- **Rotation/timing verification:** like PirateSlayer, it checks physical rotation timing and
+  tail-gap spacing; drive motor-speed variation (~300 RPM) means a byte-exact copy can still
+  fail the timing window.
+- **Killer/unformatted regions:** deliberate read errors, unformatted space and long SYNC runs
+  hang naive nibblers trying to find track boundaries.
+- **Imaging:** cannot be represented faithfully in `.d64`; preservation needs flux/nibble
+  (`.g64`/`.nib`). `nibread` shows non-standard track lengths and custom-GCR warnings on the
+  protection tracks (often T35/T36); `nibconv` to G64 preserves exact gap counts for VICE.
+
+### Correlation with our observations
+
+- Uploaded drive code at `$0300-$07FF` executing in the emulated 1571: **confirmed** by the
+  drive-CPU trace (sections 9/10).
+- Raw GCR reads from `$1C01`, `BVC`/`CLV` byte-ready loop: **confirmed** in the fastloader
+  disassembly and our `GcrReader`.
+- Void track 2 (no `$FF` sync, 0 decoded sectors) and non-standard extended tracks 36-40, with
+  long SYNC runs on T36: **confirmed** by `--cbm gaps` on the preservation G64 and by the
+  real-drive surface scan.
+- Tail-gap reading via uploaded drive code: strongly supported by the Kracker Jax `TGREAD`
+  utility we ported (section 8) and our gap-byte capture.
+- Track-length/rotation timing check: **not directly measured** by us — the fastloader's
+  `$0520-$0525` delay/handshake loop is consistent with it, but we have no isolation test.
+- D64→G64 conversion losing protection and failing in the loader: **confirmed** (section 11
+  and the boot tests in `docs/disk-images/generated/README.md`).
+
+This is user-provided research context; the confirmed items above are backed by our traces.
+
 This folder documents the 6502 code that has been uploaded into the 1541/1571 drive RAM
 while developing raw GCR access. All files are reference material; only
 `../../D64Editor.Core/Assets/GcrSampler.s` is built into the application (embedded as
