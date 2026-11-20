@@ -234,6 +234,11 @@ same fastloader code at drive RAM `$0300-$07FF` and settles into its `$0520-$052
 The non-stopping CPU-history tracer loads the game fully to the "Enemy Review" screen. All disk
 images used are preserved in [`docs/disk-images/`](docs/disk-images/README.md).
 
+A G64 made from a sector-level `d64copy` capture of the real EA disk (even with the void track 2
+re-injected) boots into the fastloader but hangs at its loading screen: the D64 intermediate
+loses the authentic GCR gap/timing on the other tracks. A faithful G64 requires raw GCR capture;
+see [`docs/disk-images/generated/README.md`](docs/disk-images/generated/README.md).
+
 Offline raw-GCR analysis is available with `--cbm gaps <image.g64>`. On the Arctic Fox G64 it
 confirms **track 2 has zero sync runs and zero decodable sectors** (matching the real-drive
 surface scan), and shows extended tracks **36-40** are also non-standard: T36 contains 469 sync
