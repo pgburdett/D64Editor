@@ -259,3 +259,113 @@ itself, and replaces the job code with an FDC status code:
 
 Codes `$80` and above mean the job is still pending. This path never uploads executable code
 and never touches the stepper directly — the drive firmware owns the head movement.
+
+---
+
+## 7. NBZ decoding — how the Kracker Jax disks were opened
+
+`../../D64Editor.Core/Nbz.cs` implements the Marcus Geelnard LZ77 decompressor used by
+preservation-project `.nbz` files:
+
+- byte 0 of the file is the **marker**;
+- a literal is any byte other than the marker;
+- marker followed by `0x00` means a literal marker byte;
+- otherwise the marker is followed by two 7-bit variable-length integers: **length** then
+  **offset**, and `length` bytes are copied from `output.Length - offset` (overlapping copies
+  are allowed, which is how long runs are encoded).
+
+Decompressing an `.nbz` yields a standard **MNIB-1541-RAW NIB** image: a 256-byte header
+with magic `"MNIB-1541-RAW"`, version at `$0D`, then 120 `(half_track, density)` pairs from
+`$10` onward, followed by 8192-byte raw GCR blocks per present track. `NibImage.TryLoad()`
+and `ToD64Bytes()` already decode that to a D64, so `--convert in.nbz out.d64` now works.
+
+This unlocked the Kracker Jax "Revealed Trilogy" disks. A batch over all 10 `.nbz` files found:
+- side 2 `TGREAD` — reads 5 tail-gap bytes (port described below);
+- vol 3 — a routine referring to a header gap set to `$0A`;
+- no literal "fat track" text. See `../HARDWARE_WORKFLOW.md` for the search summary.
+
+---
+
+## 8. TGREAD port — tail-gap reading from FDC context
+
+### Original (Kracker Jax "Revealed Trilogy" side 2)
+
+`tgread-original-host.prg` is the C64 BASIC loader. Its DATA statements contain a 6502
+program loaded at drive RAM `$0500` (`tgread-original.bin`, disassembled below). It:
+
+1. writes `JMP $0524` into `$0300` (buffer 0 start — the FDC JUMP vector);
+2. copies track/sector parameters from `$0203/$0204` into zero page `$06/$07`;
+3. waits on `$00`, then returns;
+4. the FDC jumps to `$0524`, which calls ROM `$F510` (read header), waits for SYNC via
+   `$1C00`, reads bytes from `$1C01` using VIA handshaking, stores five bytes at
+   `$0300-$0304`, calls `$F98F` (motor off), sets `$00=1` and returns.
+
+```asm
+; original setup at $0500
+78        sei
+A9 4C     lda #$4C
+8D 00 03  sta $0300        ; JMP opcode
+A9 24     lda #$24
+8D 01 03  sta $0301
+A9 05     lda #$05
+8D 02 03  sta $0302        ; JMP $0524
+AD 03 02  lda $0203
+85 06     sta $06
+AD 04 02  lda $0204
+85 07     sta $07
+A9 E0     lda #$E0
+85 00     sta $00
+58        cli
+A5 00     lda $00
+30 FC     bmi *-4
+60        rts
+
+; original FDC routine at $0524
+78        sei
+20 10 F5  jsr $F510        ; ROM: read header
+2C 00 1C  bit $1C00
+10 FB     bpl *-5          ; wait SYNC low
+2C 00 1C  bit $1C00
+30 FB     bmi *-5          ; wait SYNC high
+AD 01 1C  lda $1C01        ; read GCR byte
+B8        clv
+A2 01     ldx #$01
+A0 45     ldy #$45
+50 FE     bvc *-2
+B8        clv
+AD 01 1C  lda $1C01
+88        dey
+D0 F7     bne *-9
+CA        dex
+10 F4     bpl *-14
+...       ; five more bytes into $0300-$0304
+20 8F F9  jsr $F98F        ; motor off
+A9 01     lda #$01
+85 00     sta $00
+58        cli
+60        rts
+```
+
+The important lesson: those ROM calls are legal **only** because the routine runs in FDC
+context via a JUMP job. The same calls via M-E from the IP wedged the drive
+(`sync-test-rom-jump.s`).
+
+### Our port (`TailGap.port.s/.bin`, embedded as `Assets/tailgap.bin`)
+
+`../../D64Editor.Core/TailGap.cs` and `--cbm tailgap <dev> [outfile]`:
+
+1. upload the 87-byte routine to drive RAM `$0500`;
+2. write `4C 00 05` (`JMP $0500`) to `$0300` — the buffer-0 jump vector;
+3. write job code `$D0` (JUMP) to `$0000`;
+4. wait for the FDC to finish;
+5. download six bytes from `$0300`: five gap bytes plus status at `$0305`.
+
+The port keeps the JUMP-job structure but reads VIA2 directly (PCR `$EF`, IFR bit 1
+BYTE-READY, `$1C01` data) instead of calling ROM routines. It stores the five gap bytes at
+`$0300-$0304` (overwriting the now-consumed JMP vector) and signals `$A5` at `$0305`.
+Verified on hardware: gap bytes `60 24 46 23 99`, drive status `00, ok,00,00`.
+
+### C host probes
+
+`c-probes/` contains the four standalone OpenCBM C programs used to diagnose the VICE LOAD
+bug and the XUM1541 burst limitation; see `c-probes/README.md`.

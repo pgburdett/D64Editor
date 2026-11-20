@@ -3,6 +3,13 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — TGREAD Tail-Gap Port, NBZ Decoding & Project Probes
+
+### Added
+- `Core/TailGap.cs` + `Assets/TailGap.s/.bin` and `--cbm tailgap <dev> [outfile]`: port of the Kracker Jax "Revealed Trilogy" TGREAD utility. Runs in FDC context via JUMP job `$D0`, reads five tail-gap bytes from VIA2 into `$0300-$0304`. Verified on hardware (`60 24 46 23 99`).
+- `Core/Nbz.cs` and `.nbz` support in `--convert`: LZ77 decompression to MNIB NIB, then NIB→D64. Used to decode all ten Kracker Jax disks.
+- `docs/drive-assembly/`: all 6502 experiments, original TGREAD disassembly/binary, and `c-probes/` OpenCBM C programs, with detailed documentation.
+
 ## [Unreleased] — Drive-Side Raw GCR Sampler (current track only)
 
 ### Added

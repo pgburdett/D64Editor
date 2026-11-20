@@ -224,6 +224,12 @@ archive. Their files include `KJ DOCS` (usage notes) and a `TGREAD` utility that
 code to `$0500`, jumps to it via the job queue, and reads 5 tail-gap bytes from `$1C01` into
 `$0300-$0304` — useful reference for gap/sync work. No literal "fat track" text was found.
 
+That utility has been ported as `--cbm tailgap <dev> [outfile]`: D64Editor uploads an 87-byte
+FDC-context routine to `$0500`, installs `JMP $0500` at `$0300`, queues JUMP job `$D0`, then
+downloads the five gap bytes from `$0300-$0304` (status at `$0305`). Verified on hardware:
+`60 24 46 23 99`. See `docs/drive-assembly/README.md` for the full original disassembly and
+port details.
+
 ### Drive-side raw GCR sampler (current track only)
 
 `--cbm gcrscan <dev> [outfile]` uploads a 6502 routine to drive RAM, spins the motor, waits

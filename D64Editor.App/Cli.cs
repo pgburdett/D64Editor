@@ -1021,6 +1021,7 @@ internal static class Cli
             Console.Error.WriteLine("  sector <dev> <track> <sector> [outfile] Read a sector via the drive FDC job queue (safe seek/read)");
             Console.Error.WriteLine("  seek <dev> <track>        Move the head via the drive FDC SEEK job (drive firmware steps)");
             Console.Error.WriteLine("  surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]  FDC surface scan");
+            Console.Error.WriteLine("  tailgap <dev> [outfile] Read 5 tail-gap bytes via FDC JUMP job (Kracker Jax TGREAD port)");
             Console.Error.WriteLine("  vice <command|start|stop> [options]  Build/launch/stop the VICE OpenCBM-passthrough command");
             Console.Error.WriteLine("    --dev N        real IEC device (default 8); --data IMG  mount IMG on drive 9 (B:)");
             Console.Error.WriteLine("    --emu PATH     emulator binary (default x128); --40col  40-column mode");
@@ -1231,6 +1232,20 @@ internal static class Cli
                     }, dataChecks: dataChecks);
                     Console.WriteLine(report.Text);
                     if (outPath is not null) { File.WriteAllText(outPath, report.Text); Console.WriteLine($"Report written to {outPath}"); }
+                    break;
+                }
+                case "tailgap":
+                {
+                    var dev = ArgDev(2);
+                    var outPath = args.Length > 3 ? args[3] : Path.Combine(Path.GetTempPath(), "d64e-tailgap.bin");
+                    var r = TailGap.Read(dev);
+                    Console.WriteLine((r.Ok ? "TAILGAP OK: " : "TAILGAP FAILED: ") + r.Detail);
+                    if (r.Gap.Length > 0)
+                    {
+                        Console.WriteLine("Gap bytes: " + string.Join(' ', r.Gap.Select(b => $"{b:X2}")));
+                        File.WriteAllBytes(outPath, r.Gap);
+                        Console.WriteLine($"Written to {outPath}");
+                    }
                     break;
                 }
                 case "seek":

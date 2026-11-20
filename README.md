@@ -355,7 +355,7 @@ D64Editor --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]
 D64Editor --cpm-import-dir <donor|new:d64|new:d71|new:d81> <srcdir> <out>
 D64Editor --ctools <format|create|import|list|extract> ...
 D64Editor --cpm-cpmtools <format|create|import-dir|list> ...
-D64Editor --cbm <detect|status|dir|command|format|read|write|verify|vice|boot> ...
+D64Editor --cbm <detect|status|dir|command|format|read|write|verify|vice|boot|gcrscan|sector|seek|surface|tailgap> ...
 D64Editor --cbm vice <command|start|stop> [--dev N] [--data IMG] [--softgl] [--dry-run]
 D64Editor <image>          (opens in GUI)
 D64Editor                  (no args: starts GUI)
@@ -385,6 +385,10 @@ D64Editor                  (no args: starts GUI)
 | `--ctools <format\|create\|import\|list\|extract> ...` | Optional external ctools-based CP/M operations (explicit opt-in; not needed for the in-process paths) |
 | `--cpm-cpmtools <format\|create\|import-dir\|list>` | cpmtools-backed CP/M operations |
 | `--cbm <detect\|status\|dir\|command\|format\|read\|write\|verify>` | OpenCBM real-hardware operations (image I/O via `d64copy`) |
+| `--cbm gcrscan <dev> [outfile]` | Sample raw GCR on the current track via uploaded 6502 code (never moves the head) |
+| `--cbm sector <dev> <track> <sector>` / `seek <dev> <track>` | Read a sector / move the head via the drive's FDC job queue (no uploaded code) |
+| `--cbm surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]` | Full track/sector surface scan via FDC READ jobs |
+| `--cbm tailgap <dev> [outfile]` | Read five tail-gap bytes via an FDC JUMP job (Kracker Jax TGREAD port) |
 | `--cbm vice <command\|start\|stop> [options]` | Build/print, launch or stop the VICE OpenCBM-passthrough command (`--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`) |
 
 ---
