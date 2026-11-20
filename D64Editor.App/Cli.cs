@@ -1004,6 +1004,7 @@ internal static class Cli
             Console.Error.WriteLine("  gcrscan <dev> [outfile] Sample raw GCR on the CURRENT track (never moves the head)");
             Console.Error.WriteLine("  sector <dev> <track> <sector> [outfile] Read a sector via the drive FDC job queue (safe seek/read)");
             Console.Error.WriteLine("  seek <dev> <track>        Move the head via the drive FDC SEEK job (drive firmware steps)");
+            Console.Error.WriteLine("  surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]  FDC surface scan");
             Console.Error.WriteLine("  vice <command|start|stop> [options]  Build/launch/stop the VICE OpenCBM-passthrough command");
             Console.Error.WriteLine("    --dev N        real IEC device (default 8); --data IMG  mount IMG on drive 9 (B:)");
             Console.Error.WriteLine("    --emu PATH     emulator binary (default x128); --40col  40-column mode");
@@ -1192,6 +1193,28 @@ internal static class Cli
                     var r = SectorRead.Read(dev, track, sector);
                     Console.WriteLine((r.Ok ? "SECTOR READ OK: " : "SECTOR READ FAILED: ") + r.Detail);
                     if (r.Ok) File.WriteAllBytes(outPath, r.Data);
+                    break;
+                }
+                case "surface":
+                {
+                    var dev = ArgDev(2);
+                    var from = 1;
+                    var to = 35;
+                    string? outPath = null;
+                    for (var i = 3; i < args.Length; i++)
+                    {
+                        if (args[i] == "--from" && i + 1 < args.Length) from = int.Parse(args[++i]);
+                        else if (args[i] == "--to" && i + 1 < args.Length) to = int.Parse(args[++i]);
+                        else if (args[i] == "--out" && i + 1 < args.Length) outPath = args[++i];
+                    }
+                    var dataChecks = args.Any(x => x == "--data-checks");
+                    var lastTrack = -1;
+                    var report = SurfaceScan.Scan(dev, from, to, (t, s) =>
+                    {
+                        if (t != lastTrack) { Console.WriteLine($"Scanning track {t}..."); lastTrack = t; }
+                    }, dataChecks: dataChecks);
+                    Console.WriteLine(report.Text);
+                    if (outPath is not null) { File.WriteAllText(outPath, report.Text); Console.WriteLine($"Report written to {outPath}"); }
                     break;
                 }
                 case "seek":

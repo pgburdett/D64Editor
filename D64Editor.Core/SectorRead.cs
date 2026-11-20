@@ -17,7 +17,7 @@ public static class SectorRead
     private const int DataAddress = 0x0300;
     private const byte ReadJob = 0x80;
 
-    public sealed record Result(bool Ok, byte[] Data, string Detail);
+    public sealed record Result(bool Ok, byte[] Data, string Detail, byte Code = 0);
 
     private static string ErrorText(byte code) => code switch
     {
@@ -56,8 +56,8 @@ public static class SectorRead
         if ((code & 0x80) != 0)
             return new Result(false, Array.Empty<byte>(), "SEEK job did not complete (timeout)");
         if (code != 0x01)
-            return new Result(false, Array.Empty<byte>(), $"FDC code ${code:X2}: {ErrorText(code)}");
-        return new Result(true, Array.Empty<byte>(), $"head seeked to track {track} (FDC OK)");
+            return new Result(false, Array.Empty<byte>(), $"FDC code ${code:X2}: {ErrorText(code)}", code);
+        return new Result(true, Array.Empty<byte>(), $"head seeked to track {track} (FDC OK)", code);
     }
 
     /// <summary>Queue a READ job for the given track/sector and wait for the FDC result.</summary>
@@ -84,10 +84,10 @@ public static class SectorRead
         if ((code & 0x80) != 0)
             return new Result(false, Array.Empty<byte>(), "FDC job did not complete (timeout)");
         if (code != 0x01)
-            return new Result(false, Array.Empty<byte>(), $"FDC code ${code:X2}: {ErrorText(code)}");
+            return new Result(false, Array.Empty<byte>(), $"FDC code ${code:X2}: {ErrorText(code)}", code);
 
         var dl = OpenCbm.DownloadMemory(device, DataAddress, 256, out var data);
         if (!dl.Success) return new Result(false, Array.Empty<byte>(), "data download failed: " + dl.Error.Trim());
-        return new Result(true, data, $"track {track} sector {sector}: 256 bytes read, FDC OK");
+        return new Result(true, data, $"track {track} sector {sector}: 256 bytes read, FDC OK", code);
     }
 }
