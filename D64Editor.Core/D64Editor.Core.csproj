@@ -11,6 +11,7 @@
     <ItemGroup>
         <EmbeddedResource Include="Assets\CPM.SYS" LogicalName="D64Editor.Core.Assets.CPM.SYS" />
         <EmbeddedResource Include="Assets\BOOT.D71.bin" LogicalName="D64Editor.Core.Assets.BOOT.D71.bin" />
+        <EmbeddedResource Include="Assets\gcrsampler.bin" LogicalName="D64Editor.Core.Assets.gcrsampler.bin" />
     </ItemGroup>
 
 </Project>

@@ -3,6 +3,16 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Drive-Side Raw GCR Sampler (code complete, untested)
+
+### Added
+- `--cbm gcrscan <dev> <track> [outfile]` and `Core/GcrScan.cs`: uploads a 6502 sampler to drive RAM, delta-steps to the target track, reads 256 raw GCR bytes from VIA2, and downloads them for anomaly analysis.
+- Embedded 6502 source/binary: `Core/Assets/GcrSampler.s` / `gcrsampler.bin`.
+- Safe stepping per *Inside Commodore DOS*: two VIA phase changes per track, zone bits set from target track, delta capped at 17 tracks, no end-stop homing, parameters in unused RAM (`$03F0`/`$03F1`) rather than zero page. Status/phase at `$0300`/`$0301` are verified.
+
+### Notes
+- Code builds cleanly but has NOT been run on hardware since the stepper fix; a supervised single-track test is required before trusting results.
+
 ## [Unreleased] — VICE OpenCBM Diagnosis, Source Patch & Fast-Loader Finding
 
 ### Added

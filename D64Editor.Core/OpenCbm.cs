@@ -133,4 +133,38 @@ public static class OpenCbm
             if (a[i] != b[i]) return (false, $"byte {i} differs: {a[i]:X2} vs {b[i]:X2}");
         return (true, $"OK — {a.Length} bytes byte-for-byte identical");
     }
+
+    // ---- drive RAM / M-E execution ---------------------------------------
+
+    /// <summary>Write a byte image into drive RAM via cbmctrl upload.</summary>
+    public static Result UploadMemory(int device, int address, byte[] data)
+    {
+        var path = Path.Combine(Path.GetTempPath(), "d64e-upload-" + Guid.NewGuid().ToString("N") + ".bin");
+        try
+        {
+            File.WriteAllBytes(path, data);
+            return Run("cbmctrl", new[] { "upload", device.ToString(), "0x" + address.ToString("X"), path });
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    /// <summary>Read drive RAM via cbmctrl download.</summary>
+    public static Result DownloadMemory(int device, int address, int count, out byte[] data)
+    {
+        var path = Path.Combine(Path.GetTempPath(), "d64e-download-" + Guid.NewGuid().ToString("N") + ".bin");
+        try
+        {
+            var r = Run("cbmctrl", new[] { "download", device.ToString(),
+                "0x" + address.ToString("X"), count.ToString(), path });
+            data = File.Exists(path) ? File.ReadAllBytes(path) : Array.Empty<byte>();
+            return r;
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    /// <summary>Execute machine code in drive RAM with the DOS M-E command.</summary>
+    public static Result Execute(int device, int address) => Run("cbmctrl", new[]
+    {
+        "command", device.ToString(), "M-E", (address & 0xff).ToString(), (address >> 8).ToString()
+    });
 }
