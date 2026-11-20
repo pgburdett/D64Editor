@@ -1002,6 +1002,7 @@ internal static class Cli
             Console.Error.WriteLine("  write <image> <dev> [--d71] Write image -> real disk (DESTRUCTIVE)");
             Console.Error.WriteLine("  verify <image> <dev> [--d71] Write image, read back, byte-compare");
             Console.Error.WriteLine("  gcrscan <dev> [outfile] Sample raw GCR on the CURRENT track (never moves the head)");
+            Console.Error.WriteLine("  sector <dev> <track> <sector> [outfile] Read a sector via the drive FDC job queue (safe seek/read)");
             Console.Error.WriteLine("  vice <command|start|stop> [options]  Build/launch/stop the VICE OpenCBM-passthrough command");
             Console.Error.WriteLine("    --dev N        real IEC device (default 8); --data IMG  mount IMG on drive 9 (B:)");
             Console.Error.WriteLine("    --emu PATH     emulator binary (default x128); --40col  40-column mode");
@@ -1176,6 +1177,20 @@ internal static class Cli
                         File.WriteAllBytes(outPath, r.Raw);
                         Console.WriteLine($"Raw sample written to {outPath}");
                     }
+                    break;
+                }
+                case "sector":
+                {
+                    if (args.Length < 5 || !int.TryParse(args[3], out var track) || !int.TryParse(args[4], out var sector))
+                    {
+                        Console.Error.WriteLine("Usage: --cbm sector <dev> <track 1..42> <sector 0..40> [outfile]");
+                        return true;
+                    }
+                    var dev = ArgDev(2);
+                    var outPath = args.Length > 5 ? args[5] : Path.Combine(Path.GetTempPath(), "d64e-sector.bin");
+                    var r = SectorRead.Read(dev, track, sector);
+                    Console.WriteLine((r.Ok ? "SECTOR READ OK: " : "SECTOR READ FAILED: ") + r.Detail);
+                    if (r.Ok) File.WriteAllBytes(outPath, r.Data);
                     break;
                 }
                 default:
