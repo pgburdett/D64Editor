@@ -30,7 +30,8 @@ little-endian length/request ID, command byte, body).
 | Script | What it traces |
 |---|---|
 | `binmon_trace.py` | Sets a checkpoint on **stores to `$DD00`** (C64 CIA2 IEC data port), then feeds `LOAD"*",8,1` via the monitor keyboard buffer. Logs the accumulator value on each hit to `/tmp/opencode/binmon-iec.log`. This traces the C64-side bit-banging during a real-drive LOAD. |
-| `binmon_drive.py` | Sets a checkpoint on **execution in drive-8 RAM `$0300-$07FF`**, then feeds the same LOAD command. On each hit it logs `PC/A/X/Y` from the register response to `/tmp/opencode/g64-drive-trace.log`. This is the drive-CPU trace of the uploaded fast-loader/protection code when using `launch-x64sc-g64.sh`. |
+| `binmon_drive.py` | Sets a **stopping** checkpoint on execution in drive-8 RAM `$0300-$07FF`, then feeds the same LOAD command. On each hit it logs `PC/A/X/Y` to `/tmp/opencode/g64-drive-trace.log`. Accurate but ~14,000× slower — the loader only reaches its `$0520-$0525` delay loop. |
+| `binmon_history.py` | **Preferred.** Feeds the LOAD command and then polls VICE's CPU-history API (command `0x86`) for drive 8 **without stopping execution**. Logs instruction bytes to `/tmp/opencode/g64-cpu-history.log`. This is fast enough that the protected Arctic Fox loader completes and the game reaches the "Enemy Review" screen. Includes a PC filter (register ID 3) for `$0300-$07FF`. |
 
 Both send command `0x12` (checkpoint set) and `0x72` (keyboard feed), then repeatedly send
 `0xAA` (exit/continue) while collecting responses.

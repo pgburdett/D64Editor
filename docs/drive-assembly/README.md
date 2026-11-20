@@ -400,4 +400,9 @@ behaviour that the host side isn't satisfying in this configuration. No explicit
 bytes" branch was reached in this run; the earlier static `TGREAD` evidence remains the best
 documentation of gap reading.
 
+A **non-stopping** tracer (`tools/diagnostics/binmon_history.py`) was then used: it samples
+VICE's CPU-history API instead of stopping at every instruction. With that, the protected game
+loads completely to the "Enemy Review" screen, proving the G64 + true-drive-emulation setup is
+functionally correct. Per-instruction stopping is far too slow to let the loader finish.
+
 See `tools/diagnostics/README.md` for the full script list and a reproducible trace session.

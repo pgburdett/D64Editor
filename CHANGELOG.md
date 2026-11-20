@@ -3,6 +3,12 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Diagnostic Images and Non-stopping Drive Trace
+
+### Added
+- `docs/disk-images/`: Arctic Fox G64/NBZ/D64 and Kracker Jax Revealed Trilogy/volumes images used in the protection analysis, with provenance.
+- `tools/diagnostics/binmon_history.py`: non-stopping VICE binary-monitor CPU-history tracer; the protected Arctic Fox game loads fully to the "Enemy Review" screen with it.
+
 ## [Unreleased] — TGREAD Tail-Gap Port, NBZ Decoding & Project Probes
 
 ### Added

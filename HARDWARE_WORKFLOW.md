@@ -231,6 +231,8 @@ downloads the five gap bytes from `$0300-$0304` (status at `$0305`). Verified on
 port details. Dynamic drive-CPU tracing (with `-drive8truedrive` and the VICE binary monitor)
 is documented in `tools/diagnostics/README.md`; it confirms the Arctic Fox loader executes the
 same fastloader code at drive RAM `$0300-$07FF` and settles into its `$0520-$0525` delay loop.
+The non-stopping CPU-history tracer loads the game fully to the "Enemy Review" screen. All disk
+images used are preserved in [`docs/disk-images/`](docs/disk-images/README.md).
 
 ### Drive-side raw GCR sampler (current track only)
 
