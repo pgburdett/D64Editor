@@ -194,7 +194,7 @@ cbmctrl status 8
 
 ### Patched VICE build and the fast-loader limitation
 
-- The source fix is preserved as [`patches/vice-3.10-opencbm-filename.patch`](patches/vice-3.10-opencbm-filename.patch).
+- The source fix is preserved as [`patches/vice-3.10-opencbm-filename.patch`](patches/vice-3.10-opencbm-filename.patch), with a reproducible build script at [`tools/build-patched-vice.sh`](tools/build-patched-vice.sh) and details in [`patches/README.md`](patches/README.md).
   It changes `src/serial/realdevice.c` so the filename bytes sent after OPEN are buffered and
   passed to `cbm_open()` at UNLISTEN instead of calling it with `NULL, 0`.
 - To build it: fetch `vice-3.10.tar.gz` from <https://vice-emu.sourceforge.io/>, install the `xa`
