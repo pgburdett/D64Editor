@@ -491,6 +491,18 @@ For tracks **36–40**, `RawWriter` first SEEKs to track 35, then runs the 82-by
 (documented inward sequence), a ~20 ms per-phase delay, zone bits cleared with `AND #$9F`,
 status `$A5` at `$03F8`. No end-stop homing and no zero-page writes.
 
-**Status: code complete, NOT run on hardware.** The disk currently in drive 8 is the original
-EA disk, so no write test has been attempted. A blank test disk is required before any
-`--writeraw` invocation.
+## 13. Hardware verification (blank disk, 2026-11-19)
+
+After formatting an expendable disk with D64Editor's `N0:KK,KK`:
+
+```bash
+dotnet run --project D64Editor.App -- --writeraw 8 2 CCAD 6666
+dotnet run --project D64Editor.App -- --cbm surface 8 --from 2 --to 2
+```
+
+Result: **RAW WRITE OK**, and all 21 sectors on track 2 return FDC `$03` "no sync character"
+(0 clean, 21 errors) — the same signature as the original EA disk. Drive status remained
+`00, ok,00,00`. This proves the serial-cable drive-side writer works on real hardware.
+
+The extended-track stepper path (tracks 36-40) is still untested on hardware; it moves the head,
+so it will only be run after explicit approval with the blank disk in place.
