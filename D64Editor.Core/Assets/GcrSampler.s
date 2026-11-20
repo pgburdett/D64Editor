@@ -2,8 +2,6 @@
 
 status = $0300
 phase = $0301
-delta = $03F0
-zone = $03F1
 buffer = $0400
 
 start:
@@ -11,44 +9,15 @@ start:
         lda #$00
         sta status
         sta phase
-        lda $1C00
-        ora #$04
-        sta $1C00
-
-        lda delta
-        beq nostep
-        bpl stepinpath
-        lda delta
-        eor #$FF
-        clc
-        adc #$01
-        tax
-stepoutloop:
-        jsr phaseout
-        jsr phaseout
-        dex
-        bne stepoutloop
-        jmp nostep
-stepinpath:
-        tax
-stepinloop:
-        jsr phasein
-        jsr phasein
-        dex
-        bne stepinloop
-nostep:
-        lda $1C00
-        and #$9F
-        ora zone
-        ora #$04
-        sta $1C00
-
         lda #$EF
         sta $1C0C
         lda #$02
         sta $1C0D
         lda #$00
         sta $1C03
+        lda $1C00
+        ora #$04
+        sta $1C00
         ldy #$20
 spinupl:
         ldx #$00
@@ -101,49 +70,4 @@ finish:
         lda #$A5
         sta status
         cli
-        rts
-
-phasein:
-        lda $1C00
-        and #$03
-        cmp #$03
-        bne pi2
-        lda #$00
-        jmp pi3
-pi2:
-        clc
-        adc #$01
-pi3:
-        jsr setphase
-        rts
-
-phaseout:
-        lda $1C00
-        and #$03
-        beq po2
-        sec
-        sbc #$01
-        jmp po3
-po2:
-        lda #$03
-po3:
-        jsr setphase
-        rts
-
-setphase:
-        pha
-        lda $1C00
-        and #$FC
-        sta $1C00
-        pla
-        ora $1C00
-        sta $1C00
-        ldy #$10
-sd1:
-        ldx #$00
-sd2:
-        dex
-        bne sd2
-        dey
-        bne sd1
         rts

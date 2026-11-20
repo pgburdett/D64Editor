@@ -215,29 +215,22 @@ cbmctrl status 8
   binary/disassembly were `/tmp/opencode/fastloader.bin` and `/tmp/opencode/fastloader.asm`.
   Retest the patch with a plain `LOAD"NAME",8` disk that does not use a fast loader.
 
-### Drive-side raw GCR sampler (code complete, NOT hardware-tested)
+### Drive-side raw GCR sampler (current track only)
 
-`--cbm gcrscan <dev> <track> [outfile]` uploads a 6502 routine to drive RAM, steps **only**
-the delta from the drive's current track (read from ZP `$22`), samples 256 raw bytes from
-VIA2 port A (`$1C01`) into `$0400-$04FF`, and downloads them via `cbmctrl download`.
+`--cbm gcrscan <dev> [outfile]` uploads a 6502 routine to drive RAM, spins the motor, waits
+for SYNC, samples 256 raw bytes from VIA2 port A (`$1C01`) into `$0400-$04FF`, and downloads
+them via `cbmctrl download`.
 
-Correct stepping rules (from *Inside Commodore DOS*, Immers & Neufeld):
-- **One VIA phase change moves HALF a track**; on-track phase is always even (0 or 2). Two
-  phase changes per track, never four.
-- Inward: phase `00 -> 01 -> 10 -> 11 -> 00`; outward: `00 -> 11 -> 10 -> 01 -> 00`.
-- Bits 5-6 of `$1C00` set the speed zone: tracks 1-17 `$60`, 18-24 `$40`, 25-30 `$20`,
-  31-35 `$00`. The sampler ORs the zone bits with `(old AND $9F)` so other bits are preserved.
-- No end-stop homing. Delta is capped at 17 tracks per call and must be within 1..35.
-- The delta/zone parameters live at `$03F0`/`$03F1` (unused RAM), **never in zero page** —
-  a previous version used `$0003`, which corrupted DOS workspace and made the stepper hammer.
-- Disk-reading DOS ROM routines are never called via M-E from this sampler: per the book,
-  such routines require a JUMP job queued at `$0000`, not M-E. All reads are direct VIA access.
-- Completion at `$0300` must become `$A5` and phase `$0301` must be `$05`; `GcrScan` verifies
-  both before accepting a sample.
+**The sampler never writes the stepper bits of `$1C00` and cannot move the head.** All
+experiments with head stepping from uploaded code were abandoned after they caused head
+clatter: one phase change moves half a track, DOS workspace corruption (`$0003`) and
+parameter/code overlap made the step count unpredictable, and the drive had to be power-cycled.
 
-The sampler was assembled and built successfully but has **not been run on hardware** after
-the stepper fix. Do not treat its output as verified until a supervised single-track move is
-approved and tested.
+Reference material extracted from *Inside Commodore DOS* is kept in
+[`docs/inside-commodore-dos.txt`](docs/inside-commodore-dos.txt); it documents the correct
+VIA phase sequences, speed zones and the fact that disk-reading DOS ROM routines require a
+job-queue JUMP rather than M-E. The only other DOS-related PDF in the local Commodore
+collection was a 1541 hardware schematic, not a DOS reference.
 
 - **One owner of the bus:** VICE uses OpenCBM, so stop VICE before any `cbmctrl`/`d64copy`
   command, and finish those before launching VICE.

@@ -1001,7 +1001,7 @@ internal static class Cli
             Console.Error.WriteLine("  read <dev> <image> [--d71]  Read real disk -> image (non-destructive)");
             Console.Error.WriteLine("  write <image> <dev> [--d71] Write image -> real disk (DESTRUCTIVE)");
             Console.Error.WriteLine("  verify <image> <dev> [--d71] Write image, read back, byte-compare");
-            Console.Error.WriteLine("  gcrscan <dev> <track> [outfile] Delta-step to track (no homing, max 17 tracks/call), sample raw GCR");
+            Console.Error.WriteLine("  gcrscan <dev> [outfile] Sample raw GCR on the CURRENT track (never moves the head)");
             Console.Error.WriteLine("  vice <command|start|stop> [options]  Build/launch/stop the VICE OpenCBM-passthrough command");
             Console.Error.WriteLine("    --dev N        real IEC device (default 8); --data IMG  mount IMG on drive 9 (B:)");
             Console.Error.WriteLine("    --emu PATH     emulator binary (default x128); --40col  40-column mode");
@@ -1166,13 +1166,10 @@ internal static class Cli
                 case "gcrscan":
                 {
                     var dev = ArgDev(2);
-                    if (args.Length < 4 || !int.TryParse(args[3], out var track))
-                    {
-                        Console.Error.WriteLine("Usage: --cbm gcrscan <dev> <track 1..35> [outfile]");
-                        return true;
-                    }
-                    var outPath = args.Length > 4 ? args[4] : Path.Combine(Path.GetTempPath(), "d64e-gcr-sample.bin");
-                    var r = GcrScan.SampleTrack(dev, track);
+                    var outPath = args.Length > 3 && !int.TryParse(args[3], out _)
+                        ? args[3]
+                        : Path.Combine(Path.GetTempPath(), "d64e-gcr-sample.bin");
+                    var r = GcrScan.SampleCurrentTrack(dev);
                     Console.WriteLine((r.Ok ? "GCR SCAN OK: " : "GCR SCAN FAILED: ") + r.Detail);
                     if (r.Ok)
                     {
