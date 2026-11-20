@@ -515,3 +515,24 @@ reproduction yield **0 sync runs / 0 decodable sectors** on track 2.
 
 The extended-track stepper path (tracks 36-40) is still untested on hardware; it moves the head,
 so it will only be run after explicit approval with the blank disk in place.
+
+## 14. Raw GCR reader (incomplete for full tracks)
+
+`GcrReader.s/.bin` + `Core/GcrRead.cs` + `--gcrread` read VIA2 port A through the 6502 SO
+byte-ready signal (`BVC`/`CLV`/`LDA $1C01`), the same loop the fastloader uses. Two hardware
+details were required:
+
+- motor on must go through DOS routine `$F97E` (raw `ORA #$04` does not arm the motor-off timer
+  and the drive does not spin reliably);
+- a spin-up delay is needed before sampling.
+
+With that, 256-byte raw chunks capture successfully (`--gcrread 8 1 file --nosync`) and produce
+non-zero GCR data. `--gcrread ... --whole` attempts a 30-window full-track capture by re-locking
+to SYNC and skipping successive byte counts, but the result is **not a valid single-revolution
+stream**: a captured track 1 yielded only 19 sync runs and 0 decodable sectors. Stitching
+windows this way does not work.
+
+A faithful full-track raw capture needs a continuous stream during one revolution — either a
+drive-side fast-transfer routine that feeds bytes to the host while the disk spins, or a
+parallel-track nibbler. `--raw2g64` can wrap already-captured raw track files into a G64
+container, but its input must come from a real single-revolution capture.

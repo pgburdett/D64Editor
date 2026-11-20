@@ -58,6 +58,48 @@ internal static class Cli
             case "--to-gcr":
                 return ToGcr(args);
 
+            case "--raw2g64":
+            {
+                if (args.Length < 3) { Console.Error.WriteLine("Usage: D64Editor --raw2g64 <out.g64> <track:file> ..."); return true; }
+                try
+                {
+                    var tracks = new Dictionary<int, byte[]>();
+                    for (var i = 2; i < args.Length; i++)
+                    {
+                        var colon = args[i].IndexOf(':');
+                        if (colon < 1 || !int.TryParse(args[i][..colon], out var track))
+                            throw new ArgumentException($"Invalid track:file pair: {args[i]}");
+                        tracks[track] = File.ReadAllBytes(args[i][(colon + 1)..]);
+                    }
+                    var bytes = RawG64.Build(tracks);
+                    File.WriteAllBytes(args[1], bytes);
+                    Console.WriteLine($"Built G64 from {tracks.Count} raw track(s): {args[1]}");
+                }
+                catch (Exception ex) { Console.Error.WriteLine("Raw G64 build failed: " + ex.Message); }
+                return true;
+            }
+
+            case "--gcrread":
+            {
+                if (args.Length < 4 || !int.TryParse(args[1], out var dev) || !int.TryParse(args[2], out var track))
+                {
+                    Console.Error.WriteLine("Usage: D64Editor --gcrread <dev> <track> <outfile> [--nosync] [--skip N] [--whole]");
+                    return true;
+                }
+                var noSync = args.Any(x => x == "--nosync");
+                var whole = args.Any(x => x == "--whole");
+                var skip = 0;
+                for (var i = 4; i < args.Length - 1; i++) if (args[i] == "--skip") skip = int.Parse(args[i + 1]);
+                try
+                {
+                    var r = whole ? GcrRead.ReadTrack(dev, track) : GcrRead.ReadChunk(dev, track, !noSync, skip);
+                    Console.WriteLine((r.Ok ? "GCR READ OK: " : "GCR READ FAILED: ") + r.Detail);
+                    if (r.Ok) File.WriteAllBytes(args[3], r.Data);
+                }
+                catch (Exception ex) { Console.Error.WriteLine("GCR read failed: " + ex.Message); }
+                return true;
+            }
+
             case "--writeraw":
             {
                 if (args.Length < 5 ||

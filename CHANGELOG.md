@@ -3,6 +3,15 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Raw GCR Reader (chunk capture works; full track incomplete)
+
+### Added
+- `Core/GcrRead.cs`, `Assets/GcrReader.s/.bin` and `--gcrread`: drive-side raw GCR chunk reader using BVC/SO byte-ready; motor-on via `$F97E` and spin-up delay required.
+- `--raw2g64` + `Core/RawG64.cs`: wrap captured raw track files into a G64 container.
+
+### Notes
+- 256-byte chunks capture real GCR data, but 30-window full-track stitching does not produce a valid single-revolution stream (19 sync runs, 0 sectors on a captured track 1). True full-track capture needs continuous streaming during one revolution.
+
 ## [Unreleased] — Serial Raw-Track Writer (code complete, untested)
 
 ### Added

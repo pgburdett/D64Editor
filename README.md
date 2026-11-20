@@ -392,6 +392,8 @@ D64Editor                  (no args: starts GUI)
 | `--cbm gaps <image.g64> [--from N] [--to N] [outfile]` | Offline raw-GCR sync/gap/sector analysis of a G64 image |
 | `--protect <base.d64> <out.g64>` | Build a G64 with reproducible protected tracks (void track 2, extended tracks 36-40) |
 | `--writeraw <dev> <track> <hexpattern> <count>` | DESTRUCTIVE: serial-cable raw GCR track writer (blank disk only; code complete, not hardware-tested) |
+| `--gcrread <dev> <track> <outfile> [--nosync] [--skip N] [--whole]` | Raw GCR chunk reader (full-track stitching still incomplete) |
+| `--raw2g64 <out.g64> <track:file> ...` | Wrap captured raw track files into a G64 container |
 | `--cbm vice <command\|start\|stop> [options]` | Build/print, launch or stop the VICE OpenCBM-passthrough command (`--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`) |
 
 ---

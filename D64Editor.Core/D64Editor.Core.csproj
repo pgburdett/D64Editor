@@ -15,6 +15,7 @@
         <EmbeddedResource Include="Assets\tailgap.bin" LogicalName="D64Editor.Core.Assets.tailgap.bin" />
         <EmbeddedResource Include="Assets\rawwriter.bin" LogicalName="D64Editor.Core.Assets.rawwriter.bin" />
         <EmbeddedResource Include="Assets\stepper.bin" LogicalName="D64Editor.Core.Assets.stepper.bin" />
+        <EmbeddedResource Include="Assets\gcrreader.bin" LogicalName="D64Editor.Core.Assets.gcrreader.bin" />
     </ItemGroup>
 
 </Project>
