@@ -1,0 +1,3 @@
+logname "/tmp/opencode/g64-mon.log"
+log on
+exit

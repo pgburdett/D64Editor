@@ -228,7 +228,9 @@ That utility has been ported as `--cbm tailgap <dev> [outfile]`: D64Editor uploa
 FDC-context routine to `$0500`, installs `JMP $0500` at `$0300`, queues JUMP job `$D0`, then
 downloads the five gap bytes from `$0300-$0304` (status at `$0305`). Verified on hardware:
 `60 24 46 23 99`. See `docs/drive-assembly/README.md` for the full original disassembly and
-port details.
+port details. Dynamic drive-CPU tracing (with `-drive8truedrive` and the VICE binary monitor)
+is documented in `tools/diagnostics/README.md`; it confirms the Arctic Fox loader executes the
+same fastloader code at drive RAM `$0300-$07FF` and settles into its `$0520-$0525` delay loop.
 
 ### Drive-side raw GCR sampler (current track only)
 

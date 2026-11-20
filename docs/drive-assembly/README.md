@@ -369,3 +369,35 @@ Verified on hardware: gap bytes `60 24 46 23 99`, drive status `00, ok,00,00`.
 
 `c-probes/` contains the four standalone OpenCBM C programs used to diagnose the VICE LOAD
 bug and the XUM1541 burst limitation; see `c-probes/README.md`.
+
+---
+
+## 9. Dynamic drive-CPU trace (Arctic Fox fastloader)
+
+`../../tools/diagnostics/` contains the launchers and VICE binary-monitor clients used to
+trace the loader at runtime. `launch-x64sc-g64.sh` attaches the Arctic Fox preservation G64 to
+emulated drive 8 with `-drive8truedrive`, and `binmon_drive.py` sets a checkpoint on execution
+in drive RAM `$0300-$07FF`, logging `PC/A/X/Y` on each hit.
+
+The resulting trace (`/tmp/opencode/g64-mon.log`, ~29k lines) executed exactly the same
+fastloader family we disassembled from the other protected game disk:
+
+| PC | Instruction (from monitor) | Meaning |
+|---|---|---|
+| `$0300` | `SEI` | uploaded fastloader entry |
+| `$0301-$0313` | `LDA #$4C; STA $07E0; STA $07E3; LDA #$CC; STA $07E1; LDA #$04; STA $07E2; LDX #$00` | installs `JMP $04CC` stubs |
+| `$0315-$0319` | `ROR $0300,x; INX; CPX #$16` | rotates first 22 bytes to hide the stub |
+| `$0322` | `JSR $03C6` | ROM-ish setup routine |
+| `$0325-$0327` | `LDX #$12; JSR $0575` | sets a counter |
+| `$0506-$0517` | `CLC; LDA $1C00; AND #$FC; STA $1C00` | VIA2 stepper/phase manipulation |
+| `$0520-$0525` | `DEX; BNE $0520; DEC $C1; BNE $0523; RTS` | **hot loop** where the trace spent ~14,500 hits |
+| `$0575-$0577` | `LDA #$0A; STA $0614` | sets a retry/timeout counter to 10 |
+| `$0582-$0583` | `DEY; BNE` | inner byte loop |
+
+So the drive CPU really does execute the custom fastloader (true drive emulation), and the
+trace settles into its delay/retry loop — consistent with the loader waiting for IEC handshake
+behaviour that the host side isn't satisfying in this configuration. No explicit "compare gap
+bytes" branch was reached in this run; the earlier static `TGREAD` evidence remains the best
+documentation of gap reading.
+
+See `tools/diagnostics/README.md` for the full script list and a reproducible trace session.
