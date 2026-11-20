@@ -59,8 +59,9 @@ def main():
     deadline=time.time()+90
     while time.time()<deadline:
         for f in frames(s):
-            for ins in parse_history(f):
-                log.write(ins+'\n')
+            for pc, ins in parse_history(f):
+                if 0x0300 <= pc <= 0x07FF:
+                    log.write(f"${pc:04X} {ins}\n")
         log.flush()
         send(s,0x86,bytes([1])+struct.pack('<I',200),rid=3)  # history drive 8
         time.sleep(0.2)

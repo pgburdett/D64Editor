@@ -405,4 +405,18 @@ VICE's CPU-history API instead of stopping at every instruction. With that, the 
 loads completely to the "Enemy Review" screen, proving the G64 + true-drive-emulation setup is
 functionally correct. Per-instruction stopping is far too slow to let the loader finish.
 
+With the PC filter enabled (`$0300-$07FF`), the sampled drive-code stream is dominated by just
+two instructions:
+
+```
+$0403  2C 00 18  BIT $1800     ; VIA1 Port B: IEC ATN/CLOCK/DATA lines
+$0406  D0 FB     BNE $0403     ; wait for the C64 to change the line
+```
+
+That is the fastloader's IEC handshake loop from the original disassembly
+(`L0403: BIT $1800 / BNE L0403`). It confirms the drive side spends its time waiting for the
+host to drive the serial lines — the exact boundary where custom fastloader timing meets VICE's
+emulated bus. With both CPUs emulated and `-drive8truedrive`, the handshake completes and the
+game loads.
+
 See `tools/diagnostics/README.md` for the full script list and a reproducible trace session.
