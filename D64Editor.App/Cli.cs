@@ -1003,6 +1003,7 @@ internal static class Cli
             Console.Error.WriteLine("  verify <image> <dev> [--d71] Write image, read back, byte-compare");
             Console.Error.WriteLine("  gcrscan <dev> [outfile] Sample raw GCR on the CURRENT track (never moves the head)");
             Console.Error.WriteLine("  sector <dev> <track> <sector> [outfile] Read a sector via the drive FDC job queue (safe seek/read)");
+            Console.Error.WriteLine("  seek <dev> <track>        Move the head via the drive FDC SEEK job (drive firmware steps)");
             Console.Error.WriteLine("  vice <command|start|stop> [options]  Build/launch/stop the VICE OpenCBM-passthrough command");
             Console.Error.WriteLine("    --dev N        real IEC device (default 8); --data IMG  mount IMG on drive 9 (B:)");
             Console.Error.WriteLine("    --emu PATH     emulator binary (default x128); --40col  40-column mode");
@@ -1191,6 +1192,17 @@ internal static class Cli
                     var r = SectorRead.Read(dev, track, sector);
                     Console.WriteLine((r.Ok ? "SECTOR READ OK: " : "SECTOR READ FAILED: ") + r.Detail);
                     if (r.Ok) File.WriteAllBytes(outPath, r.Data);
+                    break;
+                }
+                case "seek":
+                {
+                    if (args.Length < 4 || !int.TryParse(args[3], out var seekTrack))
+                    {
+                        Console.Error.WriteLine("Usage: --cbm seek <dev> <track 1..40>");
+                        return true;
+                    }
+                    var r = SectorRead.Seek(ArgDev(2), seekTrack);
+                    Console.WriteLine((r.Ok ? "SEEK OK: " : "SEEK FAILED: ") + r.Detail);
                     break;
                 }
                 default:

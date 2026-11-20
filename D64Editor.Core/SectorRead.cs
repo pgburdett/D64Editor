@@ -33,6 +33,33 @@ public static class SectorRead
         _ => $"unknown FDC code ${code:X2}"
     };
 
+    private const byte SeekJob = 0xB0;
+
+    /// <summary>Queue a SEEK job so the drive firmware moves the head to <paramref name="track"/>.</summary>
+    public static Result Seek(int device, int track, int timeoutMs = 20000)
+    {
+        if (track is < 1 or > 40) return new Result(false, Array.Empty<byte>(), "track must be 1..40");
+
+        var t = OpenCbm.UploadMemory(device, TrackAddress, new[] { (byte)track });
+        if (!t.Success) return new Result(false, Array.Empty<byte>(), "track upload failed: " + t.Error.Trim());
+        var j = OpenCbm.UploadMemory(device, JobAddress, new[] { SeekJob });
+        if (!j.Success) return new Result(false, Array.Empty<byte>(), "job upload failed: " + j.Error.Trim());
+
+        byte code = SeekJob;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMs)
+        {
+            var st = OpenCbm.DownloadMemory(device, JobAddress, 1, out var b);
+            if (st.Success && b.Length == 1 && (b[0] & 0x80) == 0) { code = b[0]; break; }
+            Thread.Sleep(20);
+        }
+        if ((code & 0x80) != 0)
+            return new Result(false, Array.Empty<byte>(), "SEEK job did not complete (timeout)");
+        if (code != 0x01)
+            return new Result(false, Array.Empty<byte>(), $"FDC code ${code:X2}: {ErrorText(code)}");
+        return new Result(true, Array.Empty<byte>(), $"head seeked to track {track} (FDC OK)");
+    }
+
     /// <summary>Queue a READ job for the given track/sector and wait for the FDC result.</summary>
     public static Result Read(int device, int track, int sector, int timeoutMs = 10000)
     {

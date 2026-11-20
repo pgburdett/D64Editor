@@ -228,7 +228,8 @@ clatter. Correct facts from *Inside Commodore DOS* (see `../inside-commodore-dos
 ## 6. The safe way to read a sector — FDC job queue
 
 Implemented in `../../D64Editor.Core/SectorRead.cs` and exposed as
-`--cbm sector <dev> <track> <sector> [outfile]`.
+`--cbm sector <dev> <track> <sector> [outfile]` (READ) and
+`--cbm seek <dev> <track>` (SEEK, job code `$B0`, track in `$0006`, job in `$0000`).
 
 Buffer 0 job interface:
 
