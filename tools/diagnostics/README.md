@@ -12,6 +12,8 @@ constants at the top of each script for your system.
 | `launch-x64sc-mon.sh` | Same, with the VICE text-monitor command playback file (`vice-mon-cmds.txt`) and monitor logging. |
 | `launch-x64sc-binmon.sh` | Same, with the **binary monitor** enabled on `127.0.0.1:6502` for scripted checkpoint tracing. |
 | `launch-x64sc-g64.sh` | Launch VICE with the Arctic Fox preservation **G64** image on emulated drive 8 (no real device), binary monitor enabled, small lower-right window. Uses `-drive8truedrive` so the 6502 in drive 8 is actually executed. Used for drive-CPU tracing of the loader. |
+| `launch-x64sc-capture.sh` / `launch-x64sc-protected.sh` / `launch-x64sc-srq.sh` | Variants that attach the sector-captured G64, the protection-injected G64, or the successful SRQ-nib G64 respectively. All use `-drive8truedrive`. |
+| `capture-srq.sh` | Combined SRQ nibbling workflow: `nibread -@xum1541 -D8 -e5 -h -v` then `nibconv` to G64, with a confirmation prompt before reading the real disk. |
 
 All use:
 

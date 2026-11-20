@@ -47,6 +47,18 @@
 - `D64Editor.Core/DiskContainers.cs` — D2M/D4M/DHD partition table parsing.
 - `D64Editor.Core/G64Image.cs` / `NibImage.cs` — GCR image parsing and D64 conversion.
 - `D64Editor.Core/CpmDisk.cs` — CP/M 2.2 directory reader.
+- `D64Editor.Core/OpenCbm.cs` — OpenCBM process wrapper (`cbmctrl`/`d64copy`): detect/status/dir/command/format, image read/write/verify, plus `UploadMemory`/`DownloadMemory`/`Execute` for drive RAM and M-E.
+- `D64Editor.Core/GcrScan.cs` — raw GCR sampler via uploaded 6502 code (current track only; never moves the head).
+- `D64Editor.Core/SectorRead.cs` — decoded sector read and integer-track SEEK via FDC job queue (no uploaded code; safe head movement).
+- `D64Editor.Core/SurfaceScan.cs` — full track/sector FDC surface scan with error classification (sync/header/checksum).
+- `D64Editor.Core/TailGap.cs` — port of Kracker Jax TGREAD: 5 tail-gap bytes via FDC JUMP job.
+- `D64Editor.Core/Nbz.cs` — LZ77 decompressor for preservation-project `.nbz` images; `--convert` turns them into NIB→D64.
+- `D64Editor.Core/GapScan.cs` — offline raw-GCR sync/gap/sector analysis of G64 images.
+- `D64Editor.Core/ProtectedTracks.cs` — synthesizes EA PRODOS-style protected tracks (void T2, T36-40) into G64 via `G64Image.RawTrackOverrides`.
+- `D64Editor.Core/RawWriter.cs` + `Assets/RawWriter.s/.bin` — serial-cable raw GCR track writer (drive-side VIA2 write mode; DESTRUCTIVE, blank disk only).
+- `D64Editor.Core/Assets/Stepper.s/.bin` — safe short inward step for tracks 36-40 (no homing), used by RawWriter.
+- `D64Editor.Core/GcrRead.cs` + `Assets/GcrReader.s/.bin` — raw GCR chunk reader (BVC/SO byte-ready; motor via `$F97E`). `--whole` stitching is not a valid single-revolution capture.
+- `D64Editor.Core/RawG64.cs` — wraps captured raw track files into a G64 container (`--raw2g64`).
 - `D64Editor.App/DiskDocumentView.axaml.cs` — Per-disk editor view (directory, actions, undo/redo).
 - `D64Editor.App/MainWindow.axaml.cs` — Shell: menu/toolbar/tabbed MDI, active-document dispatch.
 - `D64Editor.App/Cli.cs` — CLI handler (all commands).
@@ -71,6 +83,16 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--ctools <format|create|import|list|extract> ...` — Optional external ctools-backed CP/M operations (explicit opt-in; kept for cross-checking).
 - `--cpm-cpmtools <format|create|import-dir|list> ...` — cpmtools-backed CP/M operations.
 - `--cbm <detect|status|dir|command|format|read|write|verify|vice|boot> ...` — OpenCBM real-hardware operations. `vice <command|start|stop>` builds/prints, launches or stops the VICE passthrough command (`--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); PID saved in `/tmp/d64editor-vice.pid`.
+- `--cbm sector <dev> <track> <sector>` / `seek <dev> <track>` — FDC job-queue sector read / integer-track head move (drive firmware does the work).
+- `--cbm surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]` — full track/sector surface scan via FDC READ jobs; reports sync/header/checksum errors.
+- `--cbm gaps <image.g64> [--from N] [--to N] [outfile]` — offline raw GCR sync/gap/sector analysis.
+- `--cbm tailgap <dev> [outfile]` — read 5 tail-gap bytes via FDC JUMP job (Kracker Jax TGREAD port).
+- `--cbm gcrscan <dev> [outfile]` — sample raw GCR on the current track via uploaded 6502 code (never moves the head).
+- `--gcrread <dev> <track> <outfile> [--nosync] [--skip N] [--whole]` — raw GCR chunk reader; `--whole` window stitching is incomplete.
+- `--raw2g64 <out.g64> <track:file> ...` — wrap captured raw track files into a G64 container.
+- `--protect <base.d64> <out.g64>` — inject reproducible EA PRODOS protected tracks into a G64.
+- `--writeraw <dev> <track> <hexpattern> <count>` — DESTRUCTIVE serial raw GCR track writer (blank test disk only; track >35 uses safe 82-byte stepper).
+- `--convert` also accepts `.nbz`: LZ77-decompress to MNIB NIB, then NIB→D64 decode.
 - `--extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]` — Extract archive contents.
 - `--print-dir <image>` — Print directory listing (text, D64).
 - `--geos-info <d64> <file>` — Show GEOS/REL metadata and best-effort VLIR info for a file (D64).
@@ -108,6 +130,16 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - VICE 3.10's real-device backend calls `cbm_open(..., NULL, 0)` and sends the filename as later raw writes, so LOAD from a real drive hangs in `raw_read`/`get_eoi`. Source fix: `patches/vice-3.10-opencbm-filename.patch` (buffer name bytes, pass them to `cbm_open` at UNLISTEN); EOI/reads themselves verified working via direct libopencbm tests. Custom fast loaders (drive code uploaded with `M-W` and executed with `M-E`, bit-banging VIA at `$1800`) remain unsupported by the high-level backend. See `HARDWARE_WORKFLOW.md`.
 - Real-drive passthrough (VICE 3.10+ with OpenCBM): `x128 -80col -devicebackend8 2 -busdevice8 -sounddev dummy` boots CP/M from the physical disk; add `-9 <data.d64>` for a local B: drive. D64Editor builds this via `--cbm vice command|start|stop` (options: `--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); only one process may own the IEC bus, so stop VICE before `cbmctrl`/`d64copy` and vice versa. On this Xwayland session VICE GTK3 startup is flaky: use `--softgl` (`LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe`) and retry; capture with `spectacle -b -o ...` (X11 root capture is black), send keys with `xdotool type --window ...`, wait for the `A>` prompt first.
 
+## Copy-protection / raw-media investigation (Arctic Fox, EA PRODOS)
+
+- `docs/drive-assembly/README.md` — detailed 6502 drive-code reference: VIA registers, byte-ready handshaking, FDC job queue, original TGREAD disassembly, fastloader trace results, protected-track byte histograms, serial raw writer/reader, and safety notes. Experimental `.s/.bin` files and captured samples live in that folder.
+- `docs/disk-images/README.md` + `docs/disk-images/generated/README.md` — all reference/generated disk images. Faithful raw G64 of Arctic Fox: `docs/disk-images/arcticfox[ea_1986](!).g64` (preservation) and `docs/disk-images/generated/arcticfox-srq.g64` (captured from the real disk with nibread).
+- `tools/diagnostics/README.md` — VICE launchers and binary-monitor Python clients for C64 IEC and drive-CPU tracing; archive search helpers. Requires patched VICE from `patches/` + `tools/build-patched-vice.sh`.
+- EA PRODOS/PirateSlayer uses custom track layouts, gap manipulation, raw GCR reads from `$1C01`, rotation/tail-gap timing checks and killer/unformatted regions. Confirmed on the EA disk: void track 2 (no `$FF` sync, 0 sectors), T36 with hundreds of sync runs/no sectors (weak GCR in nibread), T37-40 unformatted, half-track 35.5 activity.
+- **Faithful capture workflow (verified):** real 1571 on device 8 → `nibread -@xum1541 -D8 -e5 -h -v arcticfox.nib` (nibtools-git from AUR; default mode is SRQ serial, `-P` would force parallel) → `nibconv ... .g64` → VICE x64sc with `-drive8truedrive` → `LOAD"*",8,1` boots Arctic Fox to its "Enemy Review" tank screen. D64→G64 sector conversion does NOT preserve protection.
+- OpenCBM/XUM1541 has no raw-track API (`cbm_*_burst_*` fails with `LIBUSB_ERROR_NO_DEVICE`), but SRQ nibtools works. Motor control for custom drive code must use DOS `$F97E` plus spin-up delay; raw `ORA #$04` is not enough.
+- **Safety:** never run `--writeraw` on an original; use a blank disk. `--cbm seek` uses FDC jobs (no homing). Uploaded stepper code caused head clatter and was abandoned (one phase change = half track; two per track; zone bits in `$1C00` bits 5-6).
+
 ## Graphics viewers
 - `GfxViewerWindow` (charset/sprite) and `PictureViewerWindow` (Koala/Art Studio hi-res) support zoom and BMP save/export.
 - `GfxDecoder` decodes charset (2 KiB → 128×128) and sprite (63 bytes → 24×21 hires or multicolor).
@@ -142,7 +174,11 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - Undo/redo coverage not comprehensive across all edit paths.
 - Native OS print dialog and built-in updater/installer not implemented (platform-dependent).
 - Deeper GEOS disk/application-data/VLIR workflows remain best-effort.
+- Raw GCR chunk reads work, but `--gcrread --whole` window stitching is not a valid single-revolution capture; faithful full-track images need SRQ nibtools (`nibread`/`nibconv`).
+- `--writeraw` is DESTRUCTIVE and only hardware-verified for the void track 2; the track 36-40 stepper path is code-complete but untested.
 
 ## Local artifacts
-- **Committed fixtures:** `128cpm/` (CP/M reference images + docs used for verification), `D64Editor.Core/Assets/` (CPM.SYS, BOOT.D71.bin — required embedded resources), and `Epyx_FastLoad_1984_v2-b11b3b.crt` (test cartridge) are tracked in the repo. Treat them as test/reference data, not source of truth for format behavior.
+- **Committed fixtures:** `128cpm/` (CP/M reference images + docs used for verification), `D64Editor.Core/Assets/` (CPM.SYS, BOOT.D71.bin and the 6502 `.bin` assets — required embedded resources), and `Epyx_FastLoad_1984_v2-b11b3b.crt` (test cartridge) are tracked in the repo. Treat them as test/reference data, not source of truth for format behavior.
+- **Investigation docs/fixtures:** `docs/drive-assembly/` (6502 sources, disassembly, captured samples), `docs/disk-images/` (reference and generated NIB/G64/D64 images), `tools/diagnostics/` (VICE launchers and trace clients), `patches/` (VICE OpenCBM fix + build script). These are reference material for the copy-protection work, not product code.
+- **External tooling:** nibtools (`nibread`, `nibconv`, `nibsrqtest`) installed from AUR `nibtools-git`; OpenCBM + XUM1541 firmware on device 8. `nibread` defaults to SRQ serial mode; `-P` forces parallel.
 - **Ignored build artifacts (do not commit):** `bin/`, `obj/`, `.idea/`, `*.user`, `d64editor-build-archives/`.

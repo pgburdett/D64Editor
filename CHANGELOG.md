@@ -3,6 +3,16 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Faithful SRQ Nib Capture and Full Documentation
+
+### Added
+- `docs/TOOLS.md` and `docs/CODE.md`: complete indexes of CLI verbs, external utilities, workflows, and all new Core/App code and assets.
+- `tools/diagnostics/capture-srq.sh` plus G64 launcher variants; `arcticfox.nib` and `arcticfox-srq.g64` captured from the real EA disk.
+- AGENTS.md: hardware/protection investigation section, new commands, safety rules, and investigation fixtures.
+
+### Verified
+- `nibread -@xum1541 -D8 -e5 -h -v` (SRQ serial mode) captured the original Arctic Fox disk; `nibconv` produced a G64 that boots in x64sc with TDE to the "Enemy Review" tank screen. D64→G64 conversions do not preserve the protection.
+
 ## [Unreleased] — Raw GCR Reader (chunk capture works; full track incomplete)
 
 ### Added
