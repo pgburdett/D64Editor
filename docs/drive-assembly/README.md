@@ -504,5 +504,11 @@ Result: **RAW WRITE OK**, and all 21 sectors on track 2 return FDC `$03` "no syn
 (0 clean, 21 errors) — the same signature as the original EA disk. Drive status remained
 `00, ok,00,00`. This proves the serial-cable drive-side writer works on real hardware.
 
+Raw VIA2 samples (`--cbm gcrscan`) of the reproduced track do **not** byte-match the original
+G64 track 2, and differ between reads: without `$FF` sync bytes the sampler cannot lock to a
+byte boundary, so it starts at an arbitrary bit phase each time. That is exactly the property
+the protection relies on. The meaningful comparison is functional — both the original and the
+reproduction yield **0 sync runs / 0 decodable sectors** on track 2.
+
 The extended-track stepper path (tracks 36-40) is still untested on hardware; it moves the head,
 so it will only be run after explicit approval with the blank disk in place.
