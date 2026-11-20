@@ -205,6 +205,7 @@ is not yet done for hardware samples.
 | `sampler3-strobe-wrong-pcr.s` | Timeout `EF` | Polled IFR bit 1 but left CA2/SOE at the ROM's value, so BYTE-READY was never generated. Setting PCR `$EF` fixed it. |
 | `sampler4-working-direct-via.s` | **Works** | Adds `lda #$EF / sta $1C0C` and `lda #$02 / sta $1C0D`. This is the basis of the current safe sampler. |
 | `halfstep-one-phase.s/.bin` | used once, supervised | 46-byte parameter-free routine: reads `$1C00`, computes one phase **decrement** (outward half-track), writes the final byte in a single store, delays, returns. No zero-page writes, no homing. Used to move from track 35 to 35.5 for a GCR comparison. |
+| `halfstep-in-one-phase.s/.bin` | used once, supervised | 48-byte inverse routine: one phase **increment** (inward half-track). Used to return from 35.5 to track 35; verified by a successful READ of track 35 sector 0. Note: `inc` is a reserved opcode name in `xa` — the label is `incr`. |
 | `game-fastloader-disassembly.asm` | Reference | 1,280 bytes of 6502 uploaded by the game disk to drive RAM `$0300-$07FF` via 40 `M-W` commands, then executed with `M-E`. It disables interrupts, installs a `JMP $04CC` stub at `$07E0`, rotates its first 22 bytes to hide the stub, then bit-bangs VIA1 `$1800` and decodes nibbles through a table at `$0413`. This is why a high-level OpenCBM backend cannot load such disks. |
 
 ---
