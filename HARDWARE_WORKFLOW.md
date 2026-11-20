@@ -215,6 +215,15 @@ cbmctrl status 8
   binary/disassembly were `/tmp/opencode/fastloader.bin` and `/tmp/opencode/fastloader.asm`.
   Retest the patch with a plain `LOAD"NAME",8` disk that does not use a fast loader.
 
+### NBZ reference images
+
+`--convert <in.nbz> <out.d64>` decompresses Commodore preservation-project `.nbz` files
+(Marcus Geelnard LZ77) into a standard MNIB NIB image, which D64Editor's existing NIB decoder
+turns into a D64. This was used to read the Kracker Jax "Revealed Trilogy" disks in the local
+archive. Their files include `KJ DOCS` (usage notes) and a `TGREAD` utility that uploads drive
+code to `$0500`, jumps to it via the job queue, and reads 5 tail-gap bytes from `$1C01` into
+`$0300-$0304` — useful reference for gap/sync work. No literal "fat track" text was found.
+
 ### Drive-side raw GCR sampler (current track only)
 
 `--cbm gcrscan <dev> [outfile]` uploads a 6502 routine to drive RAM, spins the motor, waits

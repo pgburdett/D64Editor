@@ -366,7 +366,7 @@ D64Editor                  (no args: starts GUI)
 | Command | Description |
 |---------|-------------|
 | `--help` / `-h` / `help` | Show help text |
-| `--convert <in> <out>` / `-c` | Convert G64/NIB to D64 (or copy native image) |
+| `--convert <in> <out>` / `-c` | Convert G64/NIB/NBZ to D64 (or copy native image) |
 | `--list <image>` / `-l` | Print an image's directory |
 | `--export <image> <dir>` / `-e` | Export files from D64/T64/D71/D81/D80/D82/DNP to a directory |
 | `--info <image>` / `-i` | Show image/format information |

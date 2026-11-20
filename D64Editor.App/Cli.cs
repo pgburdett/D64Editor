@@ -121,6 +121,22 @@ internal static class Cli
                     Console.WriteLine($"Converted NIB->D64: {tracks} tracks, {warnings.Count} undecoded sector(s). Wrote {output}.");
                     return true;
                 }
+                case ".nbz":
+                {
+                    var nibBytes = Nbz.Decompress(File.ReadAllBytes(input));
+                    var tmp = Path.Combine(Path.GetTempPath(), "d64e-nbz-" + Guid.NewGuid().ToString("N") + ".nib");
+                    try
+                    {
+                        File.WriteAllBytes(tmp, nibBytes);
+                        var nib = NibImage.TryLoad(tmp);
+                        if (nib is null) { Console.Error.WriteLine("NBZ did not decompress to a valid MNIB NIB image."); return true; }
+                        var (bytes, warnings, tracks) = nib.ToD64Bytes();
+                        File.WriteAllBytes(output, bytes);
+                        Console.WriteLine($"Converted NBZ->D64: {tracks} tracks, {warnings.Count} undecoded sector(s). Wrote {output}.");
+                    }
+                    finally { if (File.Exists(tmp)) File.Delete(tmp); }
+                    return true;
+                }
                 default:
                     // Passthrough copy for formats we already store natively (e.g. .d64).
                     File.Copy(input, output, overwrite: true);
