@@ -390,6 +390,7 @@ D64Editor                  (no args: starts GUI)
 | `--cbm surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]` | Full track/sector surface scan via FDC READ jobs |
 | `--cbm tailgap <dev> [outfile]` | Read five tail-gap bytes via an FDC JUMP job (Kracker Jax TGREAD port) |
 | `--cbm gaps <image.g64> [--from N] [--to N] [outfile]` | Offline raw-GCR sync/gap/sector analysis of a G64 image |
+| `--protect <base.d64> <out.g64>` | Build a G64 with reproducible protected tracks (void track 2, extended tracks 36-40) |
 | `--cbm vice <command\|start\|stop> [options]` | Build/print, launch or stop the VICE OpenCBM-passthrough command (`--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`) |
 
 ---

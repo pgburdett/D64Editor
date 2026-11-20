@@ -58,6 +58,19 @@ internal static class Cli
             case "--to-gcr":
                 return ToGcr(args);
 
+            case "--protect":
+            {
+                if (args.Length < 3) { Console.Error.WriteLine("Usage: D64Editor --protect <base.d64> <out.g64>"); return true; }
+                try
+                {
+                    var bytes = ProtectedTracks.Apply(File.ReadAllBytes(args[1]));
+                    File.WriteAllBytes(args[2], bytes);
+                    Console.WriteLine($"Created protected G64 {args[2]} (void track 2, extended tracks 36-40).");
+                }
+                catch (Exception ex) { Console.Error.WriteLine("Protect failed: " + ex.Message); }
+                return true;
+            }
+
             case "--cpm-new":
                 return CpmNew(args);
 

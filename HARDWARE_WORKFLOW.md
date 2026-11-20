@@ -238,7 +238,10 @@ Offline raw-GCR analysis is available with `--cbm gaps <image.g64>`. On the Arct
 confirms **track 2 has zero sync runs and zero decodable sectors** (matching the real-drive
 surface scan), and shows extended tracks **36-40** are also non-standard: T36 contains 469 sync
 runs with no decodable sectors, T37-40 have sync marks but no valid sectors. These are the
-physical-media features a D64 copy cannot preserve.
+physical-media features a D64 copy cannot preserve. They can be recreated in a G64 with
+`--protect <base.d64> <out.g64>`; the generated tracks reproduce the same `--cbm gaps` anomaly
+signature (T2: 0 sync, T36: 468 sync runs/0 sectors, T37-40: 33/0). See
+`docs/drive-assembly/README.md` §11.
 
 ### Drive-side raw GCR sampler (current track only)
 

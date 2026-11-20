@@ -435,3 +435,27 @@ These are not random damaged tracks: they carry deliberately constructed GCR pat
 with the voided track 2, they form the physical-media signature the loader can verify with
 drive-side code but a D64/NIB sector copy cannot reproduce. The `--cbm gaps` analyzer reports
 these as sync/sector-count anomalies.
+
+## 11. Reproducing the protected tracks
+
+`Core/ProtectedTracks.cs` + `--protect <base.d64> <out.g64>` generate the patterns from scratch
+and inject them as raw G64 tracks (via `G64Image.RawTrackOverrides`):
+
+```bash
+dotnet run --project D64Editor.App -- --protect docs/disk-images/af-g64.d64 /tmp/repro.g64
+dotnet run --project D64Editor.App -- --cbm gaps /tmp/repro.g64
+```
+
+- **Track 2:** 6,666 bytes of alternating no-sync GCR pairs (`CC AD`, `AF AF`, `99 5B`,
+  `5B 99`, `AD CC`) — no `$FF` anywhere.
+- **Track 36:** 7,015 bytes, 15-byte period `6F×6 / FF×6 / 55×3` → **468 sync runs**
+  (original: 469).
+- **Tracks 37-40:** ~6,250 bytes, `fill×180 / FF×5` → **33 sync runs** each
+  (original: 30-33).
+
+`--cbm gaps` confirms the reproduction: T2 has 0 sync/0 sectors, T36 has 468 sync runs/0
+sectors, T37-40 have 33/0 — i.e. the same anomaly signature as the original preservation G64.
+This reproduces the **protection pattern**; the base D64 used here was decoded from the G64 with
+106 undecodable sectors, so the game data itself is not a fully faithful source. Writing these
+raw tracks to real media would require a raw-track-capable nibbler (an XP1541/XP1571 parallel
+cable); OpenCBM/XUM1541 can only write sector images.

@@ -3,6 +3,12 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Protected-Track Reproduction
+
+### Added
+- `Core/ProtectedTracks.cs` and `--protect <base.d64> <out.g64>`: generates the Arctic Fox protection patterns (void track 2, sync/filler tracks 36-40) as raw GCR and injects them into a G64 via `G64Image.RawTrackOverrides`.
+- Verified with `--cbm gaps`: reproduced T36 has 468 sync runs (original 469), T37-40 have 33 (original 30-33), T2 has zero. Writing these to real media still needs a raw-track nibbler.
+
 ## [Unreleased] — Offline GCR Gap/Sync Analyzer
 
 ### Added

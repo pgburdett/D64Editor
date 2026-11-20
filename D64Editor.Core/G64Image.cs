@@ -37,6 +37,12 @@ public sealed class G64Image
     public int DeclaredTrackSize { get; private set; }
     public List<G64Track> Tracks { get; } = new();
 
+    /// <summary>
+    ///     Optional raw GCR replacements keyed by whole track number. Used by
+    ///     <see cref="ProtectedTracks"/> to inject copy-protection patterns.
+    /// </summary>
+    public Dictionary<int, byte[]> RawTrackOverrides { get; } = new();
+
     private readonly byte[] _data;
 
     private G64Image(byte[] data) => _data = data;
@@ -182,7 +188,9 @@ public sealed class G64Image
 
             if (tr.Present)
             {
-                if (!tr.IsHalfTrack && tr.TrackNumber >= 1 && tr.TrackNumber <= 40)
+                if (!tr.IsHalfTrack && RawTrackOverrides.TryGetValue(tr.TrackNumber, out var raw))
+                    trackData = raw;
+                else if (!tr.IsHalfTrack && tr.TrackNumber >= 1 && tr.TrackNumber <= 40)
                     trackData = Gcr.EncodeTrack(d64ImageBytes, tr.TrackNumber, tr.SpeedZone);
                 else
                     trackData = GetTrackData(tr); // preserve half tracks / out-of-range slots
