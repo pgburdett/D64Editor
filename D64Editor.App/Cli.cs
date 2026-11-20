@@ -1022,6 +1022,7 @@ internal static class Cli
             Console.Error.WriteLine("  seek <dev> <track>        Move the head via the drive FDC SEEK job (drive firmware steps)");
             Console.Error.WriteLine("  surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]  FDC surface scan");
             Console.Error.WriteLine("  tailgap <dev> [outfile] Read 5 tail-gap bytes via FDC JUMP job (Kracker Jax TGREAD port)");
+            Console.Error.WriteLine("  gaps <image.g64> [--from N] [--to N] [outfile] Offline GCR sync/gap/sector analysis");
             Console.Error.WriteLine("  vice <command|start|stop> [options]  Build/launch/stop the VICE OpenCBM-passthrough command");
             Console.Error.WriteLine("    --dev N        real IEC device (default 8); --data IMG  mount IMG on drive 9 (B:)");
             Console.Error.WriteLine("    --emu PATH     emulator binary (default x128); --40col  40-column mode");
@@ -1246,6 +1247,28 @@ internal static class Cli
                         File.WriteAllBytes(outPath, r.Gap);
                         Console.WriteLine($"Written to {outPath}");
                     }
+                    break;
+                }
+                case "gaps":
+                {
+                    if (args.Length < 3) { Console.Error.WriteLine("Usage: --cbm gaps <image.g64> [--from N] [--to N] [outfile]"); return true; }
+                    var path = args[2];
+                    var from = 1;
+                    var to = 42;
+                    string? outPath = null;
+                    for (var i = 3; i < args.Length; i++)
+                    {
+                        if (args[i] == "--from" && i + 1 < args.Length) from = int.Parse(args[++i]);
+                        else if (args[i] == "--to" && i + 1 < args.Length) to = int.Parse(args[++i]);
+                        else outPath = args[i];
+                    }
+                    try
+                    {
+                        var r = GapScan.Analyze(path, from, to);
+                        Console.WriteLine(r.Text);
+                        if (outPath is not null) { File.WriteAllText(outPath, r.Text); Console.WriteLine($"Report written to {outPath}"); }
+                    }
+                    catch (Exception ex) { Console.Error.WriteLine("Gap analysis failed: " + ex.Message); }
                     break;
                 }
                 case "seek":

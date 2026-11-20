@@ -389,6 +389,7 @@ D64Editor                  (no args: starts GUI)
 | `--cbm sector <dev> <track> <sector>` / `seek <dev> <track>` | Read a sector / move the head via the drive's FDC job queue (no uploaded code) |
 | `--cbm surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]` | Full track/sector surface scan via FDC READ jobs |
 | `--cbm tailgap <dev> [outfile]` | Read five tail-gap bytes via an FDC JUMP job (Kracker Jax TGREAD port) |
+| `--cbm gaps <image.g64> [--from N] [--to N] [outfile]` | Offline raw-GCR sync/gap/sector analysis of a G64 image |
 | `--cbm vice <command\|start\|stop> [options]` | Build/print, launch or stop the VICE OpenCBM-passthrough command (`--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`) |
 
 ---

@@ -3,6 +3,12 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Offline GCR Gap/Sync Analyzer
+
+### Added
+- `Core/GapScan.cs` and `--cbm gaps <image.g64>`: per-track raw-GCR sync-run, gap-length and sector-decode analysis for G64 images.
+- On the Arctic Fox preservation image this confirms track 2 has no sync/decodable sectors and extended tracks 36-40 are non-standard (T36 has 469 sync runs, zero sectors).
+
 ## [Unreleased] — Diagnostic Images and Non-stopping Drive Trace
 
 ### Added

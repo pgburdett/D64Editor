@@ -234,6 +234,12 @@ same fastloader code at drive RAM `$0300-$07FF` and settles into its `$0520-$052
 The non-stopping CPU-history tracer loads the game fully to the "Enemy Review" screen. All disk
 images used are preserved in [`docs/disk-images/`](docs/disk-images/README.md).
 
+Offline raw-GCR analysis is available with `--cbm gaps <image.g64>`. On the Arctic Fox G64 it
+confirms **track 2 has zero sync runs and zero decodable sectors** (matching the real-drive
+surface scan), and shows extended tracks **36-40** are also non-standard: T36 contains 469 sync
+runs with no decodable sectors, T37-40 have sync marks but no valid sectors. These are the
+physical-media features a D64 copy cannot preserve.
+
 ### Drive-side raw GCR sampler (current track only)
 
 `--cbm gcrscan <dev> [outfile]` uploads a 6502 routine to drive RAM, spins the motor, waits
