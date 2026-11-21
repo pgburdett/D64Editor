@@ -70,10 +70,12 @@ internal static class Cli
                     var img = G64Image.TryLoad(args[1]) ?? throw new InvalidDataException("Not a G64 image.");
                     var raw = img.GetWholeTrackData(track) ?? throw new InvalidDataException("Track not present.");
                     var windows = new List<byte[]>();
-                    for (var off = 0; off + 256 <= raw.Length + 256; off += 128)
+                    const int size = GcrRead.ChunkSize;
+                    const int step = size / 2;
+                    for (var off = 0; off < raw.Length + size; off += step)
                     {
-                        var w = new byte[256];
-                        for (var i = 0; i < 256; i++) w[i] = raw[(off + i) % raw.Length];
+                        var w = new byte[size];
+                        for (var i = 0; i < size; i++) w[i] = raw[(off + i) % raw.Length];
                         windows.Add(w);
                     }
                     var stitched = GcrRead.Stitch(windows, raw.Length);
@@ -110,16 +112,14 @@ internal static class Cli
             {
                 if (args.Length < 4 || !int.TryParse(args[1], out var dev) || !int.TryParse(args[2], out var track))
                 {
-                    Console.Error.WriteLine("Usage: D64Editor --gcrread <dev> <track> <outfile> [--nosync] [--skip N] [--whole]");
+                    Console.Error.WriteLine("Usage: D64Editor --gcrread <dev> <track> <outfile> [--nosync] [--whole]");
                     return true;
                 }
                 var noSync = args.Any(x => x == "--nosync");
                 var whole = args.Any(x => x == "--whole");
-                var skip = 0;
-                for (var i = 4; i < args.Length - 1; i++) if (args[i] == "--skip") skip = int.Parse(args[i + 1]);
                 try
                 {
-                    var r = whole ? GcrRead.ReadTrack(dev, track) : GcrRead.ReadChunk(dev, track, !noSync, skip);
+                    var r = whole ? GcrRead.ReadTrack(dev, track) : GcrRead.ReadChunk(dev, track, !noSync);
                     Console.WriteLine((r.Ok ? "GCR READ OK: " : "GCR READ FAILED: ") + r.Detail);
                     if (r.Ok) File.WriteAllBytes(args[3], r.Data);
                 }

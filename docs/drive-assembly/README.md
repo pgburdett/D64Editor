@@ -575,9 +575,14 @@ A faithful full-track raw capture needs a continuous stream during one revolutio
 drive-side fast-transfer routine that feeds bytes to the host while the disk spins, or SRQ
 nibtools. `--raw2g64` can wrap already-captured raw track files into a G64 container.
 
-`GcrRead.Stitch()` aligns 256-byte windows captured with 128-byte overlap using a **128-byte
-prefix probe searched from the end of the accumulated stream**; shorter probes splice wrongly on
-repeated GCR patterns (especially no-sync tracks). `--test-stitch <image.g64> <track>` validates
-the algorithm against known raw tracks from a G64: tracks 1, 2 and 36 of the Arctic Fox
-preservation image reconstruct to an exact rotation (7692/6666/7015 bytes). This is synthetic
-validation only — hardware capture with real rotational drift is still untested.
+The streaming reader now fills the **whole 1 KB drive RAM buffer `$0400-$07FF` in one
+revolution**: code was moved to `$0300`, motor-on uses `$F97E`, and the 6502 writes bytes with
+`BVC`/`CLV`/`STA $1C01` using a self-modifying page pointer. Windows are captured with 512-byte
+overlap. `GcrRead.Stitch()` aligns them using a probe equal to **half the window** (512 bytes for
+this capture; 128 for the older 256-byte windows), searched backwards. Shorter probes splice
+wrongly on repeated GCR patterns (especially no-sync tracks).
+
+`--test-stitch <image.g64> <track>` validates against known raw tracks: T1 (7692), T2 (6666) and
+T36 (7015) all reconstruct to an **exact rotation**. This is synthetic validation with perfect
+windows; real hardware capture with rotational drift remains untested (ZoomFloppy disconnected).
+SRQ nibtools (`nibread`/`nibconv`) is still the authoritative raw imager.

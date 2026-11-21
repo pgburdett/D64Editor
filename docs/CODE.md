@@ -24,7 +24,7 @@ the existing Core/App split. Product behaviour stays in `D64Editor.Core`; CLI di
 | `GcrScan.cs` | Non-destructive raw GCR sampler (current track only). Uploads a 6502 routine that waits for SYNC and BYTE-READY, stores 256 bytes at `$0400`, status/phase at `$0300/$0301`. Never writes stepper bits. |
 | `ProtectedTracks.cs` | Generates EA PRODOS pattern tracks: `GenerateTrack2()` (6,666 bytes, no `$FF`), `GenerateExtendedTrack(36..40)` (sync/filler and GCR noise). `Apply()` injects them into a G64. |
 | `RawWriter.cs` | DESTRUCTIVE serial raw track writer. Uploads pattern/count/mask to drive RAM, seeks the track via FDC, launches `Assets/RawWriter.s` with M-E, polls status. Tracks >35 use the short `Stepper.s` routine. |
-| `GcrRead.cs` | Raw GCR chunk reader (read counterpart of RawWriter). `ReadChunk()` captures 256 bytes via BVC/SO byte-ready; `Stitch()` aligns overlapping windows with a 128-byte reverse-searched prefix (synthetically validated); `ReadTrack()` uses it. CLI `--test-stitch` validates against known G64 tracks. |
+| `GcrRead.cs` | Raw GCR streaming reader (read counterpart of RawWriter). Drive code at `$0300` fills the full 1 KB `$0400-$07FF` buffer via BVC/SO byte-ready; `Stitch()` aligns 512-byte-overlap windows with a half-window reverse-searched probe; `ReadTrack()` uses it. CLI `--test-stitch` validates against known G64 tracks (T1/T2/T36 exact rotation). |
 | `D64Image.cs` | Existing D64 engine; `CreateBlank(name,id).GetRawDataCopy()` supplies the base D64 used when building raw G64 containers. |
 
 ## Embedded 6502 assets (`D64Editor.Core/Assets/`)

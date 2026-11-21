@@ -3,6 +3,12 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — 1 KB streaming GCR capture
+
+### Changed
+- `GcrReader.s` moved to `$0300` so the full 1 KB drive RAM buffer `$0400-$07FF` is filled in one revolution; 512-byte overlap windows.
+- `GcrRead.Stitch()` uses a half-window probe (512 bytes) with reverse search; exact rotation reconstruction validated synthetically on Arctic Fox T1/T2/T36.
+
 ## [Unreleased] — Correlation-based GCR window stitcher
 
 ### Changed
