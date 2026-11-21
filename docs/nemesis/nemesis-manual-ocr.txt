@@ -1,0 +1,1220 @@
+NEMESIS MANUAL
+
+OBJECT OF THE GAME...AND ITS PHILOSOPHY
+
+The object of the game is to explore all levels of the
+dungeons....and survive.
+
+Once you have become familiar with the game, you can set your own
+objectives: attaining a certain amount of gold, reaching a certain
+character Tevel, pushing your character to the ultimate use of his
+growing powers, and 5o o
+
+You do’NOT play ageinst the Nemesis progran ftself; its role fs
+that of the Dungeonmaster in familiar D&D games: it keeps track of the
+rules, provides the randon factors, and records for you all the things
+that have happened. You DO play sgainst the denizens of the dungeon
+Tevels, and you find them taking on a very real character and personai ity
+25 you cone to know then.
+
+Similarly, your charscter, as you have selected it.
+character can be ‘one of 15 types, ranging from husen to Uruk-hai, with
+any one of 15 classes ("occupations”), ranging from Cleric to
+Valkyrie--wi11 become very special to you. It is a role-playing gare,
+and your character is truly unique to you as participant, unioue
+probably to every other character played anywhere on the more than 2,000
+Nemesis gemes sold in the first year of its existence.
+
+NEMESIS MANUAL PAGE 10
+
+AL the creation of the character, these nusbers may range from &
+fo 2&. The higher the number the better. The program takes the random
+nusbers it has rolled and adds various bonuses (or subtracts points)
+2ccording to the Type of Befng you have selected to reach the final
+Sotar (Sse Table 111 the Appenix for the bonus nusbers, 1{sted by Type
+of Being.
+
+If you are satisfied with a set of characteristics presented
+you, type 3 V. Otherwise, press any other key and the PERSON program
+AT roll another random set of nusbers for your consideration. The most
+fmportent of the six characteristics are STRength, INTelligence, and
+DEXterity, 30 {t {s suggested that you have PERSON roil its internal dice
+until you get 3 high balance of these three attributes.
+
+D. Once you have typed Y, the PERSON program will ask you to
+select whether the character shail be of Lawful, Neutrsl, or Chaotic
+2ligment (state of mind). These are traditional 31igments in DD, but
+have 1imited effect on the play of NEMESIS. They are primarily important
+for constructing the overall character, and determine what Type of Being
+gan have which occupations. A Chaotfc character canmot be 3 Cleric of
+Paladin, for instance. A Lawful character cannot be a Raver
+Demonidim. The full set of restrictions, slong with the minimum
+2ttributes necessary to become a particular Class or Occupstion are shown
+in Table 2 in the Appendix.
+
+Briefly, characters with a Lawful alignment tend to behave
+legally, do good, and try to bring order to a disordered Universe.
+Neutral” characters are perhaps the most truly *human® of a11,
+inexplicably at least to the Lawful character, doing both good and evil,
+2nd Chaotic characters tend o go about destroying, pillaging, reping snd
+breaking E strings on guitars. These alignments will be vitsl 1n
+SuperSoft's Nemesis 11 multi-user game, as will the CHArisma sttribute.
+but have orly one part in the actual play of the present Nemesis st
+Deyond that Just descrided. The monsters fn the dungeons alsc have
+alignments and will ususlly not attack a character with the ssme
+2ligment. (You wil] have no way of knowing that & monster passed you by
+because of your sinilar aligments, but know that it happens reaularly.)
+
+NEMESIS MAVUAL PAGE 11
+
+NEXE, the PERSON program wi11 present you with @ 14st of possible
+Clasaes Lor *occupations™] that your charactar. may be, yiven. ne
+{ie ytes you have approved and the a1igmment selected. The. following
+15t 13 necessarily Thcomlete, ot out ot overs ighes, buc. ruher 35
+freserve much of the "discovery” process, which is one of the
+foscinations of Nemests according G extended user <asting and whieh e
+NationaT Nemesis User Group maintains fs st the heort of serioes ploy.
+AT Classes available are Tisted and 3 fow points sbout each.spe potats
+
+1. Clerfc-~This Class has cleric spell powers, but 1s 1imited as to
+Yhich vedpens he can use. s a result he 15 1ot a gond FHghers Hee
+ke the Demondin below, nd 5 few other characters, can neal pinself.
+
+2, Desondin--kn “unholy* Cleric with the same. povers. | Mhersthe
+Cleric s omly Legal, the Desondin 15 only Chasties
+
+3. Featheror--ittempts to charn ponsters but s very vulnerable and
+wsualy fails. (This Class wilh be more valusble.in the my1tisuser game)
+
+€. Hirebrand--The varrior/foot saldter 3 b strong Tishier, con ede
+811 standard weapons..' However, he {15 11mited In fntel T gence. detinttery
+not ofticer maserian.
+
+5. Mage--Linited to soft armor and pointed weapons, he fs's
+poverful’ Hagic spell user. In fact, Mages who. attain pish’ cherecter
+Tevelsare incredibly strons chorastors.
+
+6. Kinstrel--Sinilar o the Mage, but with ore veapon chofces than
+the Mg
+
+7. Minja--This character is o restricted fighter who grows rapidly
+ot the st Tevels of the dungeons,
+
+6. Paladin--Another fihter type, siaflar to the Wirebrand, with
+the abiifty to cast Cleric spells, he 13 Legal only.
+
+5. Raver-—iust a5 theOemondin 15 the evil mirror imsge of the
+Cleric, the Raver 15 the evil or Chaotic mirror image of the Patadin.
+
+10, Peasant_-Anyone, with any roll, tan b s peasent. This 15 the
+true coman demoninator anong Classess.” The. Beasans groes very Fapidly,
+infact faster than any other character.  He 15 1jeied 0 o siople
+vesgan and minies) arsor
+
+11" Ranger--An slnost-oaniscient character st the highest Tevels,
+here 15 only one ftem In the entire geme that he cannot use This 15
+Very hare Gharscier o crests and wiing b in Play takes aveat pacience
+Secuse of his Stow grouth.
+
+12. Rogue--The ‘nighwaysan of the characters, he s very asile and
+snesky with, fast growi, but 18 restricted in srmor and weapens. He
+Tives by his Stealth. Very GfFICUTE to Keep hin s1ive in the Geepest
+Tedtans of ine dungeon.
+
+13. Sagec-A wise man who can use bath magic and cleric spells. He
+asspen 1 Te Suidyinan ths 1 very restrciad 45 10 wesponks
+
+1 ang fionting ooty
+e Camutat-—There 153 ingle poverful ften he can use which 1o one
+ehse can"Ba 15 a powerfil Tignier With some Sim{larities o tne Rogue:
+
+S5 Valkyrien A fenste Patacin.
+
+nd female designations have 1o Searing, in this eaual
+
+rights peenietory orid, en's characterts Hghting abiTIty or other
+poters.
+
+1 creation of the character by selecting one of the
+
+Classe: }:’;(‘:Lmﬁ. (The probability of achieving a particular Class
+
+s shown in Table 3 of the Appendix.) Nemesis will then file the
+
+Treaing crarecter in the -CHR dota file crested when you named the
+
+the operating system.
+chardcter, and (etTn o pronnts and.are ready o begin the eplc
+
+hraugh the dungeons below the' Castle.
+
+NEMESIS MANUAL
+
+STARTING THE GAME
+
+Insert your disk {n Drive A and boot up the system. For purposes.
+of this manual, we're calling the character ARAGORN. In your game it
+should be whatever you have decided to call it during the charscter
+creation process using the PERSON program.
+
+Then type in immediately after the CP/M prospt the following:
+
+NEMESIS <Character Name>
+
+In our case we would type {n MEMESIS ARAGORN. (You need not add
+the extension, .CHR.)
+
+If you are using two drives with the character's .CHR file stored
+on a disk in a drive other than the one containing the NEMESIS programs
+thenselves, add the drive specification after the character name:
+
+NEMESIS <Character Name> <Alternate drive>.
+
+After some disk activity, you will see the progras mame,
+publisher and copyright information.  As that display asks, simply press
+any key to continue.
+
+Nemesis then decides where to enter the gase. The first time,
+you il enter the Castle; subsequently, you will enter at the sane point
+Where the Tast game was suspended, whether that was in the CASTLE or on
+some LEVEL of the dungeons.
+
+Presuning this is your first visit, the drive will become active
+2g2in and you will see the CASTLE menu. Be at ease in the Castle.
+Nothing can harm you here, not even the wenches in the Inn. You now have
+begun the quest..,a wanderer seeking fame, fortune and adventure, arrived
+at the Gamemaster's Castle, to plusb the depths of the fearsome dungeons.
+
+NEMESIS MANUAL
+PAGE 14
+
+Lt ook at esch o the notations fn the Charcter fie.
+has nothing o do with e Tevels SF the donskan. Tnink of ‘Level® 0
+the Character TTSPTay o5 She STaraCEer aoromkea it i) ftbry oF grede in
+school. The higher. the better. The choracier’s 1evel Imcraases. sccoraing
+o the experience he cains snd 3 coupticated formila hich the Nemesis
+Dungecnaaster vatches ‘sutamatically. 1t depends on the Type of Geings
+the Class, the present Level attained, and. sane other factors.  Suffics
+It to 3ay that increases. In choracter Levers are relatively easy o
+achieve at first, but become significantly harder - 'ny et
+character level becones higher. s Lo T
+
+"Hits" s probably the most 1) re
+aisplay. Wnen your e ol dectines 5 O, oo dhe- And thire 15
+FERTrEh or vasdorution, ‘Hits are uies to cimpute the outcome of batil
+i monsters. Thy i1 Wiuays b retured o the starting Seveteor o
+Sone Nigher”currert Tusber of hits Tescred because of fncresses i the
+hrscrer n you return to.the CASTLE and visis she Inn or
+
+“experience® §s vt you gain by Kill rs, or
+B e e o N S e
+Gungeon eve O, you would gain 10 ixperience pajnts. The experience
+point total 15 kept by the Dungeonmaster sutomatically. When your total
+Eicecds s certain amount of experience, and you return fo the Castle
+Jour character's Level will be increased, along with Hits, and the six
+Jrimary atiributes, Shough 3 combination of factors say prevent or even
+Gecresse those six prinary attributes. Also, as the Level of the
+Character incresses, the midic. and cleric units avatiabie to hin (if he
+isa nang or cleric spell user) may also increase.
+
+hge™ is anasher ey factor.  Each Type of Being, with one
+exception, Begins the-Journey 4t Age 16, The progren keeps track of tine
+Thenn i the dungeons, in ine Inn and in the Hospital, and notes the
+mG of the charicter, Wnile prowling the dungeons, aging takes place.
+When the character reaches 65, it becomes possible to see a decrease in
+retistics nstoed 'of geining then upon advancing in level.  Nemesis
+Characters slo down with age.
+
+“AC" stands for Armor Class. As you gather shields, body armor,
+4nd other derensive. devices and speiTs. your character's AC w1l
+decline. It starts at 10, which is eauivalent to coming naked and
+e eathe GASTLE,which 13 perhaps why ¥ou had so much fun ot
+o ene first day. The lower the AC, the better. In fact, to
+e ot She Towest Tevels of the dungeon, the character should have a
+SHomtFicant minus. () Arsor Class.
+
+20E8"% Yuse that. You find Gold Pieces fn certain rooms of
+the dungeon. and each tine you kil) 3 monster you get his gold.  Gold 15
+used for a number of purposes, including buying weapons, healing yourself
+used for & mmber B Jtens in the Archives and 5o on. Collecting
+e o portant. in the early parts of the game. but becanes less
+O A2t sY Jaur charscter matures and reaches the full approxination of
+his potential powers.
+
+o mary attributes vere discussed n the earlfer PERSON
+section, g w11 be.skipped here. Magic and clerfc units are {aportant
+et on A aters who can cast spells. A chart showing all the spells
+e o re ot units necessry to cast then i fncluded Tater.
+
+b o i bottam port of the character display xill‘shox the
+{toms 3o, v sccumutted.  Jou are 1iaited to ¢ maximm of 10.
+
+NENESIS MANUAL PAGE 15
+
+& typing RETURN ssmie §
+2 L you Teave the CASTLE's character display and
+‘eturn to the main menu. ' The four facilities ar s
+
+A, e Armory
+
+& The fosprian.
+
+c. The inn?
+
+5. The Archives.
+
+Their functions are relativel
+re relatively sinple but vital to the continued
+Pealth and well-being of your character. 1In other words, staying a1ive.
+
+A oThe Armory s really tw stores in one...an outfitter who
+$e11s various {teS Useful to your quest, and a pawn shop where you can
+sell items. There's no haggling over price in the wespoms shop. It
+gives you 2 complete catalog and the price 14st. 1f you have the gold,
+you can buy. In the Pawn shop, the owner will make offers of varying
+@mounts of gold for the particular item you are trying to sell. You
+accept by pressing Y, or reject his offer by pressing any other key.
+
+B. In the Hospital, you will be told of your physical
+condition, the length of stay necessary to restore you to full health,
+and the price per day will be quoted. You then will bé asked how long you
+went to stay. The point of the hospital is restoring your Hit points to
+their maxisum amount.
+
+C. Similerly, you can lounge about the Imn and restore your
+Kit points, but it takes 3 much Tonger time than treatment in the
+hospital. Rlso, the Inn is the only place where you can restore spent
+Cleric and Magic units.
+
+D. The purpose of the Archives is to help you find out what
+items really are. You will coné 3cross many items on your journey and
+You may even buy itens in the Castle's amory, but usually they will be
+displayed in Tower case letters. That means the item may or may not be
+What the Tower case Tetters say 1t 15. by donating gold Lo e AFERTVISE
+of at least half the true value of the DISCLOSED ftem, you will be told
+what the item really fs. Of course, you have no way of knowing what its
+true value is, so your donation msy be too small, fn which case the
+Archivist will' keep your gold anyway, leaving you with an fncose tax
+deduction, but no information. Also, should you ask the Archivist to
+tel] you sbout a previously DISCLOSED item (one in capital letters), he
+will Bind your menory of that item, returning the tem o its lower case
+undisclosed state, and keep your goid.
+
+ENTERING THE DUNGEOKS
+
+L1t fs very difficult to survive at the start of the
+
+G eharscier comes into the world naked, without armor or
+
+and with the minimal kinds of physical characteristics allawed
+
+Guring creation of the character using the PERSON program. Expect that
+
+Jour Firet chracters il b 1114 evickiy a3 uu become P s ¥tk
+
+The geme... But it gets better... A e
+Shen oatering & level of the dungeon for the first tine, you
+
+the cursor displayed somewhere on ft. As you
+
+e o blank sereen, MR N® Ginensions. and characteristics of the
+
+Toericors. Crooms, and other feetures of the dungeon level will be shown
+
+and resembered by the progran.
+
+S MANUAL
+
+MOVEMENT AND OTHER COMMANDS IN THE DUNGEONS
+
+";- ‘epending on your particular terminal:
+
+Soroc 120 and TRS Model 11 can he arr r
+Saroc o sinE oy use the arrow keys, for instance, while
+
+ESC--Display charscter
+M--Throw a Magic Spell
+
+hrow a Cleric Spell
+uspend the game at the present point
+H--Store whet you know about a current level in the file
+HARDCOPY, which then can be printed out on the printer using the PIP LST
+command, or viewed on the screen using the CP/M TYPE comsand. The
+HARDCOPY' command has no bearing on play of the game.
+
+Replot the display.
+
+The character's exploration of the dungeon level is shown on the
+screen as it proceeds. The following 1ist provides the topographical
+features of the dungeon, as displayed on the terminal. All of a
+character's previous exploration of a level {s remesbered by the program
+and displayed each time the character re-enters that particular level.
+If the character dies, the memory of the dungeon'dies with him.
+
+This “deja vu" feature of Nemesis is unioue. The program provides
+you with a map of where you have been on each level...no maore, o less.
+When you enter a level you have visited previously, the screen will
+dfsplay what you slready have learned about it. You don't have to keep
+paper maps at your side.
+
+Physical characteristics are shown as follows:
+
+ical  Horizontal Meaning
+A Solfd W11 (you can not pass through)
+Closed door
+
+‘ Magic door (Halls m
+Blank  Blank Open hal lway.
+
+with o closed door, some characters may not be adle to
+e e edon the character in the Upper left of the screen if he didn't
+e heaognthe door on 8 particular tmr. The character does tot Tose
+B ing to open a door, but he does use tise in the effore. The
+DT T rodter descends in'the dungeons, the arder the doors Secome
+
+2000t hown if a 1ight spell is cast, either
+Wegic doors are orly & 2 spelt or casting o Lighe Spelt
+oot e o fhen St phrries et £ SRl o ctatieg & Ll
+
+ftem that
+directly. hny choracter <0 Uit (0 00 M e ansuer. o what seens
+
+craracters can a5t U BEL TG0 kv, anetine 11es Sehig o s
+
+be magic doors)
+
+rANUA
+o PAGE 17
+
+Those are the visible physicel charscterfstics of the dungeon
+
+levels. There are o number of otper fo vhose pr Roer
+Srapticelly as are the waTls and-doors, but hess elieaencs 15,0t 8
+
+Wnose existence may be n
+T r oY arelt portion of the screen. These ‘Include: the’ fotlovieg
+
+gan\uvn;{ :enuu: of the dungeon levels:
+airs--Each Tevel may have Up & three statrcases. A stat
+peed noC TeaT to the dungeon Tevel directly sove or berew the”sormee)
+
+level where it is found. A1) stoirways go both up and dom Br ey
+descend & stairay, then sscend again. you will return b the top ot Jou
+same steirvay in the same place. 1t 15 obviously wise to remembor shors
+they are.
+
+Chutes--Chutes, on the other hand, are one-wey: down. You
+cannot g6 Back up a chute. Y
+
+Pits--There are rough aress in the dungeons which contain pits.
+Falling TN one costs hit points. It fs said thet the deeper you 4o n
+the cungeon, the deeper are the pits.
+
+Darkness--There are certain areas of the dungeon so derk that
+even 11GhT SpelTs are rendered useless and the Journeyer is left baffled
+by what might be there.
+
+Teleporter roons--Should  charzcter enter one of these rooms
+he w1 "D TanduaTy Placed. sesesere. cioe on e seme Jevere or toes
+below level 5, he may be teleported to another level entirely.
+
+Anti-Kegic_roons--Magic spells and ftems fail. This does not
+effect CRATSCTEr STUTISTIcs which hove bean rolsed by magic or fsenss bot
+does negate the current spell. The effect lasts as long 2s one is in the
+room.
+
+Anti-Cleric rooms--Like the Anti-Magic rooms, except these
+rooms negate cTeric spelTs.
+
+Fire rooss--Sane rooms are filled with flame, which engulf the
+character and cause hits on him unless he has & fire resistant spel) fn
+effect.
+
+Melee rooms--You will be attacked more often, and more fiercely
+in theseroos
+
+Special treasure rooms--There are vast treasures in these
+rooms, biT the cort oF HTETIING them 15 sreat
+
+f the
+
+You will be told in some cases, in the upper left corner of
+
+screen, that you have entered one of thss ustine ruoms, sk 42 0 e
+4 ther cases, y
+
+Crarcser's” ntorigtes thot “ndicates you hove encountered an anei-sagic
+
+or anti-cleric roon.
+Not a1 Tevels have all festures: Jone Tevela iy s 16 e
+
+i - king of room.
+
+e e dorgoes, the 1ess he 13 Soing to Tike it, especiaily
+
+in terms of Tevel features.
+
+NEMEST
+
+Your character
+Obviously, you have 3 besventcone. Stronger by scauiring varfous ftems.
+
+e th S 60 gty panangchance In Dattle using eagons and wearing
+Pt tine you wil) 9 .
+10 the Armory 3t ‘tne ZosrtdT) Come upon ftems the character may use 15
+
+" o - T you opt to-buy iiems there, 8
+e o kg Sh22 20 Rheir prices (' gol, W11 be afsplayed You
+U7 LT o 2uy shatever you can ford o St tine and i1 Subseauent
+The second iy to gain fems 1s by
+
+560 {tem nding them in the dungeans.
+A the character walks through the dungeonss 1t may cone. upon s j oo
+¥nat. the {ten appears to be wi1l be displazed at the o Jerc of ine
+Serming), A GO TR ot e it 16 108 0 Teft ef
+Y or reject it by typing anyihing else.  1f. the charocter e aprest
+carrying the maxinun 10 ftens and tries to pick up an ftem, Nemesis will
+
+sutomatically display the character and ask what item you wish %o drop.
+1f an ftem 15 dropped, it is unrecoverable.
+
+There are tw fmportant things to note about ftess. First, when
+they appear. in the Armory shopping 115t or When they are founc, they are
+shown in their generic form, not specific form. "Boots®, for |
+instance, may be LOUD BUUTS, which tend to attract monsters while in the
+levels, or SOFT BOOTS, which allow you to move more aufetly, or sose
+- other kind of boots, which have other properties. Second, everything in
+the armory shopping ‘1{st 15 fn CAPITAL LETTERS. That means that what you )
+see {5 really What the iten"is. It is shown in its “disclosed or true
+GENERIC forn. Later, in the dungeons, you will find ftems that are noted
+in Tower case letters.  Those items sy or may not be wiat the Tower case
+letters say they are: you can only be sure by DISCLOSING the item in one
+of three ways.
+
+Those three ways are:
+
+1.Visiting the ARCHIVES in the Castle and donating an amount
+cqusl to. S TessEoRaTi the True value of the DISCLOSED ftem. The Master
+Archivist then will disclose the true nature of the ftem to you in its
+Specific. form, ' The "Flask you found on Level 5, for instance, will be
+Shown mmediately as 4 very valuable and useful “FLASK OF RESTORATION",
+or perhaps a5 8 relatively useless "BOTILE OF WATER.® 4
+
+2: Using the Magfc or cleric spell DISCLOSE. When you throw
+this spail NeResTs Wit 35K which Tten 50U vant to disclose. The
+Gungeon mester may then il you hat. £ ‘;-’“y 1o Eioalydoe
+character must have the capa b 4 bise, It
+the necessary number of magic or cleric points focartide )
+Shell or be carrying an iten that has the spell attached to
+
+can DISCLOSE anything. to deteraine the renl
+0% e e chamstarts WTELIGOCE, o detent, e, 1)
+ST ayed oy miseing he ESC key and then enteriag L 8oL NGRS, 1f
+the”character's, INTel1igerce i 0%, (000 nemests feels that anyone
+e natare‘of the ften, B8 T0Tr of Sertstance; and thre are 1o
+T dn N Of \ERESIS Wil help those with higher TS ety Cog
+suaraatess that M se: othen. facets of NEHESIS, Sitre B78 SC'in the
+excetiot e S S For tntance 8 HMMCTLL puioted 18 S
+Rraory, s ety guse, hateit XTI T urn and time; may b6
+SRS chata s S e et o grst e e e
+
+character. )
+
+rate
+
+1S MANUAL
+
+PAGE 19
+
+e ch o
+w11 sppear Sust o ey b charactar Con Use the tenr 3" "
+1L e of the ftem in th ng o we
+e ma i i Ak ebaston, WAEi0s, S s e T
+Viewing the chareceerieds i1 1ot tay be “Unusedt by prasring s o e
+ton With the er, d1SPLay, then responding o the dumaeen eoernily
+:Vg o ‘e number of the {tem You wish to Un-use. The '+' will
+D};ct’gs[n fu in front of the {tem. Once used, some items in their
+orm Nave She pouer to S1ker the hireree e
+statistics, Armor Class S Ml
+Sone Trems. a13e
+a5iC or Claric povers. - o abtain
+sccess to these powers, the ften must be DISCLOSED and hove .+ st to
+it meaning the characier can use 1. "The sexe siney Taecacier (hins &3
+It 8 st ot (s Tnlerent et T ' s pees T o the
+racter Ich 15" reschaa'by Nitting the 20 ko,
+While on the character dispiay page, the charagis
+
+page, the character may drop any
+item he is carrying by entering D.  The progran then will ask which {ten
+the cheracter should drop, and the response should be the Tetter
+
+designation of the item. Riso, the character may “un-use” any item by
+typing Q while on the character display page.
+
+In general, items followed by 2 sNumber are more valuable than
+plain vanilia items, and items followed by a -Humber are not particularly
+useful. Only a few 'ftems carry such + or - numbers. After you Use an
+iten for the first time, you should check to make sure it really fs a
+00d item to have. Check your character's statistics and if Using the
+iten has_weakened hin in any way, you probably should Un-use the ftes.
+
+Finally, most characters can find sufficient items on 2 Tevel to
+give them a fighting chance to survive for a while anyway in the next
+Tower Tevel.
+
+MAGIC AND CLERIC SPELLS
+
+o charcters can use mgic snd cleric pells. Cerutn
+tems, 05 robes shoves arry +1e hem 1T et the chrsctr e s
+even ‘though he may fot be ellowed to cest that spell directly 3z 3
+character. When the spell fs associated with an item, It s Tfree’ o
+harecter, Wnen 1 SEEL puractr any malc o clerc sperls. The LIGT
+SpeT] assoctated with a Nagic TORCH 1S the most comon exsmple of Hhis.
+The LIGHT spel) is used frequently in Nemesis Mu:" et
+units each time {t fs cast directly by a chard o
+
+e any units ot all, and thus camnot
+e o evantsou11, veers may not have any wnits 46 a1l 4nd S SarRCS
+cast the’ spell
+
+i cast
+b pe e Eran Levall adcumilate the secesters BT U
+
+S Gurelty U et e, sch as o Demonti oo b st
+
+Chinec theTls: oei (see Table 2 of the MRSt (LT s satiante
+
+Cast wnion, spe11an, e begins the sene MO B, Hicresses in Level,
+=, éro spel Ges. Spell units come in
+
+o mosoee o spel? units o G e "ype of spell for which they
+
+:--and
+pes-agic and CleTIES U BOISHBIE: 1 quring bacele; sthes can
+
+115 can on
+Further, some SPe pot
+only be cast wnite travel1ng UTOIESEE
+
+DNEMESIS
+
+qur
+First in Software Technology
+
+P.O. Box 1628
+S
+
+Chompoaign, lllinois 61820
+(217) 3592112
+
+1S MANUAL
+
+¢ to throw 8 Cleric spiny . TIAC tes an W to
+. nd duration of s
+
+Following 15 a complete 145t of the sperns:
+
+PO T WATS WX war 1 pogs
+
+L o
+
+PROTECT €8 TR Sumeas ity o CeriCter's Teve
+STRENGTH M g TRAVEL  Raises STRength based on character Tevel.
+
+¢ TRAVEL  Like CURE
+C 10 TRAVEL Restores 1)
+€ 10 TRAVEL
+
+14 TRAVEL
+
+ut stronger.
+Hit points.
+Attempts To discover trie nature of ften.
+
+ises DEXterity based on character Tevel
+C 15 TRAVEL Same as SPEED Y " i
+
+16 TRAVEL Floats character over pits
+
+M,
+W
+[
+MC & ATIAK Takes Hits from one monster
+)
+"
+[
+
+SLEEP 4 ATTACK  Kills a nusber of monsters in one group.
+FIREBALL 10 ATTACK  Throws firebol] at attacking monsters
+LIGHTNING 10 ATTACK  Hurls a Lightning bolt
+
+ATTACK € 10 ATTACK Dameges a group of monsters
+
+DISPELL € 10 ATTACK Stops monsters from attacking
+
+FEAR 15 ATTACK  Frightens attacking sonsters
+
+M
+CLOUOKILL W 20 ATTACK Generates powerful poison gas cloud
+HOLY WORD C 20 ATTACK Very Powerful sttack spell
+
+PONER WORD M 25 ATTACK  Same as HOLY ORD
+
+i fch means that
+Some monsters have the ability to turn spells, whi
+the character Teceive half the damage of his own spell. A few
+
+sonsters are unaffected by even poerful spells.
+
+FIGHTING THE MONSTERS
+
+You will meet a rich an
+core thon 200 81tferent niach 8 4IRS torde of sonsters,
+Gescend 1nto the Tevels, s 3 bec
+
+deady.
+Vater Elementals, which are t
+
+There are
+9 in the varfous Tevels. As you
+
+stronger, and more
+
+M, to Earth, Fire and
+iaree vel i Lovel 50 apcyto0 BOWErful und hideous to describe,  Those
+
+¢ Dinseons, s ke o
+<01 rove automaticaTly o the Characier Shepta (e Ty U SEEL2Y
+n ane scrsen. e’ number of Bonters Sctscting Jos s b oty bk
+aper righe. Tt 3 possibie for mors s s roon 1 o S
+Yoot the ‘ame time. 1 fuce, the Tenger - sacen s e ek
+ponsters who Sttack, the Better {5 the chance that other momsters xill
+T e Tray ™ i newcomes 9140 WHY e 1P et B e o
+portion of the screen. s B L
+
+swing 2t them, a5 in adventure-type games. If a character is too slow 1t
+the spell powers of nne"ﬂ the ‘!::21 ::h\‘lh u‘:zln by typing U, then
+
+f the tota] becomes enough to kill the
+are killed in 2 battle the display will return to the dungeon map.
+
+S MANUAL e e . At
+
+STRATEGY HINTS...
+
+While on
+
+1" men ot s
+the first three levend: i cccuption:
+racters such t minimen o survive Tomer 14
+e Tovest Teveang rious meafe users ose st it e
+2. “Concentratiot e\ Maturity, kgl
+
+n 15 o
+
+nature of . portan:.
+e e DUSE B8y attention every-seaclh, ¢ #chronous
+of conmands in the quickest possihy Yinet® o execute & certain series
+
+ERROR MESSAGES:
+
+splay standar
+
+certain error routines bult fnto Nemests seich o
+
+These are, along with an exp
+correct them: Planation of what
+
+965 where something
+In addition, there are
+re specific to the game.
+
+used thes and how to
+
+MESSAGE: Sorry, cannot enter dungeon,
+REASON:  Level 0 s either missing or damsged.
+The CHR file may have becone damaged.
+
+FIX: If Level 0 is present, check the CHR file in the fo11 nner.
+1. Exit to operating system. Wbt s
+
+2. Enter DOT <character name>.CHR
+
+3. Enter D, then return
+
+4. Check the first word in the mnemonics at the right. If it is
+anything but "LEVEL® then proceed with Steps 5 through 6.
+
+5. Enter S100, then return
+
+6. Replace the shown character, 4A for instance, with 4 by
+typing 4C immediately after the shown character. 4C is hexidecisal
+notation for L.
+
+7. Control C
+
+8. Enter: SAVE 5 <Character name>.CHR.
+
+MESSAGE: Lost him in <somewhere>
+b::-uy indicates a minor hardware drive or disk probles.
+
+Try running the entire program in another drive.
+
+A1 other error messages are self-explanstory.
+
+THE MULTI-USER GAME ... AND THE USER GROUP.. Lo
+fon of this game employ
+11, & multi-user vers! e emicyine
+Wﬂ"!enl"l":::lisnuls nd which truly .”":‘.:lt:h:‘.zn'a;hﬂsh )
+¥as being field-tested in "i“{u‘?f.'.'i,"i: e
+040, and was_expected to ava
+Finally, a National Nemesis User Group
+Nemesis User Group
+67 Northwood dr. :
+Urbana, 1L 61801
+
+r.
+2 hesdauartered at:
+
+¢ 311 Nem 0 tact the group with any non-beg
+¢ the. b
+
+411 Nemesis users are fnvited to €O ; L8
+
+Telated coments or suggestions -
+
+KN N 8000 ne T NN
+Bonoo s aeo s am oo
+2OURANERRITRRERY
+
+=
+Howgonnooononone
+
+fooncooynaNumT MO
+2 YV
+
+Be
+
+Hoosnoynawgongoy
+
+P el (el i
+
+s e BRI B, (1)
+“eigHE gEisey
+
+No i L
+
+2223500000000
+52228
+22288222322322
+
+Yes
+Yes
+No
+No
+o
+Ho
+No
+Yes
+No
+Yes
+Yes
+No
+Yes
+
+vt
+Clﬁ.:n MAGIC ALT
+
+e
+um
+
+H5c
+
+L
+
+Hes
+
+s
+
+B
+
+Egoonoaconozmannn
+
+frcczosuaraaraccy
+
+dainccononsanosinn
+
+FE
+
+Loceommnaennoasn
+
+.ml lllllllllllllllllll
+
+Emcooncannomuoany
+
+fgeccieandamacoid
+S
+
+e
+
+annis
+
+s
+
+e
+
+Ll
+
+|
+tomiexre <
+
+qireacs
+
+1001.3311.1
+i i
+
+100} 041}
+
+LG
+
+1uuoox oj.7a) 57
+
+g
+lsl.llx.n}
+
+i
+ol 571 30} KTIERIN oslluol BEHECH
+
+0!.05{ 571.63}
+
+l|213.21 Bl
+0I|.CI 57(9 ’“ ‘lil 5“
+
+.81100}
+
+eble 3. Probability of achieving a class
+
+R L ——
+
+NEMESIS
+
+n adventure in Nemesis; a quest that brings you to the edges of
+imagination. A place where the rules of the physical world have
+been altered into a new pattern; where mythical beasts with
+owers question your right to exist. You alone have the
+
+mystical p
+power to aid your character in the rise from person to demigod.
+Fhose who succeed in their quest Kknow the true pleasire in
+
+conguest.
+
+& né docunents pertaining to NEMESIS are copyrighted
+£y Wenset A, Pagels and Wionas O - Hiller; 1" graphics {
+
+pertaining to NEMESIS are copyrd
+
+TABLE OF CONTENTS.
+
+NON-DISCLOSURE AGREEWENT/COPYRIGHT. .
+INTRODUCTION. .
+HOW_TO USE THE MANUAL.
+SYSTEM REQUIREMENTS/TECHNICAL DATA.
+PACKAGE CONTENTS. .
+COPYING THE MASTER DISK.
+INSTALLATION FOR VARIOUS TERMINALS.
+OBJECT OF THE GAME/PHILOSOPHY..
+CREATING THE CHARACTER...
+STARTING THE GAME.
+
+THE CHARACTER DISPLAY.
+
+FASICAL KTTRIBUTES OF THE DNGEON ...
+MAGIC'AND CLERIC SPELLS.
+
+TABLE OF SPELLS....
+
+FIGHTING THE MONSTERS.
+
+STRATEGY HINTS.
+
+ERROR MESSAGES...
+
+THE NEMESIS USER| GRoUP.
+
+SOFTWARE NON-DISCLOSURE AGREEMENT
+
+As with all SuperSoft software, acceptance of this or other products, both in machine and human
+
+readable form, implis agreement with the principles and concepts below.
+
+1. Al sofeware is sold on an individual CPU basis. Usage on secondary machines without permission
+constitutes a violation of this agreement.
+
+2. Five (5) backup copies may be made by the user. These are for the protection of user’s investment only.
+
+3. The ideas,. concepts and machine/human interface of software are all considered the property of
+SuperSot Inc. and its authors.
+
+4. The user agrees to non-disclosure of the following:
++ Underlying concepts
++ Documentation
+- Code and code fragments (in both source and object)
++ User Interface
+- Any and all aspects of software which SuperSoft developed.
+
+5. All software is non-transferable and may not be re-sold without permission.
+
+5. User modification of software completely removes SuperSoft Inc. from any liabilty regarding the
+operation or ity of the softuware.
+
+STATEMENT OF WARRANTY
+
+‘SuperSof disclaims all warranties with rogard to the software contained on diskette, tape. or in
+‘printed form, including all warranties of merchantabilty and fitness; and any stated express warranties
+are in liew of all obligations or liabilty on the part of SuperSoft for damages, including, but not limited @
+special, indirect or consequential damages arising out of or in connection with the use or performance of
+the software licensed.
+
+“Title and ownership shall at al times remain with SuperSoft and its authors.
+NEMESIS MANUAL PAGE 3
+
+INTRODUCTION
+
+WELCOME to Nemesis...a unique role-playing game modeled after the
+Dungeons and Dragons epic simulations.
+
+Very generally, Nemesis is set in pre-history in a world not
+unlike the one described by J.R.R. Tolkien in the "Rings® trilogy.
+
+Unlike "adventure games’ with their specificelly limited text,
+and third person charecters, Nemesis is a true epic journey, where YOU,
+represented by the cursor on your terminal's screen, enter 3 worTd
+populated by more than 200 different kinds of monsters, all of whom
+believe you to be an_intruder to be devoured...a world made up of a
+friendly” castle, where the Amory, Hospital, inn, and Archives are at
+your disposal to assist you in your trek...a world of 10 levels of
+dungeons beneath the castie, each increasingly difficult to explore and
+eacn increasingly dangerous'to your very existence...a world of almost
+unlimited gold, of powerful “spells, of constant growth of your
+character to cambat the Increasing powers of evilyou wiTT et —
+
+o survive in Nemesis, you will need quickness of thousht and
+guickness of hand. Your reactions, both mental and physical, will
+determine whether your character will survive the moment to face even
+more trying moments at deeper Tevels of the dungeons.
+
+Nemesis runs in real time. It is asynchronous, which means that
+the program will not present you with a question mark ind wait patiently
+for_you to make same kind of decisfon. The monsters are ever-active and
+will strike as you are thinking, or even in the midst of input from the
+keyboard.Tnis feature alone sets Nemesis above a1l other microcomputer
+entertaiments.
+
+Part of the.beauty of Nemesis is in your discovery of the game
+itself. This menuo) Will tell you enoush so that you can proceed on your
+Journey, but it will not lay out everything for you in total detail.
+
+NEME
+SIS MANUAL wat
+
+USING THIS MANUAL
+
+As with any new program, you should read this manual from cover
+to cover, and be sure you understand it before ever 1oading the program
+and attempting to use it. Since we don't do that ourselves, though we
+should, here's a suggested way to use this manual 5o as to get up and
+running most efficiently and beginning your quest as soon 25 possible
+with some idez of what's going on.
+
+Check the SYSTEM REQUIREMENTS in the following section.
+
+Next, follow the steps in the COPY THE MASTER DISK sectfon.
+
+Third, read the TERMINAL DEFINITION SECTION, and then create the
+term.def_file for your specific hardware.
+
+Fourth, read the CREATING YOUR CHARACTER section cerefully.
+There 1s a lot of information in that section which is useful to playing
+the geme as well as creating the character. Then create a character. It
+might be useful to creste-a character, then ERAse it with the CP/M
+comnand, just to get an idea of the range of characters available.
+
+Fifth, read the Section pertaining to the CASTLE. Then load the
+progran and wender around in the CASTLE for a while. You can't get hurt
+Shere, and it will become a very femiliar place eventually, so become
+confortable with it at the start. S
+
+Then read the sections beginning with ENTERING THE DUNGEONS,
+Which cover how you move in the dungeons, what to expect in the way of
+Physical charcteristics and monsters, how to fight thea, use spells and
+So0n. Next, take a deep breath, and enter the DUNGEONS.
+
+Finaily, 1f you have problems with the game, check this manual
+carefully. Most comon questions raised in the past are answered in these.
+pages. - 5
+
+riGnitI0n
+
+NENESIS MANUAL
+
+SYSTEM REQUIREMENTS AND TECKNICAL DATA
+
+Nemesis requires 52k of memory
+
+24280 display sc:
+24180 gisplay screen with CRT unit capa
+suggested that the termina) operate at 9600 baud so that the pace of the
+game 1s at an enjoyable Tevel, though the game will run perfectly well at
+both lower and higher baud rites. Nemesis will run on any combination
+of hardware that provides those minimum requirements.
+
+enesis {s written in the C language, using the powerful C
+Compiler offered by SuperSoft. It is a very large proarem, and would
+have taken an unprofitable length of time to write in Assembier or some
+other Tow-level Tanguage. Similarly, it probably would have been too bia
+20 run on your microcomputer had it been written in BASIC o o simflar
+high-level Tanguage..
+
+Nemesis provides the heaviest use of the character graphics
+capadilities of the CP/M operating enviromment avaflable, without the
+2ddition of any hardwsre, boards, or other peripheral devicés-
+
+scel Tanecus notes on this Version:
+
+--Because of a change in where the overlays are loaded, COM files
+from Version 1.0 cannot be used with this Version.
+
+~-Similarly, 1f characters created with the earlier Version are
+
+used with this Versfon, the deja vu maps of the dungeon levels will be
+incorrect.
+
+the CP/M operating system, a
+
+ble of cursor addressing, and
+k drive capacity (whether one or two drives) of 1206, it is
+
+ecause the ASCII math package in the program does not check
+for valid character input, entering numerics when the program is
+expecting character strings can couse irrevocable damage to the
+character.
+
+WHAT YOU SHOULD HAVE IN THE NEMESIS PACKAGE
+
+You have received a complete Nemesis "Dungeon & Dragon® type of
+entertaiment if you received documentation incluging this manual, the
+User's sgreenent and registration card, and either txo 5 1/4% cisks or
+one 8° Disk, ing on your specificsysten. The 8" gisk contains a1l
+
+In'the 5 1/4% format, the same programs are listed as
+
+NEMESIS.COM - Main entry program
+CASTLE .COM - Castle routine over)
+CASTLE .0 - Castle information file
+SUNGEON.COH - Dungeon routine averlay
+LEVEL.0'TO LEVEL.10 (No 9) - Dungeon Information files.
+
+Disk 2 of 2: :
+PERSON .COM - Character creation program
+TERMDEF .CON - Terminal Definition progran
+
+Disk 1 are the actual programs needed to play out
+the_scenaricr e tv0  Jrodrims oo Disk 2 tre the e Tation restine
+
+TERMDEF, which is needed only once to confi the 2
+"o ne character crestion routine. PERSON, wEIGh 15 on
+Jou'want to create 8 new character. v
+
+)
+
+NEMESIS MANUAL
+
+COPY THE MASTER DISK.
+
+As with a1 mester disks, the first thing you should do is make
+copies of the original Factory Master Disks you re
+SuperSoft....and use the copy, not the original disk. You are sMlowed
+under the user agreesent to make a maximum of § backup copies for
+use only.  Put the factory disk away after making copies and only gek 1%
+SEESERTE 11 sonething G1sasirous happens <o our vorkivs Shak
+
+Make the copy on a new disk. If you have s utility program that
+checks to make sure the disk is good, Such as the Disk Doctor set of
+prograns offered by SuperSoft, use that before copying. Then formet the
+new disk and copy the CP/M system tracks fron your own CP/M master onto
+the new disk. ‘Then copy 31 the prograns you received in the Nemesis
+packege onto the new disk, Sxcept TERMDEF. That will give you o fresh
+and conplete game that s Tacking GRly two hore files you need. One fs
+term.def, which configures the program to your particular termins] snd
+which wil) 'be crested as the next step by using the TERMDEF file. The
+other file is the file which describes your cheracter, which will be
+created by using the PERSON progran. Both procedures w1l be explained in
+detail in following pages. -
+
+A word about disks: Floppy disks are durable and long-lasting,
+anong the most relisble mass storage devices known. But they reauire
+careful handling. Do not bend them, expose them to excessive hest or
+€o1d, 21low them to come near magnetic substances, or leave them out of
+their protective sleeves for any longer than necessary.
+
+R s i A
+
+bugh Ade nrmined S aaRERbE
+o1, She dara it s
+
+NEMESIS MANUAL
+
+INSTALLING THE TERMINAL DEF INITIONS
+
+The TERMOEF progran configures your copy of the Nemesis game
+specifically for your terninal. This is an fmportant part of ‘the
+procedure, since the game relfes heavily for the indfvidual terminal's
+graphics Capability and its ability to access those capebilities.
+
+Load TERMDEF by typing in that word after the CP/M prompt.
+
+Uhen installing the game for the first time, follow the prompts
+in the TERMDEF program, and do as they say with the following exception,
+for first tine users: Start by calling up Option No. 2 (Option i
+presunes the existence of a terninal definition file, called torm.cef.
+Since you have not used the game before, there will be no such file.)
+Option 2 then will present a 1isting of 17 different populer terninals
+such as the Soroc 120, the HazeTtine 1500, and so on. If the terminal
+You own {5 among those 17 1isted, and there is o very good chance 1t will
+be, the terminal parameters already have been determined for you. Sinply
+type in the nusmber 1isted in front of the name of your terminal, and eha
+program will return to its main menu. Next, type in 6 to test those
+terninal definitions, and watch the test display. If everything seems
+right, according to the test display, the progrem will again return to
+the main menu. This tine, type in 7 to install the terminal definitions
+permanently in 8 file which the progran wiTT sutomatically creste called,
+0ddly enouch, tern.def. Trapsfer the term.def file to the disk which
+contains the game prograns themselves. Term.def sust be on the same disk
+to make the programs display properly. As the main meny will indicate,
+You are now reay to return to the operating system. If properly done,
+You never should have to instal] the terminel definitions again.
+
+If your terminal fs not one of the 17 listed, select option 0,
+which provides a separate sibroutine to create your own, one-of-a-kind
+terninal definition file. Answer the questions asked in order, referring
+%o the manuzl for your terminal if necessary.
+
+A final note on the tern.def file. The various "packaged"
+terninal definitions for the 17 terminals hove been designed vsing. the
+manufacturers’ specifications and a11 have been tested in use. However,
+there is a faint possibility that something may be swry, either with your
+individual terninal, or with sone particulor batch of terminals produced
+by an individua] manufacuter. If the test in the installation procedure
+13 not correct, check the medis integrity of your disk, then rerun
+TERMDEF, moking sure you are specifying the correct terminal. If that
+sti11 fails, go back to option 1 of the TERMDEF file, then option S
+(editing) to see if it might be some small matter that cen be handied by
+responding to the program prompts. Sorcc users, for instance, have found
+that padding of the last four parameters may be necessary occasionally to
+get proper display. 3 =
+
+1 a1l el5é fails, phone the SuperSoft Hotline number and ask one
+of the technicians to’ talk you through the terminal definition
+installation procedure. 1t's part of the service. g
+

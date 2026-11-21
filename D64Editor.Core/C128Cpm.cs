@@ -555,7 +555,9 @@ public static class C128Cpm
         // Reference CPM+.SYS reserves 13 allocation units (blocks 2..14) even though only
         // the first 68 records hold the system image; the boot ROM expects this layout.
         var sysAlCount = Math.Max(sysBlocks, 13);
-        for (var i = 0; i < sysAlCount && i < 16; i++)
+        // A 32-byte directory entry holds 16 1-byte pointers or only 8 2-byte pointers.
+        var alCapacity = cimg.WordAl ? 8 : 16;
+        for (var i = 0; i < sysAlCount && i < alCapacity; i++)
         {
             var bv = 2 + i;
             if (cimg.WordAl)
