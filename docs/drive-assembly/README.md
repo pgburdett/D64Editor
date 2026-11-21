@@ -572,6 +572,12 @@ stream**: a captured track 1 yielded only 19 sync runs and 0 decodable sectors. 
 windows this way does not work.
 
 A faithful full-track raw capture needs a continuous stream during one revolution — either a
-drive-side fast-transfer routine that feeds bytes to the host while the disk spins, or a
-parallel-track nibbler. `--raw2g64` can wrap already-captured raw track files into a G64
-container, but its input must come from a real single-revolution capture.
+drive-side fast-transfer routine that feeds bytes to the host while the disk spins, or SRQ
+nibtools. `--raw2g64` can wrap already-captured raw track files into a G64 container.
+
+`GcrRead.Stitch()` aligns 256-byte windows captured with 128-byte overlap using a **128-byte
+prefix probe searched from the end of the accumulated stream**; shorter probes splice wrongly on
+repeated GCR patterns (especially no-sync tracks). `--test-stitch <image.g64> <track>` validates
+the algorithm against known raw tracks from a G64: tracks 1, 2 and 36 of the Arctic Fox
+preservation image reconstruct to an exact rotation (7692/6666/7015 bytes). This is synthetic
+validation only — hardware capture with real rotational drift is still untested.

@@ -3,6 +3,11 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Correlation-based GCR window stitcher
+
+### Changed
+- `GcrRead.Stitch()` now aligns 256-byte windows with a 128-byte reverse-searched prefix; `--test-stitch` validates against known G64 tracks (exact rotation match for T1/T2/T36 of Arctic Fox). Hardware capture with real drift remains untested.
+
 ## [Unreleased] — Faithful SRQ Nib Capture and Full Documentation
 
 ### Added

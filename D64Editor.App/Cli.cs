@@ -58,6 +58,33 @@ internal static class Cli
             case "--to-gcr":
                 return ToGcr(args);
 
+            case "--test-stitch":
+            {
+                if (args.Length < 3 || !int.TryParse(args[2], out var track))
+                {
+                    Console.Error.WriteLine("Usage: D64Editor --test-stitch <image.g64> <track>");
+                    return true;
+                }
+                try
+                {
+                    var img = G64Image.TryLoad(args[1]) ?? throw new InvalidDataException("Not a G64 image.");
+                    var raw = img.GetWholeTrackData(track) ?? throw new InvalidDataException("Track not present.");
+                    var windows = new List<byte[]>();
+                    for (var off = 0; off + 256 <= raw.Length + 256; off += 128)
+                    {
+                        var w = new byte[256];
+                        for (var i = 0; i < 256; i++) w[i] = raw[(off + i) % raw.Length];
+                        windows.Add(w);
+                    }
+                    var stitched = GcrRead.Stitch(windows, raw.Length);
+                    var match = Enumerable.Range(0, raw.Length).Any(rot =>
+                        stitched.SequenceEqual(raw.Skip(rot).Concat(raw.Take(rot))));
+                    Console.WriteLine($"Stitch test: {stitched.Length}/{raw.Length} bytes, exact rotation match: {match}");
+                }
+                catch (Exception ex) { Console.Error.WriteLine("Stitch test failed: " + ex.Message); }
+                return true;
+            }
+
             case "--raw2g64":
             {
                 if (args.Length < 3) { Console.Error.WriteLine("Usage: D64Editor --raw2g64 <out.g64> <track:file> ..."); return true; }

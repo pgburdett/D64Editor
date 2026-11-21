@@ -88,7 +88,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--cbm gaps <image.g64> [--from N] [--to N] [outfile]` — offline raw GCR sync/gap/sector analysis.
 - `--cbm tailgap <dev> [outfile]` — read 5 tail-gap bytes via FDC JUMP job (Kracker Jax TGREAD port).
 - `--cbm gcrscan <dev> [outfile]` — sample raw GCR on the current track via uploaded 6502 code (never moves the head).
-- `--gcrread <dev> <track> <outfile> [--nosync] [--skip N] [--whole]` — raw GCR chunk reader; `--whole` window stitching is incomplete.
+- `--gcrread <dev> <track> <outfile> [--nosync] [--skip N] [--whole]` — raw GCR chunk reader; `--whole` uses correlation-based stitching (synthetically validated, hardware drift untested). `--test-stitch <image.g64> <track>` validates the stitcher against a known track.
 - `--raw2g64 <out.g64> <track:file> ...` — wrap captured raw track files into a G64 container.
 - `--protect <base.d64> <out.g64>` — inject reproducible EA PRODOS protected tracks into a G64.
 - `--writeraw <dev> <track> <hexpattern> <count>` — DESTRUCTIVE serial raw GCR track writer (blank test disk only; track >35 uses safe 82-byte stepper).
