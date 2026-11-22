@@ -70,9 +70,10 @@ the Z80 multiply loop):
 | 4 | `0x9a6a1c5e8571` | 6762 |
 | 5 | `0xc9bd9f73b90b` | 18877 |
 
-The port is `Nemesis/Engine/Lcg48Random.cs`; it is not yet wired into
-`DungeonEngine` because the monster-template field mapping for the combat
-formulas below is still only HIGH confidence.
+The port is `Nemesis/Engine/Lcg48Random.cs`; it drives both `roll()` in
+character generation and the exact melee damage roll below.  The combat and
+payout formulas from sections 1.1–1.4 are now applied in
+`Nemesis/Engine/CombatRules.cs` and `DungeonEngine`.
 
 Important globals:
 
@@ -90,7 +91,40 @@ Important globals:
 | `0xa2e6` / `0xa2e8` | magic / cleric spell tables installed at startup | CONFIRMED |
 | `0xa2ea` | game-state word used by the `25ab` formula | HIGH |
 | `0xa2ec` / `0xa2ee` | spell-name-table counters used by magic/cleric prompts | HIGH |
-| `0x838f` | monster template base | HIGH |
+| `0x838f` | monster template base | CONFIRMED |
+
+---
+
+# 0. Monster template layout (DM.COM loader)
+
+The `MONSTERS.*` files are plain text: `<level> <name> <11 numeric fields>`.
+`DM.COM` parses them with the format string `%d %s %d %d %d %d %d %d %d %d %d %d`
+at runtime `0x1ffa`, storing the 11 numbers as consecutive words in a scratch
+buffer at `BC+0x8d .. BC+0xa1` (name string at `BC+0x64`, name pointer at
+`BC+0xa5`).  Its record builder at `0x1e14`–`0x1f3c` copies each parsed value
+into a 16-byte template record at `0x838f + 16*index`:
+
+| Template offset | Source token | Example (`Veteran`) | Width | Used by |
+|---:|---|---:|---|---|
+| `+0x00` | name pointer | — | word | display |
+| `+0x02` | field 1 | 10 | byte | best-effort armour class |
+| `+0x03` | field 2 | 5 | byte | best-effort group size |
+| `+0x04` | field 3 | 1 | byte | best-effort type/speed (HIGH) |
+| `+0x05` | field 4 | 5 | byte | monster-turn expression |
+| `+0x06` | field 5 | 1 | byte | monster-turn expression |
+| `+0x07` | field 6 | 13 | byte | monster-turn expression |
+| `+0x08` | field 7 | 5 | byte | monster-turn expression |
+| `+0x09` | field 8 | 8 | **word** | `monsterPower` in melee |
+| `+0x0b` | field 9 | 1 | byte | kill-payout base `v` |
+| `+0x0c` | field 10 | 0 | word | UNKNOWN |
+| `+0x0e` | field 11 | 0 | word | UNKNOWN |
+
+Confidence: **CONFIRMED** for the loader offsets and widths (the inline-operand
+`CALL 0x0190` sequences at `0x1e14`–`0x1f3c` are unambiguous once the operand
+byte is skipped).  The semantic names in the last column are still HIGH or
+UNCERTAIN where noted.  The C# catalogue's `F1..F11` map 1:1 to source fields
+1..11; `F12` is a trailing placeholder that the original text format does not
+contain.
 
 ---
 
@@ -174,7 +208,7 @@ Confidence:
 
 - Roll, subtraction, print, kill branch, and return values: **CONFIRMED**.
 - Meaning of `monster+6` as current monster HP: **HIGH** (consistent with the rest of the combat code and prior notes).
-- Meaning of `0x838f + 16*type + 9` as a monster power/damage field: **HIGH**.
+- Meaning of `0x838f + 16*type + 9` as a monster power/damage field: **CONFIRMED** by the DM.COM loader (section 0 shows field 8 is stored there as a word).
 - Calling this quantity “to-hit” is misleading in porting terms: the same number is subtracted from monster HP, so it is the damage applied. The original game's displayed phrase is “hits”.
 
 ## 1.4 Kill payout — `0x28ba(typeOrMonsterPtr)`

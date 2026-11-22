@@ -42,6 +42,18 @@ internal static class Verify
         Check("LFSR returns 15-bit values",
             Enumerable.Range(0, 1000).All(_ => r3.Next() <= 0x7fff));
 
+        // Exact combat arithmetic from DUNGEON.COM
+        var combatRng = new Lcg48Random();
+        Check("melee f = (STR+DEX)/10",
+            CombatRules.FightStrength(new Attributes { Strength = 12, Dexterity = 15 }) == 2);
+        Check("damage roll uses exact LCG vectors",
+            CombatRules.DamageRoll(2, 8, combatRng) == 8037 % 6 &&
+            CombatRules.DamageRoll(2, 8, combatRng) == 17375 % 6);
+        var payoutRng = new LfsrRandom(1);
+        Check("kill payout v + rand()%(10*v)",
+            CombatRules.KillPayout(5, payoutRng) == 7 &&
+            CombatRules.KillPayout(5, payoutRng) == 9);
+
         // Character file round-trip
         string sample = Path.Combine(repoRoot, "docs/nemesis/game-files/ARAGORN.CHR");
         if (File.Exists(sample))

@@ -8,13 +8,15 @@ namespace Nemesis.Engine;
 /// Port of DUNGEON.COM.  The original keeps authoritative state in three
 /// globals (X=0x80b8, Y=0x80ba, level=0x80bc) over a 26x22 grid of 3-byte
 /// cells.  Control flow (movement, stairs, hazards, encounters, combat) follows
-/// the disassembly.  Spell unit costs and the kill-payout shape are decoded in
-/// `docs/nemesis/EXACT-FORMULAS.md`; the melee damage roll below is still a
-/// best-effort model because the original 48-bit LCG at 0x6c75 is not ported.
+/// the disassembly.  Melee damage and the kill payout now use the exact
+/// formulas from `docs/nemesis/EXACT-FORMULAS.md`; monster statistics and the
+/// monster turn remain best-effort where the original template semantics are
+/// still UNCERTAIN.
 /// </summary>
 public sealed class DungeonEngine
 {
     private readonly LfsrRandom _rng;
+    private readonly Lcg48Random _lcg;
     private DungeonMap? _map;
     private readonly Dictionary<int, DungeonMap> _maps = [];
 
@@ -31,7 +33,13 @@ public sealed class DungeonEngine
     /// <summary>Directory containing LEVEL.0 .. LEVEL.10 (defaults to the repo's game-files).</summary>
     public string DataDirectory { get; set; } = "docs/nemesis/game-files";
 
-    public DungeonEngine(LfsrRandom rng) => _rng = rng;
+    public DungeonEngine(LfsrRandom rng, Lcg48Random? lcg = null)
+    {
+        _rng = rng;
+        // The original dungeon overlay boots its own 48-bit LCG at state 1.
+        // Callers can inject a shared/primed instance for exact replay tests.
+        _lcg = lcg ?? new Lcg48Random();
+    }
 
     public void Bind(Character c)
     {
@@ -329,10 +337,14 @@ public sealed class DungeonEngine
             {
                 Name = def.Name.Replace('_', ' '),
                 ArmorClass = def.ArmorClass,
-                HitDice = Math.Max(1, def.HitPoints / 4),
-                DamageDice = Math.Max(1, def.Damage / 2),
-                ExperienceValue = def.Experience,
-                GoldValue = def.Gold,
+                HitDice = Math.Max(1, def.CombatPower / 4),
+                DamageDice = Math.Max(1, def.CombatPower / 2),
+                CombatPower = def.CombatPower,
+                // DUNGEON.COM writes the same payout to both character-sheet
+                // buffers; the old distinct F8/F9 interpretation was wrong.
+                ExperienceValue = def.PayoutBase,
+                GoldValue = def.PayoutBase,
+                PayoutBase = def.PayoutBase,
             },
             HitPoints = hp * count,
             MaxHitPoints = hp * count,
@@ -349,34 +361,16 @@ public sealed class DungeonEngine
     {
         if (!InCombat || CurrentMonster == null || Character == null) { Say("Nothing to fight."); return; }
 
-        int attack = _rng.Roll(3, 6) + Character.BaseAttributes.Strength / 2
-                     + Character.Level + Character.ArmorClass / 2;
-        if (attack >= CurrentMonster.Type.ArmorClass)
-        {
-            int dmg = Math.Max(1, _rng.Roll(1, 6) + Character.BaseAttributes.Strength / 3
-                                 + WeaponDamage());
-            CurrentMonster.HitPoints -= dmg;
-            Say($"   You gave it {dmg} hits");
-            if (CurrentMonster.HitPoints <= 0) { WinCombat(); return; }
-        }
-        else
-        {
-            Say("You miss.");
-        }
+        // Exact melee path from DUNGEON.COM 0x7db7 -> 0x25dc -> 0x2853:
+        // f = (STR + DEX)/10, divisor = f + monsterPower/2, damage = LCG % divisor.
+        // There is no separate "to hit" roll or weapon-damage term in the
+        // original routine; a zero remainder is reported as "0 hits".
+        int fightStrength = CombatRules.FightStrength(Character.CurrentAttributes);
+        int hits = CombatRules.DamageRoll(fightStrength, CurrentMonster.Type.CombatPower, _lcg);
+        CurrentMonster.HitPoints -= hits;
+        Say($"   You gave it {hits} hits");
+        if (CurrentMonster.HitPoints <= 0) { WinCombat(); return; }
         MonsterTurn();
-    }
-
-    private int WeaponDamage()
-    {
-        if (Character == null) return 0;
-        int best = 0;
-        for (int i = 0; i < Character.ItemTypes.Length; i++)
-        {
-            if (Character.ItemTypes[i] == GameConstants.EmptyItem) continue;
-            var item = ItemCatalog.All.FirstOrDefault(x => x.Type == Character.ItemTypes[i]);
-            if (item != null) best = Math.Max(best, item.Damage);
-        }
-        return best;
     }
 
     private void MonsterTurn()
@@ -398,8 +392,11 @@ public sealed class DungeonEngine
     {
         if (CurrentMonster == null || Character == null) return;
         Say("You killed 1");
-        Character.Experience += CurrentMonster.Type.ExperienceValue;
-        Character.Gold += CurrentMonster.Type.GoldValue;
+        // Exact payout shape from 0x28ba: v + rand() % (10*v), v = template +0x0b.
+        // The original writes the same formatted value to both sheet buffers.
+        int payout = CombatRules.KillPayout(CurrentMonster.Type.PayoutBase, _rng);
+        Character.Experience += payout;
+        Character.Gold += payout;
         CheckLevelUp();
         CurrentMonster = null;
         InCombat = false;

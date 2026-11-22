@@ -23,11 +23,26 @@ public sealed record MonsterDef(int Level, string Name, int F1, int F2, int F3, 
     /// <summary>Damage per successful attack.</summary>
     public int Damage => Math.Max(0, F5);
 
-    /// <summary>Experience awarded for killing one monster.</summary>
-    public int Experience => Math.Max(0, F8);
+    /// <summary>
+    /// Monster combat power: the word at template offset 0x09 (the value the
+    /// original halves and adds to the fighter's STR+DEX/10 in damage_roll).
+    /// Previously mislabelled as experience.  CONFIRMED from DM.COM's loader
+    /// and DUNGEON.COM's melee routine.
+    /// </summary>
+    public int CombatPower => F8;
 
-    /// <summary>Gold awarded for killing one monster.</summary>
-    public int Gold => Math.Max(0, F9);
+    /// <summary>
+    /// Kill-payout base: the byte at template offset 0x0b.  The original
+    /// computes <c>v + rand() % (10*v)</c> and writes it to both the gold and
+    /// experience buffers.  Previously mislabelled as gold only.
+    /// </summary>
+    public int PayoutBase => Math.Max(0, F9);
+
+    /// <summary>Best-effort legacy alias; the confirmed payout uses both buffers.</summary>
+    public int Experience => PayoutBase;
+
+    /// <summary>Best-effort legacy alias; the confirmed payout uses both buffers.</summary>
+    public int Gold => PayoutBase;
 
     public int[] Raw => [F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12];
 }

@@ -23,8 +23,10 @@ immediately.
 `docs/nemesis/EXACT-FORMULAS.md` records a hand disassembly of the combat,
 spell, and castle pricing helpers with CONFIRMED/HIGH/UNCERTAIN confidence
 ratings. The recovered **spell unit costs** from the runtime tables are applied
-in `Data/GameTables.cs`; the other findings remain documentation until their
-supporting RNG/helper routines are ported.
+in `Data/GameTables.cs`.  The confirmed melee damage roll, kill payout and
+monster-template field layout are applied in `Engine/CombatRules.cs`,
+`Engine/DungeonEngine.cs` and `Data/MonsterCatalog.cs`; the remaining findings
+stay documentation until their supporting helpers are recovered.
 
 ### Fidelity notes
 
@@ -33,11 +35,13 @@ supporting RNG/helper routines are ported.
   (26×22), wall-bit movement, both RNGs (15-bit LFSR and 48-bit LCG), the
   compiled default LFSR seed (`0xffff59dc`, with `init_rand()` overriding it
   when a seed is entered), the `roll()` stat dice (**4d5**, from the machine
-  code at `PERSON.COM 0x1a71`), and the 640-byte `.CHR` fields that are decoded.
-- **Best-effort:** combat arithmetic, spell level gating/durations, shop price
-  formulas, and hospital/inn rates.  The remaining helper routines were not
-  fully recovered; the current model is documented in `Engine/DungeonEngine.cs`
-  and `Engine/CastleEngine.cs`.
+  code at `PERSON.COM 0x1a71`), melee damage (`f + power/2`, LCG remainder),
+  kill payout (`v + rand() % 10*v`, written to both sheet buffers), the DM.COM
+  monster-template offsets, and the 640-byte `.CHR` fields that are decoded.
+- **Best-effort:** monster HP/turn statistics, spell level gating/durations,
+  shop price formulas, and hospital/inn rates.  The remaining helper routines
+  were not fully recovered; the current model is documented in
+  `Engine/DungeonEngine.cs` and `Engine/CastleEngine.cs`.
 - The original `valid()` ranger bug (testing the loop counter instead of the
   class index) is intentionally preserved in `GameTables.IsValidClass`.
 - Undecoded `.CHR` bytes are retained in `Character.RawData`, so save/load is
@@ -51,8 +55,8 @@ dotnet run --project Nemesis/Nemesis.csproj -- docs/nemesis/game-files/ARAGORN.C
 dotnet run --project Nemesis/Nemesis.csproj -- --verify
 ```
 
-`--verify` runs 20 self-checks covering the tables, RNG, `.CHR` round-trip and
-real `LEVEL.0` map loading.
+`--verify` runs 23 self-checks covering the tables, both RNGs, exact
+melee/payout arithmetic, `.CHR` round-trip and real `LEVEL.0` map loading.
 
 ## Commands
 
