@@ -36,12 +36,14 @@ stay documentation until their supporting helpers are recovered.
   compiled default LFSR seed (`0xffff59dc`, with `init_rand()` overriding it
   when a seed is entered), the `roll()` stat dice (**4d5**, from the machine
   code at `PERSON.COM 0x1a71`), melee damage (`f + power/2`, LCG remainder),
-  kill payout (`v + rand() % 10*v`, written to both sheet buffers), the DM.COM
-  monster-template offsets, and the 640-byte `.CHR` fields that are decoded.
-- **Best-effort:** monster HP/turn statistics, spell level gating/durations,
-  shop price formulas, and hospital/inn rates.  The remaining helper routines
-  were not fully recovered; the current model is documented in
-  `Engine/DungeonEngine.cs` and `Engine/CastleEngine.cs`.
+  kill payout (`v + rand() % 10/v`, written to both sheet buffers), the DM.COM
+  monster-template offsets, monster type/group/HP/attack creation and the
+  per-monster stat refresh on group advancement, and the 640-byte `.CHR` fields
+  that are decoded.
+- **Best-effort:** the monster attack hit/miss test and special-attack branch,
+  spell level gating/durations, shop price formulas, and hospital/inn rates.
+  The remaining helper routines were not fully recovered; the current model is
+  documented in `Engine/DungeonEngine.cs` and `Engine/CastleEngine.cs`.
 - The original `valid()` ranger bug (testing the loop counter instead of the
   class index) is intentionally preserved in `GameTables.IsValidClass`.
 - Undecoded `.CHR` bytes are retained in `Character.RawData`, so save/load is
@@ -55,8 +57,9 @@ dotnet run --project Nemesis/Nemesis.csproj -- docs/nemesis/game-files/ARAGORN.C
 dotnet run --project Nemesis/Nemesis.csproj -- --verify
 ```
 
-`--verify` runs 23 self-checks covering the tables, both RNGs, exact
-melee/payout arithmetic, `.CHR` round-trip and real `LEVEL.0` map loading.
+`--verify` runs 24 self-checks covering the tables, both RNGs, exact
+melee/monster-creation/payout arithmetic, `.CHR` round-trip and real `LEVEL.0`
+map loading.
 
 ## Commands
 

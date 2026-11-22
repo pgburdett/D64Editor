@@ -323,14 +323,21 @@ public sealed class DungeonEngine
     private void MaybeEncounter()
     {
         if (Character == null || InCombat || IsDead) return;
+        // The 1-in-20 encounter gate is unchanged from the earlier port; the
+        // original trigger helper has not been decoded with CONFIRMED confidence.
         if (_rng.Next(20) != 0) return;
 
-        var candidates = MonsterCatalog.ForLevel(Level).ToList();
-        if (candidates.Count == 0) candidates = MonsterCatalog.All.ToList();
-        var def = candidates[_rng.Next(candidates.Count)];
+        var candidates = MonsterCatalog.ForLevel(Level);
+        if (candidates.Count == 0) return;
 
-        int count = Math.Clamp(def.GroupSize, 1, 4);
-        int hp = Math.Max(1, def.HitPoints + _rng.Next(5) - 2);
+        // Exact order from 0x7acc: type index, group size, HP, attack.  All four
+        // draws come from the 48-bit LCG, in that order.
+        int typeIndex = CombatRules.MonsterTypeIndex(candidates.Count, _lcg);
+        var def = candidates[typeIndex];
+        int count = CombatRules.MonsterGroupSize(def.GroupMin, def.GroupMax, _lcg);
+        int hp = CombatRules.MonsterHitPoints(def.HitPointsMin, def.HitPointsMax, _lcg);
+        int attack = CombatRules.MonsterAttack(def.AttackMin, def.AttackMax, _lcg);
+
         CurrentMonster = new Monster
         {
             Type = new MonsterType
@@ -345,10 +352,17 @@ public sealed class DungeonEngine
                 ExperienceValue = def.PayoutBase,
                 GoldValue = def.PayoutBase,
                 PayoutBase = def.PayoutBase,
+                GroupMin = def.GroupMin,
+                GroupMax = def.GroupMax,
+                HitPointsMin = def.HitPointsMin,
+                HitPointsMax = def.HitPointsMax,
+                AttackMin = def.AttackMin,
+                AttackMax = def.AttackMax,
             },
-            HitPoints = hp * count,
-            MaxHitPoints = hp * count,
+            HitPoints = hp,
+            MaxHitPoints = hp,
             GroupIndex = count,
+            AttackPower = attack,
         };
         InCombat = true;
         Say($"A group of {count} {CurrentMonster.Type.Name} attacks!");
@@ -379,27 +393,53 @@ public sealed class DungeonEngine
         if (CurrentMonster.IsAsleep) { CurrentMonster.IsAsleep = false; Say("It sleeps."); return; }
         if (CurrentMonster.IsFrightened) { CurrentMonster.IsFrightened = false; Say("It cowers in fear."); return; }
 
+        // Best-effort monster attack.  The live record's attack value (+8) is
+        // exact from 0x29f8, but the caller's hit/miss test is not yet decoded.
         int chance = _rng.Next(20) + Character.Level / 2;
         if (chance >= CurrentMonster.Type.ArmorClass / 2)
         {
-            int dmg = Math.Max(1, _rng.Roll(1, CurrentMonster.Type.DamageDice * 4 + 2));
+            int dmg = Math.Max(1, CurrentMonster.AttackPower
+                                   + _rng.Next(Math.Max(1, CurrentMonster.Type.CombatPower)));
             DamagePlayer(dmg, "The monster hits you");
         }
         else Say("The monster misses.");
+    }
+
+    /// <summary>
+    /// Rebuilds the live monster record after one member of a group dies.
+    /// Mirrors the tail of DUNGEON.COM 0x2954: decrement the group count at +2,
+    /// then draw a fresh HP (+6) and attack value (+8) from the 48-bit LCG.
+    /// </summary>
+    private void AdvanceMonsterGroup()
+    {
+        if (CurrentMonster == null) return;
+        CurrentMonster.GroupIndex--;
+        if (CurrentMonster.GroupIndex <= 0)
+        {
+            Say("The monsters are all gone.");
+            CurrentMonster = null;
+            InCombat = false;
+            return;
+        }
+
+        var t = CurrentMonster.Type;
+        CurrentMonster.HitPoints = CombatRules.MonsterHitPoints(t.HitPointsMin, t.HitPointsMax, _lcg);
+        CurrentMonster.MaxHitPoints = CurrentMonster.HitPoints;
+        CurrentMonster.AttackPower = CombatRules.MonsterAttack(t.AttackMin, t.AttackMax, _lcg);
+        Say($"Another {t.Name} steps forward!");
     }
 
     private void WinCombat()
     {
         if (CurrentMonster == null || Character == null) return;
         Say("You killed 1");
-        // Exact payout shape from 0x28ba: v + rand() % (10*v), v = template +0x0b.
+        // Exact payout shape from 0x28ba: v + rand() % (10 / v), v = template +0x0b.
         // The original writes the same formatted value to both sheet buffers.
         int payout = CombatRules.KillPayout(CurrentMonster.Type.PayoutBase, _rng);
         Character.Experience += payout;
         Character.Gold += payout;
         CheckLevelUp();
-        CurrentMonster = null;
-        InCombat = false;
+        AdvanceMonsterGroup();
     }
 
     private void CheckLevelUp()

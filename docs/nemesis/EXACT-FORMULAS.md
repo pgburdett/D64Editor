@@ -1,6 +1,6 @@
 # Nemesis exact-formula recovery (work in progress)
 
-Status: **partial recovery; do not treat UNCERTAIN entries as final**. This report records only what was recovered by hand from the linear Z80 disassembly in this pass. Ghidra C output was used only as a secondary cross-check where noted, never as control-flow truth.
+Status: **partial recovery; do not treat UNCERTAIN entries as final**. Reported formulas are decoded by hand from the original `.COM` bytes. Linear disassemblies are cross-checks only: `CALL 0x0190` consumes a one-byte inline operand, so raw bytes must be decoded with that byte skipped. Ghidra C output was used only as a secondary cross-check where noted, never as control-flow truth.
 
 Primary inputs:
 
@@ -107,24 +107,29 @@ into a 16-byte template record at `0x838f + 16*index`:
 | Template offset | Source token | Example (`Veteran`) | Width | Used by |
 |---:|---|---:|---|---|
 | `+0x00` | name pointer | — | word | display |
-| `+0x02` | field 1 | 10 | byte | best-effort armour class |
-| `+0x03` | field 2 | 5 | byte | best-effort group size |
-| `+0x04` | field 3 | 1 | byte | best-effort type/speed (HIGH) |
-| `+0x05` | field 4 | 5 | byte | monster-turn expression |
-| `+0x06` | field 5 | 1 | byte | monster-turn expression |
-| `+0x07` | field 6 | 13 | byte | monster-turn expression |
-| `+0x08` | field 7 | 5 | byte | monster-turn expression |
+| `+0x02` | field 1 | 10 | byte | armour class (HIGH) |
+| `+0x03` | field 2 | 5 | byte | maximum group size |
+| `+0x04` | field 3 | 1 | byte | minimum group size |
+| `+0x05` | field 4 | 5 | byte | maximum attack value |
+| `+0x06` | field 5 | 1 | byte | minimum attack value |
+| `+0x07` | field 6 | 13 | byte | maximum per-monster HP |
+| `+0x08` | field 7 | 5 | byte | minimum per-monster HP |
 | `+0x09` | field 8 | 8 | **word** | `monsterPower` in melee |
 | `+0x0b` | field 9 | 1 | byte | kill-payout base `v` |
 | `+0x0c` | field 10 | 0 | word | UNKNOWN |
 | `+0x0e` | field 11 | 0 | word | UNKNOWN |
 
-Confidence: **CONFIRMED** for the loader offsets and widths (the inline-operand
-`CALL 0x0190` sequences at `0x1e14`–`0x1f3c` are unambiguous once the operand
-byte is skipped).  The semantic names in the last column are still HIGH or
-UNCERTAIN where noted.  The C# catalogue's `F1..F11` map 1:1 to source fields
-1..11; `F12` is a trailing placeholder that the original text format does not
-contain.
+Confidence: **CONFIRMED** for the loader offsets and widths, and for the
+semantics of fields 2-9 once DUNGEON.COM's creation (`0x7acc`) and turn
+(`0x2954`) routines are decoded with `CALL 0x0190` inline operands skipped.
+Field 1 remains HIGH; fields 10-11 remain UNKNOWN.  The C# catalogue's
+`F1..F11` map 1:1 to source fields 1..11; `F12` is a trailing placeholder that
+the original text format does not contain.
+
+The signed-remainder helper at `0x020f` computes `DE % HL` (dividend in DE,
+divisor in HL).  The signed-divide helper at `0x023f` computes `DE / HL`.
+Mistaking their operand order is what produced the earlier incorrect `10*v`
+payout note.
 
 ---
 
@@ -211,50 +216,95 @@ Confidence:
 - Meaning of `0x838f + 16*type + 9` as a monster power/damage field: **CONFIRMED** by the DM.COM loader (section 0 shows field 8 is stored there as a word).
 - Calling this quantity “to-hit” is misleading in porting terms: the same number is subtracted from monster HP, so it is the damage applied. The original game's displayed phrase is “hits”.
 
-## 1.4 Kill payout — `0x28ba(typeOrMonsterPtr)`
+## 1.4 Monster creation — `0x7acc`
+
+Address range: DUNGEON.COM `0x7acc`–`0x7c8a`.  This routine allocates a 10-byte
+live monster record and fills it from the loaded template table.  `word(0x838d)`
+is the number of records loaded from `MONSTERS.N-M` for the current dungeon
+level by `0x598b`.
+
+```c
+MONSTER *m = alloc(10);
+if (!m) { error("..."); return; }
+
+// Live record layout:
+//   +0 next pointer, +2 remaining group size, +4 template index,
+//   +6 current HP, +8 current attack value
+int type = rnd_6c75(1) % word(0x838d);
+m->type = type;
+
+int f2 = byte(0x838f + 16*type + 3);   // field 2, group max
+int f3 = byte(0x838f + 16*type + 4);   // field 3, group min
+m->group = f3 + rnd_6c75(1) % (f2 - f3);
+
+int f6 = byte(0x838f + 16*type + 7);   // field 6, HP max
+int f7 = byte(0x838f + 16*type + 8);   // field 7, HP min
+m->hp = f7 + rnd_6c75(1) % (f6 - f7);
+
+int f4 = byte(0x838f + 16*type + 5);   // field 4, attack max
+int f5 = byte(0x838f + 16*type + 6);   // field 5, attack min
+m->attack = f5 + rnd_6c75(1) % (f4 - f5);
+```
+
+All four random draws come from the 48-bit LCG in exactly the order shown.
+Confidence: **CONFIRMED** (every offset and draw is visible once the inline
+operands after `CALL 0x0190` are skipped).  With the boot LCG state the first
+four outputs are `8037, 17375, 771, 6762`; for 14 records and the `Veteran`
+template this yields type `1`, group `4`, HP `8`, attack `3`.
+
+## 1.5 Kill payout — `0x28ba(typeOrMonsterPtr)`
 
 Address range: DUNGEON.COM `0x28ba`–`0x2947`.
 
 ```c
-uint16_t v = byte(0x838f + 16 * type + 11);
+uint16_t v = byte(0x838f + 16 * type + 11);  // template +0x0b, field 9
 uint16_t r = rand();                          // 0x6d72, 0..0x7fff
-uint16_t payout = v + signed_rem(r, 10 * v);
+uint16_t payout = v + signed_rem(r, signed_div(10, v));
 
 write_decimal_padded(word(0x8082), payout, "%010u");  // CALL 0x62ab/0x5a3c/0x5b5b
 write_decimal_padded(word(0x808d), payout, "%010u");
 ```
 
+`0x023f` is signed `DE / HL`; with `HL = v`, `DE = 10` it computes `10 / v`.
+`0x020f` is signed `DE % HL`; with `HL = 10 / v`, `DE = rand()` it takes the
+remainder.  For `v > 10` the divisor is zero and the payout is just `v`.
+
 Confidence:
 
-- Formula `v + rand() % (10*v)`: **CONFIRMED**.
+- Formula `v + rand() % (10 / v)`: **CONFIRMED**.  The earlier `10 * v` reading
+  was wrong because the linear disassembly did not skip the inline operand after
+  `CALL 0x0190`.
 - Destination buffers `0x8082`/`0x808d`: **CONFIRMED** as addresses written.
 - Which buffer is gold versus experience: **UNCERTAIN**; both receive the same formatted payout in this path.
 
-## 1.5 Monster-turn helper — `0x2954(arg)`
+## 1.6 Monster-turn helper — `0x2954(arg)`
 
 Address range: DUNGEON.COM `0x2954`–`0x2a62`.
 
-The first argument is used as a flag/value. A `0xffff` argument is passed from the kill path at `0x2686`. The routine:
+The `0xffff` argument is passed from the kill path at `0x268a`. The routine:
 
-1. Decrements a word at `currentMonster + 2`; if it becomes zero, returns `0xffff` immediately.
-2. Otherwise computes two expressions of the same shape using monster template bytes at offsets `7`, `8`, `5`, and `6`:
+1. Decrements the word at `currentMonster + 2` (remaining group size); if it
+   becomes zero, returns `0xffff` immediately (group exhausted).
+2. Otherwise draws a fresh per-monster HP into `+6` and a fresh attack value
+   into `+8`, in that order, using the same bounded-LCG idiom as creation:
 
 ```c
-// Shape recovered from both branches:
-uint16_t a = byte(0x838f + 16*type + 8);
-uint16_t b = byte(0x838f + 16*type + 7);
-uint16_t r1 = rnd_6c75(1);
-x = a + signed_rem(r1, (uint16_t)(-b));
+int f7 = byte(0x838f + 16*type + 8);   // HP min
+int f6 = byte(0x838f + 16*type + 7);   // HP max
+m->hp = f7 + rnd_6c75(1) % (f6 - f7);
 
-uint16_t c = byte(0x838f + 16*type + 6);
-uint16_t d = byte(0x838f + 16*type + 5);
-uint16_t r2 = rnd_6c75(1);
-y = c + signed_rem(r2, (uint16_t)(-d));
+int f5 = byte(0x838f + 16*type + 6);   // attack min
+int f4 = byte(0x838f + 16*type + 5);   // attack max
+m->attack = f5 + rnd_6c75(1) % (f4 - f5);
+return 0;
 ```
 
-Confidence: **HIGH** for the byte offsets and expression shape; **UNCERTAIN** for the semantic mapping of `x`/`y` to player HP loss, status, or message values. The negative multipliers are produced by `0x02fa`, so the divisor is the two's-complement of the template byte; this needs runtime validation before assigning game meaning.
+The byte at `+8` is also tested before the refresh (`CALL 0x4429` when
+non-zero), which is consistent with a special-attack/status flag; that branch
+remains UNCERTAIN.  Confidence: **CONFIRMED** for the group decrement and both
+stat refreshes; **UNCERTAIN** for the special-attack branch.
 
-## 1.6 Other combat helper — `0x25ab(arg)`
+## 1.7 Other combat helper — `0x25ab(arg)`
 
 Address range: DUNGEON.COM `0x25ab`–`0x25d9`.
 
@@ -549,8 +599,8 @@ Confidence: **UNCERTAIN** for the exact donation threshold. The `/2` is confirme
 These remain open and must not be guessed in a faithful port:
 
 1. **Melee terminology** — whether the original source called `0x2853`'s result “to hit”, “damage”, or “hits” internally. Code truth: the value is subtracted from monster HP.
-2. **`0x2954` semantics** — exact meaning of the two `a + rnd % (-b)` expressions and how the `0xffff` argument changes the branch.
-3. **`0x28ba` payout buffers** — which of `0x8082`/`0x808d` is gold versus experience.
+2. **`0x2954` special-attack branch** — what the non-zero byte at `monster+8` triggers via `0x4429`; the group decrement and both stat refreshes are now CONFIRMED.
+3. **`0x28ba` payout buffers** — which of `0x8082`/`0x808d` is gold versus experience (the formula itself is CONFIRMED).
 4. **Spell effect vector map** — complete mapping from `0x7cad` vector words to spell IDs; only `vec[0] = 0x21c5` was decoded.
 5. **Spell level gate internals** — exact semantics of `0x5be8` against `0x80d6`/`0x80d8`.
 6. **Context mask values** — why combat passes `2` yet several healing spells have flags `1`; needs runtime or source-fragment confirmation.
@@ -595,4 +645,4 @@ placeholder was wrong; `ARAGORN.CHR`'s stats require a custom seed or editing.
 
 ## Method note
 
-Every arithmetic claim above was decoded from the linear disassemblies with inline operands emitted explicitly after `CALL 0x0190`. Ghidra output was not used to resolve any disputed operand order. No source files were modified while producing this report.
+Every arithmetic claim above was decoded from the original `.COM` bytes with an operand-aware pass that skips the one-byte inline operand after each `CALL 0x0190`; the old linear disassemblies are misaligned after those calls. Ghidra output was not used to resolve any disputed operand order. Source files are updated only where a formula is marked CONFIRMED.

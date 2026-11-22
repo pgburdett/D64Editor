@@ -20,6 +20,14 @@ public sealed class MonsterType
 
     /// <summary>Byte at monster-template offset 0x0b; base of the kill payout.</summary>
     public int PayoutBase { get; set; }
+
+    /// <summary>Confirmed template bounds used when creating/refreshing a monster.</summary>
+    public int GroupMin { get; set; }
+    public int GroupMax { get; set; }
+    public int HitPointsMin { get; set; }
+    public int HitPointsMax { get; set; }
+    public int AttackMin { get; set; }
+    public int AttackMax { get; set; }
     public int ExperienceValue { get; set; }
     public int GoldValue { get; set; }
     public MonsterAlignment Alignment { get; set; }
@@ -39,7 +47,12 @@ public sealed class Monster
     public MonsterType Type { get; set; } = new();
     public int HitPoints { get; set; }
     public int MaxHitPoints { get; set; }
+
+    /// <summary>Remaining monsters in the group (live record offset +2).</summary>
     public int GroupIndex { get; set; }
+
+    /// <summary>Current per-monster attack value (live record offset +8).</summary>
+    public int AttackPower { get; set; }
     public bool IsAsleep { get; set; }
     public bool IsFrightened { get; set; }
     public bool IsDispellled { get; set; }

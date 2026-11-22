@@ -455,7 +455,7 @@ combat_loop(monster):
 
 Confirmed anchors:
 
-- `0x28ba` reads a monster/table entry from `0x838f + ...`, calls `rand()` at `0x28e9`, uses `LD DE,10` + arithmetic helper `0x020f`, and seems to clamp at zero. This is the strongest candidate for a **10-sided damage roll plus modifiers**. **[medium]**
+- `0x28ba` reads the payout base from `0x838f + ...`, calls `rand()`, divides `10` by that base via `0x023f`, then takes `rand() % (10 / base)` via `0x020f` and adds the base. Superseded by the operand-aware decoding in `EXACT-FORMULAS.md` section 1.5. **[confirmed]**
 - `0x25ab` combines experience (`0x80a4`) and a stat/global (`0x80a2`, likely DEX) and adds `100` (`0x64`). This looks like an experience/level threshold calculation, not direct melee damage. **[medium]**
 - `0x26c7` on kill also reads `0x80a4` and level `0x80bc`, indexing a table near `0x838f`; consistent with **experience award**. **[high]**
 - `0x2b64` prints `"You %s 1"` and calls `0x6d41(1)`, likely a short delay/animation after a kill. **[medium]**

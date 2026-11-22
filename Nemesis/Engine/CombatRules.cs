@@ -6,7 +6,12 @@ namespace Nemesis.Engine;
 /// Exact combat arithmetic recovered from DUNGEON.COM.  These helpers are kept
 /// separate from <see cref="DungeonEngine"/> so they can be tested against the
 /// original machine code with known RNG states.  See
-/// <c>docs/nemesis/EXACT-FORMULAS.md</c> sections 1.1, 1.2 and 1.4.
+/// <c>docs/nemesis/EXACT-FORMULAS.md</c> sections 0-1.5.
+///
+/// Important decoding note: <c>CALL 0x0190</c> consumes a one-byte inline
+/// operand.  A linear disassembly that does not skip that byte misaligns every
+/// following instruction; the formulas below were decoded with operand-aware
+/// disassembly of the original bytes.
 /// </summary>
 public static class CombatRules
 {
@@ -32,14 +37,58 @@ public static class CombatRules
     }
 
     /// <summary>
-    /// Kill payout at DUNGEON.COM 0x28ba: <c>v + rand() % (10*v)</c>, where
+    /// The original bounded-random idiom used throughout monster creation and
+    /// monster turns: <c>low + rand() % (high - low)</c>.  A non-positive span
+    /// returns <paramref name="low"/>; the original's signed-remainder helper
+    /// returns zero when its divisor is zero.
+    /// </summary>
+    public static int RangeRoll(int low, int high, Lcg48Random rng)
+    {
+        int span = high - low;
+        return span > 0 ? low + rng.Next() % span : low;
+    }
+
+    /// <summary>
+    /// <c>type = LCG(1) % word(0x838d)</c> from 0x7b00-0x7b17.  The global at
+    /// 0x838d is the number of monster records loaded from MONSTERS.* for the
+    /// current dungeon level.
+    /// </summary>
+    public static int MonsterTypeIndex(int recordCount, Lcg48Random rng) =>
+        recordCount > 0 ? rng.Next() % recordCount : 0;
+
+    /// <summary>
+    /// Group size from 0x7b26-0x7b78: <c>F3 + LCG % (F2 - F3)</c>.
+    /// </summary>
+    public static int MonsterGroupSize(int min, int max, Lcg48Random rng) =>
+        RangeRoll(min, max, rng);
+
+    /// <summary>
+    /// Per-monster HP from 0x7b79-0x7bd4 (and refreshed each monster turn at
+    /// 0x298d): <c>F7 + LCG % (F6 - F7)</c>.
+    /// </summary>
+    public static int MonsterHitPoints(int min, int max, Lcg48Random rng) =>
+        RangeRoll(min, max, rng);
+
+    /// <summary>
+    /// Monster attack value from 0x7bd5-0x7d30 (and refreshed each monster
+    /// turn at 0x29f8): <c>F5 + LCG % (F4 - F5)</c>.
+    /// </summary>
+    public static int MonsterAttack(int min, int max, Lcg48Random rng) =>
+        RangeRoll(min, max, rng);
+
+    /// <summary>
+    /// Kill payout at DUNGEON.COM 0x28ba: <c>v + rand() % (10 / v)</c>, where
     /// <c>v</c> is the byte at monster-template offset 0x0b and <c>rand()</c>
-    /// is the 32-bit LFSR.  The original writes the same value to both the gold
-    /// and experience buffers; which address is which is still UNCERTAIN.
+    /// is the 32-bit LFSR.  The divisor is computed by 0x023f as <c>10 / v</c>;
+    /// previous notes incorrectly recorded <c>10 * v</c> because the linear
+    /// disassembly misread the inline operand after <c>CALL 0x0190</c>.
+    /// The original writes the same value to both the gold and experience
+    /// buffers; which address is which is still UNCERTAIN.
     /// </summary>
     public static int KillPayout(int payoutBase, LfsrRandom rng)
     {
         if (payoutBase <= 0) return payoutBase;
-        return payoutBase + rng.Next() % (10 * payoutBase);
+        int divisor = 10 / payoutBase;
+        return divisor > 0 ? payoutBase + rng.Next() % divisor : payoutBase;
     }
 }

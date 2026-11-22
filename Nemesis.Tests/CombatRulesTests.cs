@@ -36,11 +36,38 @@ public sealed class CombatRulesTests
     }
 
     [Fact]
-    public void KillPayout_Uses_Exact_Lfsr_Vectors()
+    public void MonsterCreation_Uses_Exact_Lcg_Vectors_In_Original_Order()
     {
+        // Boot-state LCG outputs: 8037, 17375, 771, 6762.
+        var rng = new Lcg48Random();
+        Assert.Equal(1, CombatRules.MonsterTypeIndex(14, rng)); // 8037 % 14
+        Assert.Equal(4, CombatRules.MonsterGroupSize(1, 5, rng)); // 1 + 17375 % 4
+        Assert.Equal(8, CombatRules.MonsterHitPoints(5, 13, rng)); // 5 + 771 % 8
+        Assert.Equal(3, CombatRules.MonsterAttack(1, 5, rng)); // 1 + 6762 % 4
+    }
+
+    [Fact]
+    public void RangeRoll_Returns_Low_For_NonPositive_Span()
+    {
+        var rng = new Lcg48Random();
+        Assert.Equal(7, CombatRules.RangeRoll(7, 7, rng));
+        Assert.Equal(7, CombatRules.RangeRoll(7, 3, rng));
+    }
+
+    [Fact]
+    public void KillPayout_Uses_Exact_Lfsr_Vectors_And_10_Divided_By_Base()
+    {
+        // LFSR from state 1 returns 2 then 4.  The original computes
+        // v + rand() % (10 / v), not v + rand() % (10 * v).
         var rng = new LfsrRandom(1);
-        // LFSR from state 1 returns 2 then 4.
-        Assert.Equal(5 + 2 % 50, CombatRules.KillPayout(5, rng));
-        Assert.Equal(5 + 4 % 50, CombatRules.KillPayout(5, rng));
+        Assert.Equal(3, CombatRules.KillPayout(1, rng)); // 1 + 2 % 10
+        Assert.Equal(5, CombatRules.KillPayout(1, rng)); // 1 + 4 % 10
+
+        var narrow = new LfsrRandom(1);
+        Assert.Equal(5, CombatRules.KillPayout(5, narrow)); // 10 / 5 = 2
+        Assert.Equal(5, CombatRules.KillPayout(5, narrow));
+
+        var capped = new LfsrRandom(1);
+        Assert.Equal(13, CombatRules.KillPayout(13, capped)); // 10 / 13 = 0
     }
 }

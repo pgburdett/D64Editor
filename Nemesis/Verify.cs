@@ -50,9 +50,15 @@ internal static class Verify
             CombatRules.DamageRoll(2, 8, combatRng) == 8037 % 6 &&
             CombatRules.DamageRoll(2, 8, combatRng) == 17375 % 6);
         var payoutRng = new LfsrRandom(1);
-        Check("kill payout v + rand()%(10*v)",
-            CombatRules.KillPayout(5, payoutRng) == 7 &&
-            CombatRules.KillPayout(5, payoutRng) == 9);
+        Check("kill payout v + rand()%(10/v)",
+            CombatRules.KillPayout(1, payoutRng) == 3 &&
+            CombatRules.KillPayout(1, payoutRng) == 5);
+        var monsterRng = new Lcg48Random();
+        Check("monster creation LCG order",
+            CombatRules.MonsterTypeIndex(14, monsterRng) == 1 &&
+            CombatRules.MonsterGroupSize(1, 5, monsterRng) == 4 &&
+            CombatRules.MonsterHitPoints(5, 13, monsterRng) == 8 &&
+            CombatRules.MonsterAttack(1, 5, monsterRng) == 3);
 
         // Character file round-trip
         string sample = Path.Combine(repoRoot, "docs/nemesis/game-files/ARAGORN.CHR");

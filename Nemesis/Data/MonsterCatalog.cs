@@ -4,9 +4,9 @@ namespace Nemesis.Data;
 
 /// <summary>
 /// A monster record transcribed verbatim from the original MONSTERS.* tables.
-/// The 12 numeric fields are kept raw because the binary loaders that consume
-/// them have not been fully decoded; the named properties are the current
-/// best-effort interpretation used by the combat model.
+/// The 12 numeric fields are kept raw.  DM.COM's loader and DUNGEON.COM's
+/// creation/turn routines confirm the mapping of fields 2-9 below; fields
+/// 10-12 remain unknown.
 /// </summary>
 public sealed record MonsterDef(int Level, string Name, int F1, int F2, int F3, int F4,
     int F5, int F6, int F7, int F8, int F9, int F10, int F11, int F12)
@@ -14,14 +14,32 @@ public sealed record MonsterDef(int Level, string Name, int F1, int F2, int F3, 
     /// <summary>Armor class (higher is harder to hit in this game's encoding).</summary>
     public int ArmorClass => F1;
 
-    /// <summary>Typical group size.</summary>
-    public int GroupSize => Math.Max(1, F2);
+    /// <summary>Maximum group size (template field 2).</summary>
+    public int GroupMax => F2;
 
-    /// <summary>Average hit points for one monster.</summary>
-    public int HitPoints => Math.Max(1, F4);
+    /// <summary>Minimum group size (template field 3).</summary>
+    public int GroupMin => F3;
 
-    /// <summary>Damage per successful attack.</summary>
-    public int Damage => Math.Max(0, F5);
+    /// <summary>Maximum per-monster HP (template field 6).</summary>
+    public int HitPointsMax => F6;
+
+    /// <summary>Minimum per-monster HP (template field 7).</summary>
+    public int HitPointsMin => F7;
+
+    /// <summary>Maximum monster attack value (template field 4).</summary>
+    public int AttackMax => F4;
+
+    /// <summary>Minimum monster attack value (template field 5).</summary>
+    public int AttackMin => F5;
+
+    /// <summary>Legacy best-effort alias for the upper group bound.</summary>
+    public int GroupSize => Math.Max(1, GroupMax);
+
+    /// <summary>Legacy best-effort alias for the upper HP bound.</summary>
+    public int HitPoints => Math.Max(1, HitPointsMax);
+
+    /// <summary>Legacy best-effort alias for the upper attack bound.</summary>
+    public int Damage => Math.Max(0, AttackMax);
 
     /// <summary>
     /// Monster combat power: the word at template offset 0x09 (the value the
@@ -33,7 +51,7 @@ public sealed record MonsterDef(int Level, string Name, int F1, int F2, int F3, 
 
     /// <summary>
     /// Kill-payout base: the byte at template offset 0x0b.  The original
-    /// computes <c>v + rand() % (10*v)</c> and writes it to both the gold and
+    /// computes <c>v + rand() % (10 / v)</c> and writes it to both the gold and
     /// experience buffers.  Previously mislabelled as gold only.
     /// </summary>
     public int PayoutBase => Math.Max(0, F9);
@@ -135,6 +153,17 @@ public static class MonsterCatalog
         new(1, "Hill_giant",    20,5,1,30,20,45,35,-2,8,0,0,0),
     ];
 
-    public static IEnumerable<MonsterDef> ForLevel(int level) =>
-        All.Where(m => Math.Abs(m.Level - level) <= 1);
+    /// <summary>
+    /// Monster records loaded for a dungeon level.  The original selects one
+    /// of the four shipped MONSTERS.N-M files from the level number; the first
+    /// numeric field on each line is a monster rating, not the dungeon level.
+    /// The source order in <see cref="All"/> mirrors those four files.
+    /// </summary>
+    public static IReadOnlyList<MonsterDef> ForLevel(int level)
+    {
+        int[] offsets = [0, 14, 34, 56];
+        int[] counts = [14, 20, 22, 19];
+        int file = Math.Clamp(level / 2, 0, offsets.Length - 1);
+        return All.Skip(offsets[file]).Take(counts[file]).ToArray();
+    }
 }
