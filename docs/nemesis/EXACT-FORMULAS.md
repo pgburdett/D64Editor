@@ -531,11 +531,11 @@ the actual price arithmetic is in the branch at `0x0dd5`–`0x0e10`.
 Decoded core:
 
 ```c
-// 0x80d0 is a bit array of identified/disclosed item-catalog entries.
-// 0x3310(ptr=0x80d0, bit=itemIndex) returns word(ptr + 2*(bit/16)) & (1 << (bit % 16)).
-if (known_bit(0x80d0, itemIndex)) {
+// 0x80d0 is a bit array indexed by INVENTORY SLOT (0..9), not catalog entry.
+// 0x3310(ptr=0x80d0, bit=slot) returns word(ptr + 2*(bit/16)) & (1 << (bit % 16)).
+if (known_bit(0x80d0, slot)) {
     // CASTLE.COM 0x0de8-0x0dfe calls 0x1595 for the base value, then:
-    base = item_value(index);       // see 0x1595 below
+    base = item_value(slot);        // see 0x1595 below
     if (base == 0) base = lcg48_time_seeded() % 20;
     sell_value = base + rand_lfsr() % 20;
 } else {
@@ -565,8 +565,9 @@ Helper evidence:
   clock, so its exact value is environment-specific; the algorithm and the
   `% 20`/`% 70` remainders are still CONFIRMED.
 - `0x329a` sets the `0x80d0` bit when an item is bought (`0x0c90`); `0x3310`
-  tests it for the pawn branch; `0x34ca` toggles it in the archives donation
-  path (`0x14bd`).
+  tests it for the pawn branch; `0x34ca` toggles it (XOR) in the archives
+  donation path (`0x14bd`); `0x3382` clears it when the item is sold (`0x0e5d`).
+  Every call site passes an inventory slot index, so the bits are per slot.
 
 Confidence:
 
@@ -574,6 +575,9 @@ Confidence:
 - Zero-value substitution `LCG48 % 20`: **CONFIRMED**.
 - Unidentified formula `LCG48 % 70`: **CONFIRMED**.
 - Bit-array address and set/test/toggle helpers: **CONFIRMED**.
+- Serialization of that bit array into the 640-byte `.CHR` file: **UNCERTAIN**;
+  no confirmed file offset was recovered, so the port keeps identified flags
+  session-local rather than inventing a layout.
 - Exact seed for the time-seeded LCG: **UNCERTAIN** by design; it depends on
   the CP/M console/clock at run time.
 
@@ -649,14 +653,45 @@ Confidence:
 
 Address range: `0x1332`–`0x14d2` (strings `"Welcome to the Game Master's Archive"` `0x14d2`, `"How many gold pieces do you wish to donate ?"` `0x150e`, `"You don't have that much gold."` `0x1543`/`0x1542`).
 
-Decoded fragments:
+Decoded core:
 
-- Donation is read as a decimal string via helper at `0x1b9c`.
-- Gold availability is checked and the error string printed when insufficient.
-- Helper `0x1595(index)` computes the same composite item value used by the armory and pawn shop (`500*|AC| + 100*damage + base price`, plus spell bonuses when those tables are loaded).
-- At `0x1465`–`0x1497`, a value is divided by `2` using signed divide `0x02cb` and compared against an item price before an inventory/availability update.
+```c
+// 0x1392 reads the donation string into the local buffer; 0x13b6 pads it,
+// 0x13d5/0x13f7 compare it with the gold string at 0x8082.
+if (donation > gold) { print("You don't have that much gold."); return; }
 
-Confidence: **UNCERTAIN** for the exact donation threshold. The `/2` is confirmed; the operand provenance and the comparison direction were not fully resolved.
+// 0x1418 reads an item letter A-J, 0x1434 converts it to a slot 0..9.
+if (letter == '\n') return;
+slot = upper(letter) - 'A';
+
+if (inventory[slot].type == 0xff) continue;          // 0x145b
+value = item_value(slot);                            // 0x146a -> 0x1595
+required = value / 2;                                // 0x146e-0x1475, signed /2
+sprintf(buf, "%010u", required);                     // 0x147d
+pad_and_normalize(buf);                              // 0x1486 -> 0x33fe
+if (strcmp(donation_string, buf) == 0 &&             // 0x1492 -> 0x320d
+    word(inventory[slot] + 4) != 0) {                // 0x14ae-0x14b5
+    toggle_bit(0x80d0, slot);                        // 0x14bd -> 0x34ca (XOR)
+}
+```
+
+The comparison helper `0x320d` walks ten zero-padded decimal digits from the
+least significant end, so a non-zero result means the donation string does not
+match the required string (the `0x13e4` branch prints the insufficient-gold
+error for that comparison).
+
+Confidence:
+
+- Donation must exactly equal `item_value(slot) / 2`: **CONFIRMED** by the
+  `%010u` formatting at `0x147d` and the zero-result branch at `0x1499`.
+- Identified bit is indexed by inventory slot: **CONFIRMED** by every call site
+  (`0x0c90`, `0x0dd5`, `0x0e5d`, `0x14bd`).
+- The word at `inventory[slot] + 4` must be non-zero: **CONFIRMED** as a branch
+  condition, but that field's meaning is **UNCERTAIN**; the port does not model
+  it.
+- Actual debiting of the donation from the gold string: **UNCERTAIN**; no
+  confirmed store was found in this path, so the port's `Gold -= amount` is a
+  best-effort behavior.
 
 ---
 
@@ -679,7 +714,9 @@ These remain open and must not be guessed in a faithful port:
    the original environment.
 9. **Hospital stay/debit path** — exact HP restoration and gold debit after the stay prompt (`days` and `rate` are now CONFIRMED).
 10. **Inn debit** — whether `missing HP * 3` is days, gold, or both, and where the final gold subtraction occurs.
-11. **Archives donation threshold** — operand provenance for the confirmed `/2`.
+11. **Archives donation debit** — the exact-half threshold and per-slot bit are
+    CONFIRMED, but the final gold-string debit and the meaning of the required
+    `inventory[slot] + 4` word remain unresolved.
 12. **RNG seed used for the shipped `ARAGORN.CHR`** — the compiled default LFSR
     seed (`0xffff59dc`) and the interactive `init_rand()` path are known, but
     the seed actually entered for that saved character is not recorded.

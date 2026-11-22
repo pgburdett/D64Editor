@@ -130,11 +130,12 @@ public sealed class Character
     public byte[] ItemTypes { get; set; } = Enumerable.Repeat((byte)255, MaxItems).ToArray();
 
     /// <summary>
-    /// Identified/disclosed bit per item catalog entry.  This mirrors the bit
-    /// array at CASTLE.COM 0x80d0: buying an item or donating to disclose it
-    /// sets the bit, and the pawn shop uses it to choose the sell formula.
+    /// Identified/disclosed bit per inventory slot (0..9).  This mirrors the
+    /// bit array at CASTLE.COM 0x80d0: every call site (buy 0x0c90, pawn
+    /// 0x0dd5/0x0e5d and archives 0x14bd) passes an inventory slot index.
+    /// No confirmed `.CHR` byte offset exists, so this is session-local state.
     /// </summary>
-    public bool[] ItemIdentified { get; set; } = new bool[Data.ItemCatalog.All.Length];
+    public bool[] ItemIdentified { get; set; } = new bool[MaxItems];
 
     /// <summary>Opaque per-item data (kept raw until the item loader is decoded).</summary>
     public byte[] Inventory { get; set; } = new byte[MaxItems * 16];

@@ -111,8 +111,14 @@ internal static class Program
                 case "rest": Console.WriteLine(Engine.Rest()); break;
                 case "donate":
                     if (parts.Length < 2 || !int.TryParse(parts[1], out int amount))
-                        Engine.Message = "Usage: donate <gold>";
-                    else Console.WriteLine(Engine.Donate(amount));
+                        Engine.Message = "Usage: donate <gold> [slot]";
+                    else
+                    {
+                        int slot = parts.Length >= 3 && int.TryParse(parts[2], out int parsedSlot)
+                            ? parsedSlot
+                            : -1;
+                        Console.WriteLine(Engine.Donate(amount, slot));
+                    }
                     break;
                 case "char": Console.WriteLine(Engine.CharacterSheet()); break;
                 default: Engine.Message = $"Unknown command: {cmd}"; break;
@@ -174,7 +180,7 @@ internal static class Program
         Console.WriteLine("          char | castle | dungeon | quit");
         Console.WriteLine();
         Console.WriteLine("Castle:   menu | choice A-G | buy <item> | sell <item> | heal <days>");
-        Console.WriteLine("          rest | donate <gold> | char | dungeon");
+        Console.WriteLine("          rest | donate <gold> [slot] | char | dungeon");
         Console.WriteLine();
         Console.WriteLine("Dungeon:  r/l/u/d or Ctrl-L/H/K/J | + / - stairs | p replot | f fight");
         Console.WriteLine("          m <spell> | c <spell> | u <item> | inv | spells [m|c] | back");

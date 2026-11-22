@@ -111,13 +111,14 @@ public sealed class EngineTests
         castle.Bind(c);
         int index = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
         c.ItemTypes[0] = (byte)ItemCatalog.All[index].Type;
-        c.ItemIdentified[index] = true;
+        c.ItemIdentified[0] = true;
 
         string msg = castle.Sell("AXE");
 
         // LFSR from state 1 returns 2; AXE value is 500*0 + 100*2 + 10 = 210.
         Assert.Contains("212 gold pieces", msg);
         Assert.Equal(312, c.Gold);
+        Assert.False(c.ItemIdentified[0]); // 0x0e5d clears the slot bit
     }
 
     [Fact]
@@ -128,7 +129,7 @@ public sealed class EngineTests
         castle.Bind(c);
         int index = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
         c.ItemTypes[0] = (byte)ItemCatalog.All[index].Type;
-        c.ItemIdentified[index] = false;
+        c.ItemIdentified[0] = false;
 
         string msg = castle.Sell("AXE");
 
@@ -147,9 +148,34 @@ public sealed class EngineTests
 
         castle.Buy("AXE");
 
-        Assert.True(c.ItemIdentified[index]);
+        Assert.True(c.ItemIdentified[0]);
         Assert.Equal(790, c.Gold);
         Assert.Contains((byte)ItemCatalog.All[index].Type, c.ItemTypes);
+    }
+
+    [Fact]
+    public void Castle_Donate_Requires_Exact_Half_Value_And_Sets_Slot_Bit()
+    {
+        var castle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
+        var c = new Character { Gold = 1000 };
+        castle.Bind(c);
+        int index = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
+        int value = ItemCatalog.Value(ItemCatalog.All[index], absoluteDamage: false);
+        c.ItemTypes[0] = (byte)ItemCatalog.All[index].Type;
+
+        string wrong = castle.Donate(value / 2 + 1, 0);
+        Assert.Contains("asks for", wrong);
+        Assert.False(c.ItemIdentified[0]);
+        Assert.Equal(1000, c.Gold);
+
+        string right = castle.Donate(value / 2, 0);
+        Assert.Contains("archivist reveals", right);
+        Assert.True(c.ItemIdentified[0]);
+        Assert.Equal(1000 - value / 2, c.Gold);
+
+        // 0x34ca is XOR, so a second identical donation clears the bit.
+        castle.Donate(value / 2, 0);
+        Assert.False(c.ItemIdentified[0]);
     }
 
     [Fact]

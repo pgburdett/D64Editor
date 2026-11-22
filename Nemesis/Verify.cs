@@ -76,14 +76,26 @@ internal static class Verify
         pawnCastle.Bind(pawnChar);
         int axe = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
         pawnChar.ItemTypes[0] = (byte)ItemCatalog.All[axe].Type;
-        pawnChar.ItemIdentified[axe] = true;
+        pawnChar.ItemIdentified[0] = true;
         string identifiedSale = pawnCastle.Sell("AXE");
+        bool clearedOnSale = !pawnChar.ItemIdentified[0];
         pawnChar.ItemTypes[0] = (byte)ItemCatalog.All[axe].Type;
-        pawnChar.ItemIdentified[axe] = false;
+        pawnChar.ItemIdentified[0] = false;
         string unidentifiedSale = pawnCastle.Sell("AXE");
         Check("pawn composite value+rand%20, unidentified lcg48%70",
             identifiedSale.Contains("212 gold pieces") &&
-            unidentifiedSale.Contains("57 gold pieces"));
+            unidentifiedSale.Contains("57 gold pieces") && clearedOnSale);
+
+        var archiveCastle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
+        var archiveChar = new Character { Gold = 1000 };
+        archiveCastle.Bind(archiveChar);
+        int axeValue = ItemCatalog.Value(ItemCatalog.All[axe], absoluteDamage: false);
+        archiveChar.ItemTypes[0] = (byte)ItemCatalog.All[axe].Type;
+        string wrongDonation = archiveCastle.Donate(axeValue / 2 + 1, 0);
+        string rightDonation = archiveCastle.Donate(axeValue / 2, 0);
+        Check("archives donation requires exact half value and sets slot bit",
+            wrongDonation.Contains("asks for") &&
+            rightDonation.Contains("archivist reveals") && archiveChar.ItemIdentified[0]);
 
         // Character file round-trip
         string sample = Path.Combine(repoRoot, "docs/nemesis/game-files/ARAGORN.CHR");

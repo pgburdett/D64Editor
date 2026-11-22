@@ -347,9 +347,12 @@ Item data records recovered from `ITEMS.C-0` give item type, level, name, and a 
 - **CONFIRMED (see `EXACT-FORMULAS.md` 3.2/3.3):** buy price and the identified
   pawn base use the composite `500*|AC| + 100*damage + price` item value;
   identified sales add `LFSR % 20`, while unidentified sales use `LCG48 % 70`.
-  The identified flag is the `0x80d0` bit array, set when an item is bought and
-  toggled by the archives disclosure path.  Only the time-seeded LCG's initial
-  value remains environment-specific.
+  The identified flag is the `0x80d0` bit array indexed by inventory slot
+  (0..9), set when an item is bought, cleared when it is sold, and toggled by
+  the archives disclosure path.  Only the time-seeded LCG's initial value remains
+  environment-specific. The `0x80d0` bit array itself has no confirmed byte
+  offset in the 640-byte `.CHR` record, so the C# port keeps
+  `Character.ItemIdentified` session-local and does not serialize it.
 
 ### 3.3 Hospital
 
@@ -388,7 +391,7 @@ Manual context: the Inn restores HP more slowly than the Hospital and is the **o
 
 Strings include `"How many gold pieces do you wish to donate ? "`.
 
-Manual context: Archives disclose unidentified items either by spending a DISCLOSE magic/cleric spell or by donating gold. Exact donation threshold/disclosure rule not fully recovered.
+**CONFIRMED:** Archives disclose unidentified items either by spending a DISCLOSE magic/cleric spell or by donating gold. The gold path at `0x1332` requires the donation to exactly equal `item_value(slot) / 2` for the selected inventory slot A-J, then toggles that slot's `0x80d0` bit (XOR). The final debit of the donation from the gold string remains UNCERTAIN.
 
 ### 3.6 Dungeon entrance
 
@@ -432,12 +435,10 @@ Displays all fields from the character record (level, hits, experience, age, AC,
 - Dungeon chain and exit-save behavior at a high level.
 
 **Uncertain / not completed:**
-- Exact dice expression inside `roll()`.
-- Exact 640-byte on-disk field offsets (source-level fields known; byte serialization not fully mapped).
-- Castle armory buy/sell price formula and full price table.
-- Hospital cost-per-day / healing formula.
+- Exact 640-byte on-disk field offsets beyond the decoded gold/EXP/stats/level/age/HP/magic/cleric fields.
 - Inn rest cost and restoration amounts.
-- Archives donation threshold/disclosure rule.
+- The final gold debit after an Archives donation and the meaning of the required `inventory[slot] + 4` word.
+- Serialization of the `0x80d0` per-slot identified bits into `.CHR`.
 - Some class constructor “later raw fields” (108/24/100...) are almost certainly XP/age/item flags but were not decoded to named constants.
 
 No source files were modified; only this report was written.

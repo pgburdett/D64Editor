@@ -40,18 +40,22 @@ stay documentation until their supporting helpers are recovered.
   monster-template offsets, monster type/group/HP/attack creation and the
   per-monster stat refresh on group advancement, hospital `days = missing HP`
   and `rate = (Level+1)*10`, the composite buy/pawn item value, pawn sell formulas
-  (`item_value + LFSR%20` identified, `LCG48%70` unidentified), and the
+  (`item_value + LFSR%20` identified, `LCG48%70` unidentified), the per-inventory-slot
+  identified bits at `0x80d0`, the Archives exact-half donation threshold, and the
   640-byte `.CHR` fields that are decoded.
 - **Best-effort:** the monster attack hit/miss test and special-attack branch,
-  spell level gating/durations, armory buy modifiers, and the hospital/inn
-  stay-debit paths. Hospital `days`/`rate` and both pawn formulas are confirmed;
-  their final gold/HP postings remain best-effort.
+  spell level gating/durations, armory buy modifiers, the hospital/inn stay-debit
+  paths, and the Archives final gold debit. Hospital `days`/`rate`, both pawn
+  formulas and the Archives exact-half threshold are confirmed; their final
+  gold/HP postings remain best-effort.
   The remaining helper routines were not fully recovered; the current model is
   documented in `Engine/DungeonEngine.cs` and `Engine/CastleEngine.cs`.
 - The original `valid()` ranger bug (testing the loop counter instead of the
   class index) is intentionally preserved in `GameTables.IsValidClass`.
 - Undecoded `.CHR` bytes are retained in `Character.RawData`, so save/load is
-  byte-exact for untouched files.
+  byte-exact for untouched files.  The confirmed runtime-only per-slot
+  identified-bit array (`0x80d0`) has no mapped `.CHR` offset, so
+  `ItemIdentified` is not serialized.
 
 ## Building and running
 
@@ -61,7 +65,7 @@ dotnet run --project Nemesis/Nemesis.csproj -- docs/nemesis/game-files/ARAGORN.C
 dotnet run --project Nemesis/Nemesis.csproj -- --verify
 ```
 
-`--verify` runs 26 self-checks covering the tables, both RNGs, exact
+`--verify` runs 27 self-checks covering the tables, both RNGs, exact
 melee/monster-creation/payout/hospital-rate/pawn arithmetic, `.CHR` round-trip
 and real `LEVEL.0` map loading.
 

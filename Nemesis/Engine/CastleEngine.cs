@@ -114,9 +114,9 @@ public sealed class CastleEngine
 
         Character.Gold -= price;
         Character.ItemTypes[slot] = (byte)def.Type;
-        // CASTLE.COM 0x0c90 sets the 0x80d0 bit for a bought item, so it is
-        // identified before any later pawn-shop visit.
-        Character.ItemIdentified[index] = true;
+        // CASTLE.COM 0x0c90 sets the 0x80d0 bit for the inventory slot, so it
+        // is identified before any later pawn-shop visit.
+        Character.ItemIdentified[slot] = true;
         Say($"You buy {def.Name} for {price} gold pieces.");
         return $"You buy {def.Name} for {price} gold pieces.";
     }
@@ -134,8 +134,10 @@ public sealed class CastleEngine
     /// <summary>
     /// Sells an item using the confirmed pawn-shop formulas from CASTLE.COM
     /// 0x0dd5-0x0e10: identified items fetch <c>item_value() + LFSR % 20</c>,
-    /// while unidentified items fetch <c>LCG48 % 70</c>.  <c>item_value()</c>
-    /// is the composite 500*|AC| + 100*damage + price routine at 0x1595.
+    /// while unidentified items fetch <c>LCG48 % 70</c>.  The identified bit
+    /// is indexed by inventory slot, and the 0x0e5d path clears it on sale.
+    /// <c>item_value()</c> is the composite 500*|AC| + 100*damage + price
+    /// routine at 0x1595.
     /// </summary>
     public string Sell(string name)
     {
@@ -147,11 +149,12 @@ public sealed class CastleEngine
         int slot = Array.IndexOf(Character.ItemTypes, (byte)def.Type);
         if (slot < 0) return $"You do not have {name}.";
 
-        int price = Character.ItemIdentified[index]
+        int price = Character.ItemIdentified[slot]
             ? ItemValueOrFallback(def) + _rng.Next(20) // 0x0de8-0x0dfe
             : _pawnRng.Next() % 70;                    // 0x0e01-0x0e10
 
         Character.ItemTypes[slot] = (byte)GameConstants.EmptyItem;
+        Character.ItemIdentified[slot] = false;        // 0x0e5d clears the bit
         Character.Gold += price;
         string msg = $"I'll give you {price} gold pieces for that item";
         Say(msg);
@@ -248,31 +251,69 @@ public sealed class CastleEngine
         Say("How many gold pieces do you wish to donate ?");
     }
 
-    /// <summary>Donating gold discloses one unidentified item.</summary>
-    public string Donate(int amount)
+    /// <summary>
+    /// Donates the exact half-value of the first eligible inventory slot.
+    /// This overload keeps the CLI form <c>donate &lt;gold&gt;</c> usable.
+    /// </summary>
+    public string Donate(int amount) => Donate(amount, FindSlotForDonation(amount));
+
+    /// <summary>
+    /// Discloses one inventory item.  CASTLE.COM 0x1465-0x1499 computes
+    /// <c>0x1595(slot) / 2</c>, formats it as <c>%010u</c>, and compares that
+    /// string with the entered donation; only an exact match reaches the
+    /// identified-bit toggle at 0x14bd (0x34ca uses XOR).  The bit is indexed
+    /// by SLOT, not catalog entry.  The original also checks an unmapped
+    /// inventory word at +4.
+    /// </summary>
+    public string Donate(int amount, int slot)
     {
         if (Character == null) return "No character.";
         if (amount <= 0) return "You must donate something.";
         if (Character.Gold < amount) return "You do not have that much gold.";
-        Character.Gold -= amount;
+        if (slot < 0 || slot >= Character.ItemTypes.Length ||
+            Character.ItemTypes[slot] == GameConstants.EmptyItem)
+        {
+            string none = "You have nothing to disclose.";
+            Say(none);
+            return none;
+        }
 
+        var def = ItemCatalog.All.FirstOrDefault(x => x.Type == Character.ItemTypes[slot]);
+        if (def == null)
+        {
+            string none = "You have nothing to disclose.";
+            Say(none);
+            return none;
+        }
+
+        int required = ItemCatalog.Value(def, absoluteDamage: false) / 2;
+        if (amount != required)
+        {
+            string wrong = $"The archivist asks for {required} gold pieces.";
+            Say(wrong);
+            return wrong;
+        }
+
+        Character.Gold -= amount;
+        // 0x34ca is an XOR toggle, unlike the OR-set at 0x329a (buy) and the
+        // AND-clear at 0x3382 (sell).  A repeated donation clears the bit.
+        Character.ItemIdentified[slot] = !Character.ItemIdentified[slot];
+        string msg = $"The archivist reveals: {def.Name}";
+        Say(msg);
+        return msg;
+    }
+
+    private int FindSlotForDonation(int amount)
+    {
+        if (Character == null) return -1;
         for (int i = 0; i < Character.ItemTypes.Length; i++)
         {
             if (Character.ItemTypes[i] == GameConstants.EmptyItem) continue;
-            int index = Array.FindIndex(ItemCatalog.All, x => x.Type == Character.ItemTypes[i]);
-            if (index >= 0)
-            {
-                // The original donation path toggles the same 0x80d0 bit for
-                // the selected item (0x14bd -> 0x34ca).
-                Character.ItemIdentified[index] = true;
-                string msg = $"The archivist reveals: {ItemCatalog.All[index].Name}";
-                Say(msg);
-                return msg;
-            }
+            var def = ItemCatalog.All.FirstOrDefault(x => x.Type == Character.ItemTypes[i]);
+            if (def != null && ItemCatalog.Value(def, absoluteDamage: false) / 2 == amount)
+                return i;
         }
-        string none = "You have nothing to disclose.";
-        Say(none);
-        return none;
+        return -1;
     }
 
     // ----------------------------------------------------------- char sheet ---

@@ -171,7 +171,7 @@ public sealed class GameEngine
     public string Sell(string name) => CastleAction(() => _castle.Sell(name));
     public string Heal(int days) => CastleAction(() => _castle.Heal(days));
     public string Rest() => CastleAction(() => _castle.Rest());
-    public string Donate(int amount) => CastleAction(() => _castle.Donate(amount));
+    public string Donate(int amount, int slot = -1) => CastleAction(() => _castle.Donate(amount, slot));
     public string CharacterSheet() => Character == null ? "No character." : _castle.CharacterSheet();
     public string Inventory() => Dungeon.ListInventory();
 
