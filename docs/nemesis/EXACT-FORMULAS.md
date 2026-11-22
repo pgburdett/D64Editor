@@ -43,6 +43,37 @@ Important helpers (DUNGEON.COM; analogous helpers exist in CASTLE.COM):
 | `0x6c75` | 48-bit LCG; arg `1` advances state and returns a 15-bit positive value | CONFIRMED |
 | `0x6d72` | 15-bit LFSR `rand()` at `0x0597`/`0x0599`, feedback bits 3^6; returns `state & 0x7fff` | CONFIRMED |
 
+### The 48-bit LCG at `0x6c75` — CONFIRMED
+
+This is a second, independent generator from the LFSR. `CALL 0x6c75` with
+argument `1` (many call sites, e.g. `0x2888` inside `damage_roll`) advances it.
+The multiplier is a six-byte data table embedded in code bytes at
+`0x6d2f`–`0x6d34`: `c5 87 01 0e 9a e0` little-endian = `0xe09a0e0187c5`.
+The 48-bit state lives at `0x6d35`–`0x6d3a` and starts as `1` in the `.COM`
+image. The step routine (`0x6cbf`–`0x6d2d`) multiplies the state by the
+constant, negates the product modulo 2^48, and returns the top 15 bits of the
+new state (`state[5] & 0x7f` as the high byte, `state[4]` as the low):
+
+```c
+state = (-state * 0xe09a0e0187c5ULL) & 0xffffffffffffULL;
+return (state >> 32) & 0x7fff;
+```
+
+First five outputs from the boot state `1` (verified by byte-level emulation of
+the Z80 multiply loop):
+
+| step | state | return |
+|---:|---|---:|
+| 1 | `0x1f65f1fe783b` | 8037 |
+| 2 | `0x43dfe38b5d99` | 17375 |
+| 3 | `0x0303abcc4a43` | 771 |
+| 4 | `0x9a6a1c5e8571` | 6762 |
+| 5 | `0xc9bd9f73b90b` | 18877 |
+
+The port is `Nemesis/Engine/Lcg48Random.cs`; it is not yet wired into
+`DungeonEngine` because the monster-template field mapping for the combat
+formulas below is still only HIGH confidence.
+
 Important globals:
 
 | Address | Meaning used here | Confidence |
