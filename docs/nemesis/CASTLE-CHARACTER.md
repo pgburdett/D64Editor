@@ -262,14 +262,22 @@ The character record is **640 bytes**. Source-level fields confirmed from the re
   | `0x5e` | BE16 | age (16) |
   | `0x64` | BE16 | current HITS (5) |
   | `0x66` | BE16 | O_HITS / maximum HITS (8) |
+  | `0x89` | LE16 | per-slot identified bits; bit N = slot N (all zero in sample) |
+  | `0x8b` | LE16 | second flag word, tested/cleared by the pawn path; meaning UNCERTAIN |
+  | `0xa3 + slot*0x25 + 0x20` | byte | inventory item type; `0xff` = empty slot |
 
-  The `0xffff` pairs around `0x71..0x74` are plausibly `p_mspell`/`p_cspell`
-  and/or the `p_item[]` initial `255` values, but cannot be disambiguated from
-  a single sample. The C# reader therefore keeps the whole file in `RawData`
-  and only writes back fields it has confirmed, giving byte-exact round-trips.
+  The inventory records are 37 bytes each.  In `ARAGORN.CHR` their non-type
+  bytes happen to contain a CP/M setup script, but every slot's `+0x20` byte is
+  `0xff`, confirming both the slot stride and the empty-slot marker.
 
-The exact byte-for-byte meaning of the remaining fields still needs a pass over
-`save_char()`/`load_char()` in `PERSON.COM`; that was not completed.
+**Save/load direction — CONFIRMED:** `NEMESIS.COM 0x093f` reads five 128-byte
+records into runtime `0x8047` via `0x2090`; `CASTLE.COM 0x1b12` writes the same
+buffer back via `0x4820` on exit.  The runtime globals map to file offsets by
+subtracting `0x8047`, so `0x80d0` is `.CHR` offset `0x89` and `0x80ea` is
+offset `0xa3`.  The C# reader/writer therefore persists identified bits and
+inventory item types there while keeping all other bytes in `RawData` for
+byte-exact round-trips.  The exact meaning of the `0x8b` flag word and of the
+remaining non-type inventory bytes is still UNCERTAIN.
 
 ---
 
@@ -350,9 +358,9 @@ Item data records recovered from `ITEMS.C-0` give item type, level, name, and a 
   The identified flag is the `0x80d0` bit array indexed by inventory slot
   (0..9), set when an item is bought, cleared when it is sold, and toggled by
   the archives disclosure path.  Only the time-seeded LCG's initial value remains
-  environment-specific. The `0x80d0` bit array itself has no confirmed byte
-  offset in the 640-byte `.CHR` record, so the C# port keeps
-  `Character.ItemIdentified` session-local and does not serialize it.
+  environment-specific. The save buffer starts at runtime `0x8047`, so the
+  identified bit word maps to `.CHR` offset `0x89` and is persisted; the C#
+  port serializes `Character.ItemIdentified` there.
 
 ### 3.3 Hospital
 
@@ -435,10 +443,9 @@ Displays all fields from the character record (level, hits, experience, age, AC,
 - Dungeon chain and exit-save behavior at a high level.
 
 **Uncertain / not completed:**
-- Exact 640-byte on-disk field offsets beyond the decoded gold/EXP/stats/level/age/HP/magic/cleric fields.
+- Exact 640-byte on-disk field offsets beyond the decoded gold/EXP/stats/level/age/HP/magic/cleric, identified-bit (`0x89`), and inventory type (`0xa3 + slot*0x25 + 0x20`) fields.
 - Inn rest cost and restoration amounts.
-- The final gold debit after an Archives donation and the meaning of the required `inventory[slot] + 4` word.
-- Serialization of the `0x80d0` per-slot identified bits into `.CHR`.
+- The final gold debit after an Archives donation, the meaning of the required `inventory[slot] + 4` word, and the second flag word at `.CHR` offset `0x8b`.
 - Some class constructor “later raw fields” (108/24/100...) are almost certainly XP/age/item flags but were not decoded to named constants.
 
 No source files were modified; only this report was written.

@@ -133,7 +133,8 @@ public sealed class Character
     /// Identified/disclosed bit per inventory slot (0..9).  This mirrors the
     /// bit array at CASTLE.COM 0x80d0: every call site (buy 0x0c90, pawn
     /// 0x0dd5/0x0e5d and archives 0x14bd) passes an inventory slot index.
-    /// No confirmed `.CHR` byte offset exists, so this is session-local state.
+    /// The array lies inside the 640-byte save buffer at runtime 0x8047, so
+    /// it is persisted at `.CHR` offset 0x89 as a little-endian bit word.
     /// </summary>
     public bool[] ItemIdentified { get; set; } = new bool[MaxItems];
 

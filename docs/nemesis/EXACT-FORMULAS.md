@@ -575,9 +575,14 @@ Confidence:
 - Zero-value substitution `LCG48 % 20`: **CONFIRMED**.
 - Unidentified formula `LCG48 % 70`: **CONFIRMED**.
 - Bit-array address and set/test/toggle helpers: **CONFIRMED**.
-- Serialization of that bit array into the 640-byte `.CHR` file: **UNCERTAIN**;
-  no confirmed file offset was recovered, so the port keeps identified flags
-  session-local rather than inventing a layout.
+- Serialization of that bit array into the 640-byte `.CHR` file: **CONFIRMED**.
+  `NEMESIS.COM 0x093f` reads five 128-byte records into runtime `0x8047` via
+  `0x2090`, and `CASTLE.COM 0x1b12` writes that same buffer back via `0x4820`.
+  The `0x80d0` bit word therefore maps to file offset `0x89` (little endian,
+  bit N = inventory slot N); the adjacent `0x80d2` word at `0x8b` is a second
+  flag array whose meaning is still UNCERTAIN. Inventory slot records begin at
+  `0xa3`, are `0x25` bytes each, and carry the item type at record `+0x20`
+  with `0xff` for an empty slot.
 - Exact seed for the time-seeded LCG: **UNCERTAIN** by design; it depends on
   the CP/M console/clock at run time.
 
@@ -721,6 +726,9 @@ These remain open and must not be guessed in a faithful port:
     seed (`0xffff59dc`) and the interactive `init_rand()` path are known, but
     the seed actually entered for that saved character is not recorded.
     `roll()` itself is now confirmed (4d5, section 5).
+13. **`0x80d2` second flag word** — its `.CHR` offset (`0x8b`) is confirmed by
+    the save-buffer mapping, and the pawn path tests/clears it at `0x0e6b`/
+    `0x0e9c`, but which game state it represents remains UNCERTAIN.
 
 ---
 

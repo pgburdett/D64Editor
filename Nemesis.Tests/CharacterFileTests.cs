@@ -44,6 +44,31 @@ public sealed class CharacterFileTests
     }
 
     [Fact]
+    public void IdentifiedBits_And_ItemTypes_Use_Save_Buffer_Offsets()
+    {
+        byte[] original = File.ReadAllBytes(RepoData.GameFile("ARAGORN.CHR"));
+        var c = CharacterFile.Read(original);
+
+        Assert.DoesNotContain(true, c.ItemIdentified);
+        Assert.All(c.ItemTypes, t => Assert.Equal((byte)0xff, t));
+
+        c.ItemIdentified[0] = true;   // low byte of the little-endian word
+        c.ItemIdentified[9] = true;   // high byte, bit 1
+        c.ItemTypes[0] = 42;
+
+        byte[] bytes = CharacterFile.Write(c);
+        Assert.Equal(0x01, bytes[0x89]);
+        Assert.Equal(0x02, bytes[0x8a]);
+        Assert.Equal((byte)42, bytes[0xa3 + 0x20]);
+
+        var roundTrip = CharacterFile.Read(bytes);
+        Assert.True(roundTrip.ItemIdentified[0]);
+        Assert.True(roundTrip.ItemIdentified[9]);
+        Assert.False(roundTrip.ItemIdentified[1]);
+        Assert.Equal((byte)42, roundTrip.ItemTypes[0]);
+    }
+
+    [Fact]
     public void GeneratedCharacter_Also_RoundTrips_ByteExactly()
     {
         var c = new Character

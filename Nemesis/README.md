@@ -53,9 +53,11 @@ stay documentation until their supporting helpers are recovered.
 - The original `valid()` ranger bug (testing the loop counter instead of the
   class index) is intentionally preserved in `GameTables.IsValidClass`.
 - Undecoded `.CHR` bytes are retained in `Character.RawData`, so save/load is
-  byte-exact for untouched files.  The confirmed runtime-only per-slot
-  identified-bit array (`0x80d0`) has no mapped `.CHR` offset, so
-  `ItemIdentified` is not serialized.
+  byte-exact for untouched files.  The save buffer starts at runtime `0x8047`,
+  so the per-slot identified bits (`0x80d0`) are persisted at `.CHR` offset
+  `0x89`, and inventory item types are read/written at
+  `0xa3 + slot*0x25 + 0x20`.  The adjacent `0x80d2` flag word is preserved but
+  its meaning is still uncertain.
 
 ## Building and running
 
@@ -65,7 +67,7 @@ dotnet run --project Nemesis/Nemesis.csproj -- docs/nemesis/game-files/ARAGORN.C
 dotnet run --project Nemesis/Nemesis.csproj -- --verify
 ```
 
-`--verify` runs 27 self-checks covering the tables, both RNGs, exact
+`--verify` runs 28 self-checks covering the tables, both RNGs, exact
 melee/monster-creation/payout/hospital-rate/pawn arithmetic, `.CHR` round-trip
 and real `LEVEL.0` map loading.
 

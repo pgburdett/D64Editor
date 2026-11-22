@@ -111,6 +111,14 @@ internal static class Verify
                 c.BaseAttributes.Constitution == 8 && c.BaseAttributes.Dexterity == 15);
             Check("gold/exp parsed from padded decimal strings",
                 c.Gold == 117 && c.Experience == 0, $"gold={c.Gold} exp={c.Experience}");
+
+            c.ItemIdentified[0] = true;
+            c.ItemIdentified[9] = true;
+            c.ItemTypes[0] = 42;
+            byte[] modified = CharacterFile.Write(c);
+            Check("identified bits at 0x89 and item types at 0xa3+slot*0x25+0x20 persist",
+                modified[0x89] == 0x01 && modified[0x8a] == 0x02 &&
+                modified[0xa3 + 0x20] == 42);
         }
         else Check("sample .CHR exists", false, sample);
 

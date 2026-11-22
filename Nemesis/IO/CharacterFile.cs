@@ -18,8 +18,13 @@ namespace Nemesis.IO;
 ///   0x5e   age (BE16)
 ///   0x64   current hit points (BE16)
 ///   0x66   maximum hit points (BE16)
+///   0x89   per-inventory-slot identified bits (little-endian 16-bit word)
+///   0xa3   inventory records, 0x25 bytes each; item type is at record +0x20
+///          and 0xff marks an empty slot
 ///
-/// All other regions are kept verbatim in RawData so that the file always
+/// The save buffer starts at runtime 0x8047: NEMESIS.COM loads five 128-byte
+/// records into it and CASTLE.COM/DUNGEON.COM write the same buffer back on
+/// exit.  All other regions are kept verbatim in RawData so that the file always
 /// round-trips byte-exactly, even where the original layout is still opaque.
 /// </summary>
 public static class CharacterFile
@@ -30,6 +35,10 @@ public static class CharacterFile
     private const int GoldOffset = 0x3b;
     private const int ExpOffset = 0x46;
     private const int StatOffset = 0x50;
+    private const int IdentifiedOffset = 0x89;
+    private const int ItemSlotOffset = 0xa3;
+    private const int ItemSlotSize = 0x25;
+    private const int ItemSlotTypeOffset = 0x20;
     private const int NumericWidth = 10;
 
     public static Character Read(string path) => Read(File.ReadAllBytes(path));
@@ -62,6 +71,19 @@ public static class CharacterFile
         c.MagicUnits = ReadBE16(data, 0x70);
         c.ClericUnits = ReadBE16(data, 0x72);
 
+        // 0x80d0 is inside the 640-byte save buffer at 0x8047, so the
+        // per-slot identified bits are persistent.  The Z80 word is little
+        // endian and bit N corresponds to inventory slot N.
+        ushort identified = (ushort)(data[IdentifiedOffset] |
+                                     (data[IdentifiedOffset + 1] << 8));
+        for (int i = 0; i < Character.MaxItems; i++)
+            c.ItemIdentified[i] = (identified & (1 << i)) != 0;
+
+        // The expanded inventory records start at 0x80ea; their item-type
+        // index is at record +0x20 and 0xff marks an empty slot.
+        for (int slot = 0; slot < Character.MaxItems; slot++)
+            c.ItemTypes[slot] = data[ItemSlotOffset + slot * ItemSlotSize + ItemSlotTypeOffset];
+
         return c;
     }
 
@@ -84,6 +106,15 @@ public static class CharacterFile
         WriteBE16(data, 0x66, c.MaxHitPoints);
         WriteBE16(data, 0x70, c.MagicUnits);
         WriteBE16(data, 0x72, c.ClericUnits);
+
+        ushort identified = 0;
+        for (int i = 0; i < Character.MaxItems && i < c.ItemIdentified.Length; i++)
+            if (c.ItemIdentified[i]) identified |= (ushort)(1 << i);
+        data[IdentifiedOffset] = (byte)identified;
+        data[IdentifiedOffset + 1] = (byte)(identified >> 8);
+
+        for (int slot = 0; slot < Character.MaxItems && slot < c.ItemTypes.Length; slot++)
+            data[ItemSlotOffset + slot * ItemSlotSize + ItemSlotTypeOffset] = c.ItemTypes[slot];
 
         return data;
     }
