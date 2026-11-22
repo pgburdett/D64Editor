@@ -51,7 +51,7 @@ public sealed record MonsterDef(int Level, string Name, int F1, int F2, int F3, 
 
     /// <summary>
     /// Kill-payout base: the byte at template offset 0x0b.  The original
-    /// computes <c>v + rand() % (10 / v)</c> and writes it to both the gold and
+    /// computes <c>v + rand() % (10 * v)</c> and writes it to both the gold and
     /// experience buffers.  Previously mislabelled as gold only.
     /// </summary>
     public int PayoutBase => Math.Max(0, F9);

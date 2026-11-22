@@ -77,18 +77,17 @@ public static class CombatRules
         RangeRoll(min, max, rng);
 
     /// <summary>
-    /// Kill payout at DUNGEON.COM 0x28ba: <c>v + rand() % (10 / v)</c>, where
+    /// Kill payout at DUNGEON.COM 0x28ba: <c>v + rand() % (10 * v)</c>, where
     /// <c>v</c> is the byte at monster-template offset 0x0b and <c>rand()</c>
-    /// is the 32-bit LFSR.  The divisor is computed by 0x023f as <c>10 / v</c>;
-    /// previous notes incorrectly recorded <c>10 * v</c> because the linear
-    /// disassembly misread the inline operand after <c>CALL 0x0190</c>.
-    /// The original writes the same value to both the gold and experience
-    /// buffers; which address is which is still UNCERTAIN.
+    /// is the 32-bit LFSR.  The modulus is computed by <c>CALL 0x023f</c>, the
+    /// signed multiply helper (not divide), which is why a brief note calling
+    /// it <c>10 / v</c> was wrong.  The original writes the same value to both
+    /// the gold and experience buffers; which address is which is UNCERTAIN.
     /// </summary>
     public static int KillPayout(int payoutBase, LfsrRandom rng)
     {
         if (payoutBase <= 0) return payoutBase;
-        int divisor = 10 / payoutBase;
+        int divisor = 10 * payoutBase;
         return divisor > 0 ? payoutBase + rng.Next() % divisor : payoutBase;
     }
 }

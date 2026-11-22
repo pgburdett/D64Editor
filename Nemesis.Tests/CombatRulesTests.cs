@@ -55,19 +55,16 @@ public sealed class CombatRulesTests
     }
 
     [Fact]
-    public void KillPayout_Uses_Exact_Lfsr_Vectors_And_10_Divided_By_Base()
+    public void KillPayout_Uses_Exact_Lfsr_Vectors_And_10_Times_Base()
     {
-        // LFSR from state 1 returns 2 then 4.  The original computes
-        // v + rand() % (10 / v), not v + rand() % (10 * v).
+        // LFSR from state 1 returns 2 then 4.  0x023f is signed multiply, so
+        // the modulus is 10 * v (the brief 10/v note was wrong).
         var rng = new LfsrRandom(1);
         Assert.Equal(3, CombatRules.KillPayout(1, rng)); // 1 + 2 % 10
         Assert.Equal(5, CombatRules.KillPayout(1, rng)); // 1 + 4 % 10
 
-        var narrow = new LfsrRandom(1);
-        Assert.Equal(5, CombatRules.KillPayout(5, narrow)); // 10 / 5 = 2
-        Assert.Equal(5, CombatRules.KillPayout(5, narrow));
-
-        var capped = new LfsrRandom(1);
-        Assert.Equal(13, CombatRules.KillPayout(13, capped)); // 10 / 13 = 0
+        var scaled = new LfsrRandom(1);
+        Assert.Equal(7, CombatRules.KillPayout(5, scaled)); // 5 + 2 % 50
+        Assert.Equal(9, CombatRules.KillPayout(5, scaled)); // 5 + 4 % 50
     }
 }

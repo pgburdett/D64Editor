@@ -127,9 +127,10 @@ Field 1 remains HIGH; fields 10-11 remain UNKNOWN.  The C# catalogue's
 the original text format does not contain.
 
 The signed-remainder helper at `0x020f` computes `DE % HL` (dividend in DE,
-divisor in HL).  The signed-divide helper at `0x023f` computes `DE / HL`.
-Mistaking their operand order is what produced the earlier incorrect `10*v`
-payout note.
+divisor in HL).  The signed-multiply helper at `0x023f` computes `HL * DE`.
+The signed-divide helper at `0x02cb` computes `DE / HL`.  Confusing `0x023f`
+(multiply) with `0x02cb` (divide) briefly produced an incorrect `10/v` payout
+note; the operand-aware re-decode confirms `10*v`.
 
 ---
 
@@ -259,21 +260,20 @@ Address range: DUNGEON.COM `0x28ba`–`0x2947`.
 ```c
 uint16_t v = byte(0x838f + 16 * type + 11);  // template +0x0b, field 9
 uint16_t r = rand();                          // 0x6d72, 0..0x7fff
-uint16_t payout = v + signed_rem(r, signed_div(10, v));
+uint16_t payout = v + signed_rem(r, signed_mul(10, v));
 
 write_decimal_padded(word(0x8082), payout, "%010u");  // CALL 0x62ab/0x5a3c/0x5b5b
 write_decimal_padded(word(0x808d), payout, "%010u");
 ```
 
-`0x023f` is signed `DE / HL`; with `HL = v`, `DE = 10` it computes `10 / v`.
-`0x020f` is signed `DE % HL`; with `HL = 10 / v`, `DE = rand()` it takes the
-remainder.  For `v > 10` the divisor is zero and the payout is just `v`.
+`0x023f` is signed `HL * DE`; with `HL = v`, `DE = 10` it computes `10 * v`.
+`0x020f` is signed `DE % HL`; with `HL = 10 * v`, `DE = rand()` it takes the
+remainder.  A very brief `10 / v` note was wrong: `0x023f` is multiply, while
+`0x02cb` is the divide helper.
 
 Confidence:
 
-- Formula `v + rand() % (10 / v)`: **CONFIRMED**.  The earlier `10 * v` reading
-  was wrong because the linear disassembly did not skip the inline operand after
-  `CALL 0x0190`.
+- Formula `v + rand() % (10 * v)`: **CONFIRMED**.
 - Destination buffers `0x8082`/`0x808d`: **CONFIRMED** as addresses written.
 - Which buffer is gold versus experience: **UNCERTAIN**; both receive the same formatted payout in this path.
 
@@ -533,6 +533,8 @@ if (word(0x80be) == word(0x80a6)) {       // max HP == current HP
 }
 
 missing = word(0x80be) - word(0x80a6);    // 0x02fa + ADD at 0x0fa4..0x0faf
+days = missing;                          // CALL 0x0190 op00 at 0x0fca
+rate = (word(0x80a4) + 1) * 10;            // EXP + 1, CALL 0x023f at 0x0fec
 printf("Your wounds will take %u days to heal", days);
 printf("At a rate of %u gold per day", rate);
 ```
@@ -550,7 +552,12 @@ Confidence:
 
 - Full-HP early-out and `missing HP` calculation: **CONFIRMED**.
 - Day-count rollover `/365` and `%365`: **CONFIRMED**.
-- Exact `days` formula and `rate` formula: **UNCERTAIN**. The string xrefs and input prompt at `0x1176` (`"Please enter the length of your stay -- "`) are confirmed, but the arithmetic preceding the two `%u` prints was not fully decoded.
+- `days = missing HP` and `rate = (EXP + 1) * 10`: **CONFIRMED** from the two
+  `printf` argument paths at `0x0fca` and `0x0fe5`.  The earlier level-based
+  rate and halved day count were guesses.
+- Final HP restoration/debit details after the stay prompt at `0x1176`:
+  **UNCERTAIN**.  The stay length is parsed by `0x38c0`, but the exact branch
+  that updates `0x80a6` and debits gold is not fully traced.
 
 ## 3.5 Inn pricing and restoration
 
@@ -606,7 +613,7 @@ These remain open and must not be guessed in a faithful port:
 6. **Context mask values** — why combat passes `2` yet several healing spells have flags `1`; needs runtime or source-fragment confirmation.
 7. **Armory buy modifiers** — any class/level multiplier on `word[item+8]`.
 8. **Pawn sell formula** — exact arithmetic in `0x38a7`/`0x33fe`/`0x343d` path.
-9. **Hospital `days` and `rate`** — exact formulas before the two `%u` prints.
+9. **Hospital stay/debit path** — exact HP restoration and gold debit after the stay prompt (`days` and `rate` are now CONFIRMED).
 10. **Inn debit** — whether `missing HP * 3` is days, gold, or both, and where the final gold subtraction occurs.
 11. **Archives donation threshold** — operand provenance for the confirmed `/2`.
 12. **RNG seed used for the shipped `ARAGORN.CHR`** — the compiled default LFSR

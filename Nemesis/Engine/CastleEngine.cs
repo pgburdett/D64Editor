@@ -126,19 +126,27 @@ public sealed class CastleEngine
             Say("You are in perfect physical shape");
             return;
         }
+        // Confirmed from CASTLE.COM 0x0f5f-0x0ff7: the "%u days" argument is
+        // word(0x80be) - word(0x80a6) (missing HP), and the "%u gold per day"
+        // argument is (word(0x80a4) + 1) * 10 (experience + 1, times ten via
+        // the signed-multiply helper 0x023f).  The earlier level-based rate
+        // and halved day count were guesses.
         int missing = Character.MaxHitPoints - Character.HitPoints;
-        int rate = Math.Max(1, Character.Level / 2 + 1);
-        int days = (missing + 1) / 2;
-        Say($"Your wounds will take {days} days to heal");
+        int rate = (Character.Experience + 1) * 10;
+        Say($"Your wounds will take {missing} days to heal");
         Say($"At a rate of {rate} gold per day");
         Say("Please enter the length of your stay --");
     }
 
-    /// <summary>Pays for a stay; two hit points are restored per day.</summary>
+    /// <summary>
+    /// Pays for a stay at the confirmed rate of (EXP + 1) * 10 gold per day.
+    /// The exact HP-restoration/debit branch is still best-effort; one HP per
+    /// day, capped at the missing HP, matches the confirmed day count.
+    /// </summary>
     public string Heal(int days)
     {
         if (Character == null) return "No character.";
-        int rate = Math.Max(1, Character.Level / 2 + 1);
+        int rate = (Character.Experience + 1) * 10;
         int cost = days * rate;
         if (Character.Gold < cost)
         {
@@ -147,7 +155,7 @@ public sealed class CastleEngine
             return fail;
         }
         Character.Gold -= cost;
-        int healed = Math.Min(Character.MaxHitPoints - Character.HitPoints, days * 2);
+        int healed = Math.Min(Character.MaxHitPoints - Character.HitPoints, days);
         Character.HitPoints += healed;
         string msg = $"You are restored to {Character.HitPoints} hits.";
         Say(msg);
