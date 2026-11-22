@@ -375,11 +375,12 @@ public sealed class DungeonEngine
     {
         if (!InCombat || CurrentMonster == null || Character == null) { Say("Nothing to fight."); return; }
 
-        // Exact melee path from DUNGEON.COM 0x7db7 -> 0x25dc -> 0x2853:
-        // f = (STR + DEX)/10, divisor = f + monsterPower/2, damage = LCG % divisor.
-        // There is no separate "to hit" roll or weapon-damage term in the
-        // original routine; a zero remainder is reported as "0 hits".
-        int fightStrength = CombatRules.FightStrength(Character.CurrentAttributes);
+        // Exact melee path from DUNGEON.COM 0x7db7 -> 0x7e0a -> 0x25dc -> 0x2853:
+        // f = (STR + DEX)/10 plus the record +2 bonus of every equipped item;
+        // divisor = f + monsterPower/2, damage = LCG % divisor.  There is no
+        // separate "to hit" roll; a zero remainder is reported as "0 hits".
+        int fightStrength = CombatRules.FightStrength(
+            Character.CurrentAttributes, Character.ItemEquipped, Character.ItemFModifier);
         int hits = CombatRules.DamageRoll(fightStrength, CurrentMonster.Type.CombatPower, _lcg);
         CurrentMonster.HitPoints -= hits;
         Say($"   You gave it {hits} hits");

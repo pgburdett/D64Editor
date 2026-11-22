@@ -155,6 +155,11 @@ Then the `F` command calls:
 result = melee_attack(word(0xa2f6));   // CALL 0x25dc at 0x7a13
 ```
 
+The FIGHT command then adds the signed BE16 word at inventory record `+2` for
+every slot whose `0x80d2` equipped bit is set (`0x7df0`–`0x7e0a`) before calling
+`0x25dc`.  This is **CONFIRMED** and is implemented in
+`CombatRules.FightStrength(stats, equipped, modifiers)`.
+
 Confidence: **HIGH**. The division and store are visible; the exact semantic label “to-hit bonus” is inferred from the call into the damage roll. `0x8098` is STR and `0x80a2` is DEX per prior corroborated sheet work.
 
 ## 1.2 Damage roll helper — `0x2853(arg1, arg2)`
@@ -603,9 +608,15 @@ The displayed AC is the signed LE16 global `0x80da` (`.CHR` offset `0x93`);
 `CASTLE.COM 0x1f79` prints it with `"Age: %u AC: %d Gold: "`.  `DUNGEON.COM
 0x3a08` adds each equipped item's signed BE16 word at record `+0` to that AC,
 and `CASTLE.COM 0x0e79`–`0x0e94` subtracts the same word when an equipped item
-is pawned.  The C# port persists the flag at `0x8b`, base AC at `0x93`, item AC
-modifiers at record `+0`, and reverses the modifier on sale.  The parallel
-`record +2` bonus applied to `0xa2f6` remains UNCERTAIN.
+is pawned.
+
+The signed BE16 word at record `+2` is the **fight-strength bonus**.  The FIGHT
+command recomputes base F as `(STR+DEX)/10` into `0xa2f6` at `0x7db7`, then
+`0x7df0`–`0x7e0a` loops over all ten slots, tests `0x80d2`, and adds record `+2`
+for every equipped item before calling `0x25dc`.  Unequipping subtracts it at
+`0x3809`.  The C# port persists this word at `.CHR` `0xa3 + slot*0x25 + 2`,
+adds it only for equipped slots in `CombatRules.FightStrength`, and clears it
+when an item is sold.
 
 ## 3.4 Hospital pricing and healing
 
@@ -754,10 +765,6 @@ These remain open and must not be guessed in a faithful port:
     seed (`0xffff59dc`) and the interactive `init_rand()` path are known, but
     the seed actually entered for that saved character is not recorded.
     `roll()` itself is now confirmed (4d5, section 5).
-13. **Second equipped-item modifier** — `DUNGEON.COM 0x3a42` also adds the
-    signed BE16 word at inventory record `+2` to the global `0xa2f6` when an
-    item is equipped, but the meaning of `0xa2f6` is still UNCERTAIN; the pawn
-    path does not reverse that word.
 
 ---
 

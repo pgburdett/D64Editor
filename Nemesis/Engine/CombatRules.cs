@@ -24,6 +24,20 @@ public static class CombatRules
         (stats.Strength + stats.Dexterity) / 10;
 
     /// <summary>
+    /// Full F value used by the FIGHT command.  DUNGEON.COM 0x7db7 computes
+    /// the base <c>(STR+DEX)/10</c>, then 0x7df0-0x7e0a adds the signed BE16 at
+    /// each equipped inventory record +2.  The AC modifiers at record +0 are
+    /// not part of F.
+    /// </summary>
+    public static int FightStrength(Attributes stats, bool[] equipped, int[] modifiers)
+    {
+        int f = FightStrength(stats);
+        for (int i = 0; i < equipped.Length && i < modifiers.Length; i++)
+            if (equipped[i]) f += modifiers[i];
+        return f;
+    }
+
+    /// <summary>
     /// <c>damage_roll(arg1, arg2)</c> at DUNGEON.COM 0x2853.  The divisor is
     /// <c>arg1 + arg2/2</c>; a non-positive divisor yields zero damage.  The
     /// random value comes from the 48-bit LCG at 0x6c75, not the 32-bit LFSR.

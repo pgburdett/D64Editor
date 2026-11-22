@@ -266,6 +266,7 @@ The character record is **640 bytes**. Source-level fields confirmed from the re
   | `0x8b` | LE16 | per-slot equipped/enchantment-active bits (all zero in sample) |
   | `0x93` | signed LE16 | displayed armor class (`0x000a` = 10 in sample) |
   | `0xa3 + slot*0x25 + 0x00` | signed BE16 | AC modifier applied while that slot is equipped |
+  | `0xa3 + slot*0x25 + 0x02` | signed BE16 | fight-strength bonus added to F for an equipped slot |
   | `0xa3 + slot*0x25 + 0x20` | byte | inventory item type; `0xff` = empty slot |
 
   The inventory records are 37 bytes each.  In `ARAGORN.CHR` their non-type
@@ -277,10 +278,11 @@ records into runtime `0x8047` via `0x2090`; `CASTLE.COM 0x1b12` writes the same
 buffer back via `0x4820` on exit.  The runtime globals map to file offsets by
 subtracting `0x8047`, so `0x80d0` is `.CHR` offset `0x89`, `0x80d2` is `0x8b`,
 `0x80da` is `0x93`, and `0x80ea` is `0xa3`.  The C# reader/writer therefore
-persists identified/equipped bits, base AC, item AC modifiers and inventory
+persists identified/equipped bits, base AC, item AC/fight modifiers and inventory
 item types there while keeping all other bytes in `RawData` for byte-exact
-round-trips.  The meaning of the parallel `record +2` bonus (`0xa2f6`) and of
-the remaining non-type inventory bytes is still UNCERTAIN.
+round-trips.  The fight modifier is added to F only for equipped slots
+(`DUNGEON.COM 0x7df0`-`0x7e0a`).  The meaning of `record +4` and of the remaining
+non-type inventory bytes is still UNCERTAIN.
 
 ---
 
@@ -451,7 +453,7 @@ Displays all fields from the character record (level, hits, experience, age, AC,
 **Uncertain / not completed:**
 - Exact 640-byte on-disk field offsets beyond the decoded gold/EXP/stats/level/age/HP/magic/cleric, identified bit (`0x89`), equipped bit (`0x8b`), AC (`0x93`), inventory AC modifier (`record +0`) and inventory type (`record +0x20`) fields.
 - Inn rest cost and restoration amounts.
-- The meaning of the required `inventory[slot] + 4` word and the parallel item bonus at `record +2` (global `0xa2f6`).  The Archives gold debit (`0x13f2`) is now CONFIRMED.
+- The meaning of the required `inventory[slot] + 4` word.  The record `+2` fight bonus and the Archives gold debit (`0x13f2`) are now CONFIRMED.
 - Some class constructor “later raw fields” (108/24/100...) are almost certainly XP/age/item flags but were not decoded to named constants.
 
 No source files were modified; only this report was written.

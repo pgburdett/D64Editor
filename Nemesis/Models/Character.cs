@@ -158,6 +158,13 @@ public sealed class Character
     /// </summary>
     public int[] ItemAcModifier { get; set; } = new int[MaxItems];
 
+    /// <summary>
+    /// Signed big-endian fight-strength modifier at inventory record +2.
+    /// DUNGEON.COM 0x7df0-0x7e0a adds it to F (0xa2f6) for every equipped slot
+    /// before calling the melee routine; 0x3809 subtracts it when unequipped.
+    /// </summary>
+    public int[] ItemFModifier { get; set; } = new int[MaxItems];
+
     /// <summary>Opaque per-item data (kept raw until the item loader is decoded).</summary>
     public byte[] Inventory { get; set; } = new byte[MaxItems * 16];
 

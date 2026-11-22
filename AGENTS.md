@@ -6,15 +6,15 @@
   - `D64Editor.Core/` — disk/image engine and format logic (library, `net10.0`, `LangVersion 12`, nullable enabled).
   - `D64Editor.App/` — Avalonia desktop UI (Exe, `net10.0`, `LangVersion 12`, nullable enabled, `Avalonia 11.3.4`). Entry point: `D64Editor.App/Program.cs`.
   - `Nemesis/` — console port of the 1981 CP/M game Nemesis (Exe, `net10.0`). Reverse-engineering work is in `docs/nemesis/`.
-  - `Nemesis.Tests/` — xUnit tests for the Nemesis port (61 tests).
+  - `Nemesis.Tests/` — xUnit tests for the Nemesis port (62 tests).
 - `D64Editor.App` references `D64Editor.Core`. Keep format/disk behavior changes in `Core` and UI changes in `App` unless there is a clear reason. `Nemesis` is standalone; `Nemesis.Tests` references it.
 
 ## Commands
 - Restore: `dotnet restore`
 - Build: `dotnet build` (or `dotnet build --no-restore` after restore)
 - Run UI: `dotnet run --project D64Editor.App`
-- Test: `dotnet test` / `dotnet test --no-build --verbosity normal` (61 xUnit tests in `Nemesis.Tests/`)
-- Nemesis port self-check: `dotnet run --project Nemesis/Nemesis.csproj -- --verify` (29 checks)
+- Test: `dotnet test` / `dotnet test --no-build --verbosity normal` (62 xUnit tests in `Nemesis.Tests/`)
+- Nemesis port self-check: `dotnet run --project Nemesis/Nemesis.csproj -- --verify` (30 checks)
 
 ## CI / environment notes
 - `.github/workflows/dotnet.yml` runs on `ubuntu-latest` (push/PR to `master`) with .NET SDK `10.0.x`: `dotnet restore`, `dotnet build --no-restore`, `dotnet test --no-build --verbosity normal`.
@@ -172,8 +172,8 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - Reference material lives in `docs/nemesis/`: five analysis reports (`RECONSTRUCTED-SOURCE.md`, `CASTLE-CHARACTER.md`, `DATA-FORMATS.md`, `DUNGEON-LOGIC.md`, `EXACT-FORMULAS.md`), Ghidra/decompiled C, disassemblies, and original game files in `docs/nemesis/game-files/` (used as test fixtures). `EXACT-FORMULAS.md` rates hand-decoded combat/spell/shop findings CONFIRMED/HIGH/UNCERTAIN; spell unit costs plus the confirmed melee damage, monster creation/refresh, kill-payout, hospital day/rate and pawn-sell formulas and monster-template offsets are applied in the port.
 - Source fragments embedded in `LEVEL.*`/`ITEMS.*` are primary evidence; Ghidra output is secondary/noisy and must be hand-verified against the linear disassembly.
 - Confirmed: stat order `STR INT WIS CHA CON DEX`, 15 races/classes, 32-bit LFSR at `DUNGEON.COM` 0x6d72, 48-bit LCG at 0x6c75 (multiplier `0xe09a0e0187c5`, boot state 1; ported in `Nemesis/Engine/Lcg48Random.cs`; drives `roll()` = 4d5 from PERSON.COM 0x1a71, exact melee damage, and monster creation/refresh rolls), 26×22 × 3-byte map cells at file offset `0x1482` in all shipped `LEVEL.N` files, `.CHR` gold/experience as 10-char zero-padded decimal strings.
-- Best-effort: monster attack hit/miss and special-attack branches, spell level gating/durations, armory buy modifiers, and castle debit paths. Monster type/group/HP/attack creation and group-advance refreshes are CONFIRMED and applied in `CombatRules.cs`. Composite item value, buy price and pawn sell formulas (`item_value+LFSR%20` identified, `LCG48%70` unidentified), hospital days/rate (`(Level+1)*10`), per-inventory-slot identified bits (persisted at `.CHR` offset `0x89`), inventory item-type bytes (`0xa3 + slot*0x25 + 0x20`), Archives exact-half donation threshold, melee damage and kill payout are CONFIRMED. Spell **unit costs** are confirmed from the runtime tables (`docs/nemesis/EXACT-FORMULAS.md`) and applied in `GameTables.SpellCatalog`. Preserve the original `valid()` ranger bug in `GameTables.IsValidClass` for fidelity.
-- `Nemesis/Verify.cs` (`--verify`, 29 checks) and `Nemesis.Tests/` (61 xUnit tests) both load the committed original game files; keep them passing when changing recovered tables or file I/O.
+- Best-effort: monster attack hit/miss and special-attack branches, spell level gating/durations, armory buy modifiers, and castle debit paths. Monster type/group/HP/attack creation and group-advance refreshes are CONFIRMED and applied in `CombatRules.cs`. Composite item value, buy price and pawn sell formulas (`item_value+LFSR%20` identified, `LCG48%70` unidentified), hospital days/rate (`(Level+1)*10`), per-inventory-slot identified/equipped bits (`.CHR` offsets `0x89`/`0x8b`), base AC (`0x93`), inventory AC/fight modifiers (`record +0`/`+2`) and item-type bytes (`record +0x20`), Archives exact-half donation threshold and gold debit, melee damage and kill payout are CONFIRMED. Spell **unit costs** are confirmed from the runtime tables (`docs/nemesis/EXACT-FORMULAS.md`) and applied in `GameTables.SpellCatalog`. Preserve the original `valid()` ranger bug in `GameTables.IsValidClass` for fidelity.
+- `Nemesis/Verify.cs` (`--verify`, 30 checks) and `Nemesis.Tests/` (62 xUnit tests) both load the committed original game files; keep them passing when changing recovered tables or file I/O.
 
 ## Known limitations
 - G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.

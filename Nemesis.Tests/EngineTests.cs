@@ -132,11 +132,14 @@ public sealed class EngineTests
         c.ItemIdentified[0] = true;
         c.ItemEquipped[0] = true;
         c.ItemAcModifier[0] = -2;
+        c.ItemFModifier[0] = 3;
 
         string msg = castle.Sell("AXE");
 
         Assert.Contains("212 gold pieces", msg);
         Assert.Equal(10, c.ArmorClass);          // 8 - (-2)
+        Assert.Equal(0, c.ItemAcModifier[0]);
+        Assert.Equal(0, c.ItemFModifier[0]);
         Assert.False(c.ItemEquipped[0]);         // 0x0e9c clears the bit
         Assert.False(c.ItemIdentified[0]);
     }

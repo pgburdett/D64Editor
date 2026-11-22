@@ -22,7 +22,8 @@ namespace Nemesis.IO;
 ///   0x8b   per-slot equipped/enchantment-active bits (LE16, runtime 0x80d2)
 ///   0x93   displayed armor class (signed LE16, runtime 0x80da)
 ///   0xa3   inventory records, 0x25 bytes each; AC modifier is a signed BE16
-///          at record +0, item type is at +0x20, and 0xff marks an empty slot
+///          at record +0, fight bonus at +2, item type at +0x20, and 0xff
+///          marks an empty slot
 ///
 /// The save buffer starts at runtime 0x8047: NEMESIS.COM loads five 128-byte
 /// records into it and CASTLE.COM/DUNGEON.COM write the same buffer back on
@@ -43,6 +44,7 @@ public static class CharacterFile
     private const int ItemSlotOffset = 0xa3;
     private const int ItemSlotSize = 0x25;
     private const int ItemSlotAcOffset = 0;
+    private const int ItemSlotFOffset = 2;
     private const int ItemSlotTypeOffset = 0x20;
     private const int NumericWidth = 10;
 
@@ -90,12 +92,14 @@ public static class CharacterFile
         }
 
         // The expanded inventory records start at 0x80ea.  Record +0 is a
-        // signed big-endian AC modifier applied while the slot is equipped;
-        // record +0x20 is the item type and 0xff marks an empty slot.
+        // signed big-endian AC modifier and record +2 is the signed fight
+        // bonus, both applied while the slot is equipped.  Record +0x20 is the
+        // item type and 0xff marks an empty slot.
         for (int slot = 0; slot < Character.MaxItems; slot++)
         {
             int record = ItemSlotOffset + slot * ItemSlotSize;
             c.ItemAcModifier[slot] = ReadBE16Signed(data, record + ItemSlotAcOffset);
+            c.ItemFModifier[slot] = ReadBE16Signed(data, record + ItemSlotFOffset);
             c.ItemTypes[slot] = data[record + ItemSlotTypeOffset];
         }
 
@@ -140,6 +144,8 @@ public static class CharacterFile
             int record = ItemSlotOffset + slot * ItemSlotSize;
             if (slot < c.ItemAcModifier.Length)
                 WriteBE16(data, record + ItemSlotAcOffset, c.ItemAcModifier[slot]);
+            if (slot < c.ItemFModifier.Length)
+                WriteBE16(data, record + ItemSlotFOffset, c.ItemFModifier[slot]);
             data[record + ItemSlotTypeOffset] = c.ItemTypes[slot];
         }
 

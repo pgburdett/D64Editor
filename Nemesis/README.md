@@ -41,9 +41,9 @@ stay documentation until their supporting helpers are recovered.
   per-monster stat refresh on group advancement, hospital `days = missing HP`
   and `rate = (Level+1)*10`, the composite buy/pawn item value, pawn sell formulas
   (`item_value + LFSR%20` identified, `LCG48%70` unidentified), the per-inventory-slot
-  identified bits at `0x80d0`, the equipped bits at `0x80d2`, the equipped-item
-  AC reversal on sale, the Archives exact-half donation threshold and gold
-  debit, and the 640-byte `.CHR` fields that are decoded.
+  identified bits at `0x80d0`, the equipped bits at `0x80d2`, equipped-item AC
+  and fight bonuses, their reversal on sale, the Archives exact-half donation
+  threshold and gold debit, and the 640-byte `.CHR` fields that are decoded.
 - **Best-effort:** the monster attack hit/miss test and special-attack branch,
   spell level gating/durations, armory buy modifiers, the hospital/inn stay-debit
   paths, and the meaning of the Archives-required `inventory[slot] + 4` word.
@@ -59,7 +59,7 @@ stay documentation until their supporting helpers are recovered.
   so the per-slot identified bits (`0x80d0`) are persisted at `.CHR` offset
   `0x89`, the equipped bits (`0x80d2`) at `0x8b`, and base AC (`0x80da`) at
   `0x93`.  Inventory records start at `0xa3`; each has a signed big-endian AC
-  modifier at `+0` and its item type at `+0x20`.
+  modifier at `+0`, fight bonus at `+2`, and item type at `+0x20`.
 
 ## Building and running
 
@@ -69,7 +69,7 @@ dotnet run --project Nemesis/Nemesis.csproj -- docs/nemesis/game-files/ARAGORN.C
 dotnet run --project Nemesis/Nemesis.csproj -- --verify
 ```
 
-`--verify` runs 29 self-checks covering the tables, both RNGs, exact
+`--verify` runs 30 self-checks covering the tables, both RNGs, exact
 melee/monster-creation/payout/hospital-rate/pawn arithmetic, `.CHR` round-trip
 and real `LEVEL.0` map loading.
 

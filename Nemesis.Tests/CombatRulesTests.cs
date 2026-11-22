@@ -17,6 +17,17 @@ public sealed class CombatRulesTests
     }
 
     [Fact]
+    public void FightStrength_Adds_Only_Equipped_Record_Plus_Two_Bonuses()
+    {
+        var stats = new Attributes { Strength = 12, Dexterity = 15 };
+        bool[] equipped = [true, false, true];
+        int[] modifiers = [3, 7, -1];
+
+        // DUNGEON.COM 0x7db7 base 2, then 0x7df0-0x7e0a adds +3 and -1.
+        Assert.Equal(4, CombatRules.FightStrength(stats, equipped, modifiers));
+    }
+
+    [Fact]
     public void DamageRoll_Uses_Exact_Lcg_Vectors()
     {
         // Lcg48Random boot state 1 yields 8037, 17375, ... (verified vectors).

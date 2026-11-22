@@ -46,6 +46,10 @@ internal static class Verify
         var combatRng = new Lcg48Random();
         Check("melee f = (STR+DEX)/10",
             CombatRules.FightStrength(new Attributes { Strength = 12, Dexterity = 15 }) == 2);
+        Check("equipped record +2 bonuses are added to f",
+            CombatRules.FightStrength(
+                new Attributes { Strength = 12, Dexterity = 15 },
+                [true, false, true], [3, 7, -1]) == 4);
         Check("damage roll uses exact LCG vectors",
             CombatRules.DamageRoll(2, 8, combatRng) == 8037 % 6 &&
             CombatRules.DamageRoll(2, 8, combatRng) == 17375 % 6);
@@ -93,9 +97,11 @@ internal static class Verify
         equippedChar.ItemIdentified[0] = true;
         equippedChar.ItemEquipped[0] = true;
         equippedChar.ItemAcModifier[0] = -2;
+        equippedChar.ItemFModifier[0] = 3;
         equippedCastle.Sell("AXE");
         Check("selling equipped item reverses its AC modifier and clears the bit",
-            equippedChar.ArmorClass == 10 && !equippedChar.ItemEquipped[0]);
+            equippedChar.ArmorClass == 10 && !equippedChar.ItemEquipped[0] &&
+            equippedChar.ItemAcModifier[0] == 0 && equippedChar.ItemFModifier[0] == 0);
 
         var archiveCastle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
         var archiveChar = new Character { Gold = 1000 };
@@ -129,6 +135,7 @@ internal static class Verify
             c.ItemEquipped[9] = true;
             c.ArmorClass = 8;
             c.ItemAcModifier[0] = -2;
+            c.ItemFModifier[0] = 3;
             c.ItemTypes[0] = 42;
             byte[] modified = CharacterFile.Write(c);
             Check("identified/equipped bits, AC and item types persist at confirmed .CHR offsets",
@@ -136,6 +143,7 @@ internal static class Verify
                 modified[0x8b] == 0x01 && modified[0x8c] == 0x02 &&
                 modified[0x93] == 0x08 && modified[0x94] == 0x00 &&
                 modified[0xa3] == 0xff && modified[0xa4] == 0xfe &&
+                modified[0xa3 + 0x02] == 0x00 && modified[0xa3 + 0x03] == 0x03 &&
                 modified[0xa3 + 0x20] == 42);
         }
         else Check("sample .CHR exists", false, sample);

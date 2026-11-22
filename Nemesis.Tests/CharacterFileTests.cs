@@ -60,6 +60,7 @@ public sealed class CharacterFileTests
         c.ItemEquipped[9] = true;
         c.ArmorClass = 8;
         c.ItemAcModifier[0] = -2;     // signed BE16 at record +0
+        c.ItemFModifier[0] = 3;       // signed BE16 at record +2
         c.ItemTypes[0] = 42;
 
         byte[] bytes = CharacterFile.Write(c);
@@ -71,6 +72,8 @@ public sealed class CharacterFileTests
         Assert.Equal(0x00, bytes[0x94]);
         Assert.Equal(0xff, bytes[0xa3]);
         Assert.Equal(0xfe, bytes[0xa4]);
+        Assert.Equal(0x00, bytes[0xa5]);
+        Assert.Equal(0x03, bytes[0xa6]);
         Assert.Equal((byte)42, bytes[0xa3 + 0x20]);
 
         var roundTrip = CharacterFile.Read(bytes);
@@ -82,6 +85,7 @@ public sealed class CharacterFileTests
         Assert.False(roundTrip.ItemEquipped[1]);
         Assert.Equal(8, roundTrip.ArmorClass);
         Assert.Equal(-2, roundTrip.ItemAcModifier[0]);
+        Assert.Equal(3, roundTrip.ItemFModifier[0]);
         Assert.Equal((byte)42, roundTrip.ItemTypes[0]);
     }
 
