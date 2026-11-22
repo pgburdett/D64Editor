@@ -1,3 +1,4 @@
+using Nemesis.Data;
 using Nemesis.Models;
 using System.Text;
 
@@ -6,13 +7,31 @@ namespace Nemesis.IO;
 /// <summary>
 /// Reads/writes the original Nemesis 640-byte character (.CHR) files.
 ///
-/// The layout was inferred from PERSON.COM / DUNGEON.COM disassembly and by
-/// comparing generated character files.  Some regions (notably the level maps
-/// and inventory) are still treated as opaque bytes so that files round-trip
-/// byte-exactly; structured views are layered on top where confidence is high.
+/// Confirmed from the ARAGORN.CHR sample and the recovered C source:
+///   0x12   name (ASCIIZ, lowercase in the sample)
+///   0x27   race/type name (ASCIIZ, e.g. "Hobbit")
+///   0x31   class name (ASCIIZ, e.g. "Peasant")
+///   0x3b   gold as a 10-char zero-filled decimal string
+///   0x46   experience as a 10-char zero-filled decimal string
+///   0x50   six big-endian 16-bit stats in STR,INT,WIS,CHA,CON,DEX order
+///   0x5c   level (BE16)
+///   0x5e   age (BE16)
+///   0x64   current hit points (BE16)
+///   0x66   maximum hit points (BE16)
+///
+/// All other regions are kept verbatim in RawData so that the file always
+/// round-trips byte-exactly, even where the original layout is still opaque.
 /// </summary>
 public static class CharacterFile
 {
+    private const int NameOffset = 0x12;
+    private const int TypeOffset = 0x27;
+    private const int ClassOffset = 0x31;
+    private const int GoldOffset = 0x3b;
+    private const int ExpOffset = 0x46;
+    private const int StatOffset = 0x50;
+    private const int NumericWidth = 10;
+
     public static Character Read(string path) => Read(File.ReadAllBytes(path));
 
     public static Character Read(byte[] data)
@@ -22,55 +41,26 @@ public static class CharacterFile
 
         var c = new Character { RawData = (byte[])data.Clone() };
 
-        // Offsets inferred from PERSON.COM:
-        // 0x00-0x2f: filename strings / scratch buffer
-        // 0x37-0x3f: class/race/class-name strings (ASCIIZ)
-        // 0x40-0x4f: formatted numeric strings (level, HP, etc.)
-        // 0x50-0x5f: 16-bit big-endian attributes + level/gold/exp
-        // 0x60-0x9f: binary game state (flags, equipment, dungeon position)
-        // 0xa0-0x13f: message buffer / CP/M install script remnants
-        // 0x140+: banner screen data (not character-specific)
+        c.Name = ReadAsciiZ(data, NameOffset, 12).Trim();
+        c.Type = ParseType(ReadAsciiZ(data, TypeOffset, 10));
+        c.Class = ParseClass(ReadAsciiZ(data, ClassOffset, 8));
+        c.DungeonName = c.Name;
 
-        // Layout confirmed from ARAGORN.CHR hex dump:
-        // 0x12 = character name (ASCIIZ, e.g. "aragorn")
-        // 0x27 = race/type (e.g. "Hobbit")
-        // 0x31 = class (e.g. "Peasant")
-        // 0x2e = alignment/flag byte
-        c.Name = ReadAsciiZ(data, 0x12, 8).Trim();
-        var typeStr = ReadAsciiZ(data, 0x27, 10).Trim();
-        var classStr = ReadAsciiZ(data, 0x31, 8).Trim();
-        c.Class = ParseClass(classStr);
-        c.Type = ParseType(typeStr);
+        c.Gold = ParsePaddedInt(data, GoldOffset);
+        c.Experience = ParsePaddedInt(data, ExpOffset);
 
-        c.Alignment = data[0x2e] switch
-        {
-            (byte)'L' => Alignment.Lawful,
-            (byte)'C' => Alignment.Chaotic,
-            _ => Alignment.Neutral
-        };
-
-        // 16-bit big-endian attribute block at 0x50
-        c.BaseAttributes.Strength = ReadBE16(data, 0x50);
-        c.BaseAttributes.Intelligence = ReadBE16(data, 0x52);
-        c.BaseAttributes.Wisdom = ReadBE16(data, 0x54);
-        c.BaseAttributes.Dexterity = ReadBE16(data, 0x56);
-        c.BaseAttributes.Constitution = ReadBE16(data, 0x58);
-        c.BaseAttributes.Charisma = ReadBE16(data, 0x5a);
+        for (int i = 0; i < 6; i++) c.BaseAttributes[i] = ReadBE16(data, StatOffset + i * 2);
+        c.CurrentAttributes = c.BaseAttributes.Clone();
 
         c.Level = ReadBE16(data, 0x5c);
-        c.Experience = ReadBE16(data, 0x5e);
-        c.Gold = ReadBE16(data, 0x60);
-        c.MaxHitPoints = ReadBE16(data, 0x62);
+        c.Age = ReadBE16(data, 0x5e);
         c.HitPoints = ReadBE16(data, 0x64);
-        c.ArmorClass = data[0x66];
+        c.MaxHitPoints = ReadBE16(data, 0x66);
 
-        // Copy the opaque state regions
-        Array.Copy(data, 0x68, c.Inventory, 0, Math.Min(128, data.Length - 0x68));
-        for (int i = 0; i < 11; i++)
-            Array.Copy(data, 0x100 + i * 32, c.LevelMaps[i], 0, 32);
-
-        // Current attributes start as copies of base (modified by curses/equipment)
-        for (int i = 0; i < 6; i++) c.CurrentAttributes[i] = c.BaseAttributes[i];
+        // Magic/cleric spell pools: 0xffff means unlimited.  Store the raw
+        // 16-bit value so stale bytes in sample files still round-trip.
+        c.MagicUnits = ReadBE16(data, 0x70);
+        c.ClericUnits = ReadBE16(data, 0x72);
 
         return c;
     }
@@ -81,27 +71,19 @@ public static class CharacterFile
             ? (byte[])c.RawData.Clone()
             : new byte[Character.FileSize];
 
-        WriteAsciiZ(data, 0x12, c.Name.ToUpperInvariant(), 8);
-        WriteAsciiZ(data, 0x31, c.Class.ToString().ToUpperInvariant(), 8);
-        WriteAsciiZ(data, 0x27, c.Type.ToString().ToUpperInvariant(), 10);
-        data[0x2e] = (byte)c.Alignment;
+        WriteAsciiZ(data, NameOffset, c.Name, 12);
+        WriteAsciiZ(data, TypeOffset, GameTables.Races[(int)c.Type].Name, 10);
+        WriteAsciiZ(data, ClassOffset, GameTables.Classes[(int)c.Class].Name, 8);
+        WritePaddedInt(data, GoldOffset, c.Gold);
+        WritePaddedInt(data, ExpOffset, c.Experience);
 
-        WriteBE16(data, 0x50, c.BaseAttributes.Strength);
-        WriteBE16(data, 0x52, c.BaseAttributes.Intelligence);
-        WriteBE16(data, 0x54, c.BaseAttributes.Wisdom);
-        WriteBE16(data, 0x56, c.BaseAttributes.Dexterity);
-        WriteBE16(data, 0x58, c.BaseAttributes.Constitution);
-        WriteBE16(data, 0x5a, c.BaseAttributes.Charisma);
+        for (int i = 0; i < 6; i++) WriteBE16(data, StatOffset + i * 2, c.BaseAttributes[i]);
         WriteBE16(data, 0x5c, c.Level);
-        WriteBE16(data, 0x5e, c.Experience);
-        WriteBE16(data, 0x60, c.Gold);
-        WriteBE16(data, 0x62, c.MaxHitPoints);
+        WriteBE16(data, 0x5e, c.Age);
         WriteBE16(data, 0x64, c.HitPoints);
-        data[0x66] = (byte)c.ArmorClass;
-
-        Array.Copy(c.Inventory, 0, data, 0x68, Math.Min(128, c.Inventory.Length));
-        for (int i = 0; i < 11; i++)
-            Array.Copy(c.LevelMaps[i], 0, data, 0x100 + i * 32, 32);
+        WriteBE16(data, 0x66, c.MaxHitPoints);
+        WriteBE16(data, 0x70, c.MagicUnits);
+        WriteBE16(data, 0x72, c.ClericUnits);
 
         return data;
     }
@@ -109,9 +91,28 @@ public static class CharacterFile
     public static void Save(Character c, string path) => File.WriteAllBytes(path, Write(c));
 
     private static int ReadBE16(byte[] d, int o) => (d[o] << 8) | d[o + 1];
+
     private static void WriteBE16(byte[] d, int o, int v)
     {
-        d[o] = (byte)(v >> 8); d[o + 1] = (byte)v;
+        d[o] = (byte)(v >> 8);
+        d[o + 1] = (byte)v;
+    }
+
+    private static int ParsePaddedInt(byte[] d, int off)
+    {
+        int start = off, end = off + NumericWidth;
+        while (start < end && d[start] == '0') start++;
+        if (start == end) return 0;
+        var sb = new StringBuilder();
+        for (int i = start; i < end && d[i] >= '0' && d[i] <= '9'; i++) sb.Append((char)d[i]);
+        return sb.Length == 0 ? 0 : int.Parse(sb.ToString());
+    }
+
+    private static void WritePaddedInt(byte[] d, int off, int value)
+    {
+        string s = Math.Clamp(value, 0, 99_999_999).ToString();
+        s = s.PadLeft(NumericWidth, '0');
+        for (int i = 0; i < NumericWidth; i++) d[off + i] = (byte)s[i];
     }
 
     private static string ReadAsciiZ(byte[] d, int off, int max)
@@ -124,33 +125,26 @@ public static class CharacterFile
 
     private static void WriteAsciiZ(byte[] d, int off, string s, int max)
     {
-        for (int i = 0; i < max; i++) d[off + i] = 0;
-        for (int i = 0; i < Math.Min(s.Length, max - 1); i++) d[off + i] = (byte)s[i];
+        // Only write the string and its terminator.  Zeroing the whole field
+        // would destroy the stale bytes that follow the NUL in original files.
+        int len = Math.Min(s.Length, max - 1);
+        for (int i = 0; i < len; i++) d[off + i] = (byte)s[i];
+        d[off + len] = 0;
     }
 
-    private static CharacterClass ParseClass(string s) => s.ToUpperInvariant() switch
+    private static CharacterClass ParseClass(string s)
     {
-        "CLERIC" => CharacterClass.Cleric, "FIGHTER" => CharacterClass.Fighter,
-        "MAGE" => CharacterClass.Mage, "THIEF" => CharacterClass.Thief,
-        "PALADIN" => CharacterClass.Paladin, "RANGER" => CharacterClass.Ranger,
-        "DRUID" => CharacterClass.Druid, "MONK" => CharacterClass.Monk,
-        "BARD" => CharacterClass.Bard, "BARBARIAN" => CharacterClass.Barbarian,
-        "ASSASSIN" => CharacterClass.Assassin, "NECROMANCER" => CharacterClass.Necromancer,
-        "WIZARD" => CharacterClass.Wizard, "WARLOCK" => CharacterClass.Warlock,
-        _ => CharacterClass.Peasant
-    };
+        for (int i = 0; i < GameTables.Classes.Length; i++)
+            if (string.Equals(GameTables.Classes[i].Name, s, StringComparison.OrdinalIgnoreCase))
+                return (CharacterClass)i;
+        return CharacterClass.Peasant;
+    }
 
-    private static CharacterType ParseType(string s) => s.ToUpperInvariant() switch
+    private static CharacterType ParseType(string s)
     {
-        "HOBBIT" => CharacterType.Hobbit, "ELF" => CharacterType.Elf,
-        "DWARF" => CharacterType.Dwarf, "HALFELF" => CharacterType.HalfElf,
-        "HALFORC" => CharacterType.HalfOrc, "GNOLL" => CharacterType.Gnoll,
-        "GOBLIN" => CharacterType.Goblin, "HOBGOBLIN" => CharacterType.Hobgoblin,
-        "ORC" => CharacterType.Orc, "URUK-HAI" => CharacterType.UrukHai,
-        "HALFDWARF" => CharacterType.HalfDwarf, "GREY ELF" => CharacterType.GreyElf,
-        "FEATHEROR" => CharacterType.Featheror, "DEMONDIM" => CharacterType.Demondim,
-        "MINSTREL" => CharacterType.Minstrel, "VALKYRIE" => CharacterType.Valkyrie,
-        "HIREBRAND" => CharacterType.Hirebrand,
-        _ => CharacterType.Human
-    };
+        for (int i = 0; i < GameTables.Races.Length; i++)
+            if (string.Equals(GameTables.Races[i].Name, s, StringComparison.OrdinalIgnoreCase))
+                return (CharacterType)i;
+        return CharacterType.Human;
+    }
 }

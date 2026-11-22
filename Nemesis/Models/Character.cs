@@ -1,47 +1,59 @@
 namespace Nemesis.Models;
 
-/// <summary>
-/// Character alignment (Lawful, Neutral, Chaotic).
-/// </summary>
-public enum Alignment : byte { Lawful = (byte)'L', Neutral = (byte)'N', Chaotic = (byte)'C' }
+/// <summary>Alignment (L/N/C = 1/2/4 bit flags in the original).</summary>
+public enum Alignment : byte
+{
+    Lawful = 0x01,
+    Neutral = 0x02,
+    Chaotic = 0x04
+}
+
+/// <summary>Sex flags (M/F = 0x08/0x10 in the original).</summary>
+public enum Sex : byte
+{
+    Male = 0x08,
+    Female = 0x10
+}
 
 /// <summary>
-/// The 15 character classes in Nemesis.
+/// The 15 class names from PERSON.COM, in the original numeric order.
+/// These replace the approximate D&amp;D names used by the first scaffold.
 /// </summary>
 public enum CharacterClass : byte
 {
-    Cleric = 0, Fighter, Mage, Thief, Paladin, Ranger, Druid,
-    Monk, Bard, Barbarian, Assassin, Necromancer, Wizard, Warlock, Peasant
+    Cleric = 0, Demondim, Featheror, Hirebrand, Mage,
+    Minstrel, Ninja, Paladin, Peasant, Ranger,
+    Raver, Rogue, Sage, Samurai, Valkyrie
 }
 
 /// <summary>
-/// Character race/type options.
+/// The 15 race/type names from PERSON.COM, in the original numeric order.
 /// </summary>
 public enum CharacterType : byte
 {
-    Human = 0, Hobbit, Elf, Dwarf, HalfElf, HalfOrc, Gnoll,
-    Goblin, Hobgoblin, Orc, UrukHai, HalfDwarf, GreyElf, Featheror,
-    Demondim, Minstrel, Valkyrie, Hirebrand
+    Human = 0, Elf, Dwarf, Halfdwarf, Halfelf, Hobbit, Orc, UrukHai,
+    Orge, Pixie, Goblin, Hobgoblin, Kobold, UrVile, GreyElf
 }
 
 /// <summary>
-/// The six primary D&amp;D-style attributes.
+/// The six primary attributes in the original's exact order:
+/// STR, INT, WIS, CHA, CON, DEX.
 /// </summary>
 public sealed class Attributes
 {
-    public int Strength { get; set; }
-    public int Intelligence { get; set; }
-    public int Wisdom { get; set; }
-    public int Dexterity { get; set; }
-    public int Constitution { get; set; }
-    public int Charisma { get; set; }
+    public int Strength;
+    public int Intelligence;
+    public int Wisdom;
+    public int Charisma;
+    public int Constitution;
+    public int Dexterity;
 
     public int this[int index]
     {
         get => index switch
         {
             0 => Strength, 1 => Intelligence, 2 => Wisdom,
-            3 => Dexterity, 4 => Constitution, 5 => Charisma,
+            3 => Charisma, 4 => Constitution, 5 => Dexterity,
             _ => throw new ArgumentOutOfRangeException(nameof(index))
         };
         set
@@ -51,52 +63,84 @@ public sealed class Attributes
                 case 0: Strength = value; break;
                 case 1: Intelligence = value; break;
                 case 2: Wisdom = value; break;
-                case 3: Dexterity = value; break;
+                case 3: Charisma = value; break;
                 case 4: Constitution = value; break;
-                case 5: Charisma = value; break;
+                case 5: Dexterity = value; break;
                 default: throw new ArgumentOutOfRangeException(nameof(index));
             }
         }
     }
+
+    public int Total => Strength + Intelligence + Wisdom + Charisma + Constitution + Dexterity;
+    public Attributes Clone() => new()
+    {
+        Strength = Strength, Intelligence = Intelligence, Wisdom = Wisdom,
+        Charisma = Charisma, Constitution = Constitution, Dexterity = Dexterity
+    };
 }
 
 /// <summary>
-/// A Nemesis character.  Size matches the original 640-byte .CHR file.
-/// Field offsets are inferred from the decompiled PERSON.COM and DUNGEON.COM;
-/// some are still best-effort pending full analysis.
+/// A Nemesis character.  All fields that map to the original PERSON struct
+/// are exposed; the original 640-byte file is retained in RawData so that
+/// undecoded regions round-trip exactly.
 /// </summary>
 public sealed class Character
 {
     public const int FileSize = 640;
+    public const int MaxItems = 10;
+    public const int CarryOver = 6;
 
-    /// <summary>Original raw bytes, retained so un-decoded fields round-trip exactly.</summary>
+    /// <summary>Original raw bytes, retained so undecoded fields round-trip.</summary>
     public byte[]? RawData { get; set; }
 
-    /// <summary>Character name (8 chars, CP/M 8.3-style).</summary>
     public string Name { get; set; } = "";
-
+    public string DungeonName { get; set; } = "";
     public Alignment Alignment { get; set; } = Alignment.Neutral;
-    public CharacterClass Class { get; set; } = CharacterClass.Fighter;
-    public CharacterType Type { get; set; } = CharacterType.Hobbit;
+    public Sex Sex { get; set; } = Sex.Male;
+
+    public CharacterClass Class { get; set; } = CharacterClass.Peasant;
+    public CharacterType Type { get; set; } = CharacterType.Human;
+    public string ClassName => Data.GameTables.Classes[(int)Class].Name;
+    public string TypeName => Data.GameTables.Races[(int)Type].Name;
 
     public Attributes BaseAttributes { get; } = new();
-    public Attributes CurrentAttributes { get; } = new();
+    public Attributes CurrentAttributes { get; set; } = new();
 
-    public int Level { get; set; } = 1;
+    public int Level { get; set; }
+    public int DungeonLevel { get; set; } = -1;
+    public int X { get; set; } = -1;
+    public int Y { get; set; } = -1;
+    public int HiPage { get; set; } = -1;
+
+    public int Age { get; set; } = 16;
+    public int XpMultiplier { get; set; } = 200;
+    public int AgeFactor { get; set; } = 10;
+    public int ItemMask1 { get; set; }
+    public int ItemMask2 { get; set; }
+
     public int Experience { get; set; }
     public int Gold { get; set; }
-    public int HitPoints { get; set; }
-    public int MaxHitPoints { get; set; }
+    public int HitPoints { get; set; } = 1;
+    public int MaxHitPoints { get; set; } = 1;
     public int ArmorClass { get; set; } = 10;
+    public int MagicUnits { get; set; }
+    public int ClericUnits { get; set; }
 
-    /// <summary>Explored/known map data for each dungeon level (0..10).</summary>
-    public byte[][] LevelMaps { get; } = new byte[11][];
+    /// <summary>Item type per inventory slot; 255 = empty.</summary>
+    public byte[] ItemTypes { get; set; } = Enumerable.Repeat((byte)255, MaxItems).ToArray();
 
-    /// <summary>Inventory / carried items — raw slot data pending full decode.</summary>
-    public byte[] Inventory { get; set; } = new byte[128];
+    /// <summary>Opaque per-item data (kept raw until the item loader is decoded).</summary>
+    public byte[] Inventory { get; set; } = new byte[MaxItems * 16];
+
+    public int[] CarryOverTimes { get; set; } = new int[CarryOver];
+
+    /// <summary>Explored/known map data for each dungeon level.</summary>
+    public byte[][] LevelMaps { get; } = Enumerable.Range(0, 11).Select(_ => new byte[256]).ToArray();
+
+    public bool IsAlive => HitPoints > 0;
 
     public Character()
     {
-        for (int i = 0; i < LevelMaps.Length; i++) LevelMaps[i] = new byte[256];
+        for (int i = 0; i < 6; i++) CurrentAttributes[i] = BaseAttributes[i];
     }
 }

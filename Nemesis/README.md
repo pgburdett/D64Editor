@@ -1,67 +1,94 @@
 # Nemesis C# port
 
-A work-in-progress high-level-language port of the 1981 CP/M dungeon crawler
-**Nemesis** by Michael Q. Hiller and Michael A. Pagels.
+A high-level-language port of the 1981 CP/M dungeon crawler **Nemesis** by
+Michael Q. Hiller and Michael A. Pagels.  The port targets .NET 10 and keeps a
+console UI because the original is a text-mode CP/M program.
 
 ## Status
 
-This is a **scaffold**, not a playable game yet.  The original Z80 code is
-~76 KB across four overlaid `.COM` files; a faithful port requires reconstructing
-the game logic from the decompiled output in `docs/nemesis/`.
+Playable.  All four original overlays have a C# counterpart:
 
-### What works
-- Builds cleanly (`dotnet build Nemesis/Nemesis.csproj`)
-- Console front-end with launcher/castle/dungeon screen state machine
-- Character file I/O: reads the original 640-byte `.CHR` format
-  (name, class, race, alignment, and six attributes decode correctly)
-- New character creation with 4d6-drop-lowest stat rolls
-- Save/load round-trips raw bytes for un-decoded fields
+| Original | Port | Coverage |
+|----------|------|----------|
+| `PERSON.COM` | `Engine/CharacterGenerator.cs` | Exact recovered formulas: type modifiers, class requirements/alignment, sex, gold, `init_char()` spell pools/age/HP |
+| `CASTLE.COM` | `Engine/CastleEngine.cs` | A–G menu, armory buy/sell, hospital, inn, archives, character sheet |
+| `DUNGEON.COM` | `Engine/DungeonEngine.cs` | 26×22 map loading, movement/walls, stairs, pits/shafts/flame/teleport, encounters, combat, spells, items |
+| `NEMESIS.COM` | `Engine/GameEngine.cs` + `Program.cs` | Launcher and screen dispatch |
 
-### What's not done
-- Dungeon map generation and exploration (R/L/U/D movement is placeholder only)
-- Combat, spells, monsters, items, traps
-- Castle menu (armory, hospital, inn, archives)
-- Terminal/ANSI rendering to match the ADM-31 screen output
-- Exact field decoding for all 640 character-file bytes
+Recovered data (all 15 races, 15 classes, 94 items, 75 monster records, 27
+spells) lives in `Data/`.  The exact 32-bit LFSR from `DUNGEON.COM` is in
+`Engine/LfsrRandom.cs` — using `System.Random` would diverge from the original
+immediately.
 
-## Building
+### Fidelity notes
+
+- **Confirmed:** control flow, stat order (`STR INT WIS CHA CON DEX`), type/class
+  tables, gold/HP/age formulas, spell-user class sets, 3-byte map cell layout
+  (26×22), wall-bit movement, RNG algorithm, and the 640-byte `.CHR` fields that
+  are decoded.
+- **Best-effort:** combat arithmetic, spell costs/durations, shop price formulas,
+  and hospital/inn rates.  The original helper routines for these were not
+  fully recovered; the current model is documented in `Engine/DungeonEngine.cs`
+  and `Engine/CastleEngine.cs`.
+- The original `valid()` ranger bug (testing the loop counter instead of the
+  class index) is intentionally preserved in `GameTables.IsValidClass`.
+- Undecoded `.CHR` bytes are retained in `Character.RawData`, so save/load is
+  byte-exact for untouched files.
+
+## Building and running
 
 ```sh
 dotnet build Nemesis/Nemesis.csproj
 dotnet run --project Nemesis/Nemesis.csproj -- docs/nemesis/game-files/ARAGORN.CHR
+dotnet run --project Nemesis/Nemesis.csproj -- --verify
 ```
+
+`--verify` runs 20 self-checks covering the tables, RNG, `.CHR` round-trip and
+real `LEVEL.0` map loading.
+
+## Commands
+
+```
+new <name> [type] [align] [class] [seed]   create a character (types 0-14, L/N/C)
+load <file> / save <file>                  load/save .CHR
+char                                       character sheet
+castle / dungeon / back                   change screen
+menu / choice A-G                          castle menu
+buy <item> / sell <item> / heal <days> / rest / donate <gold>
+r l u d                                    move (also Ctrl-L/H/K/J)
++ / -                                      ascend / descend stairs
+p                                          replot
+f                                          fight
+m <spell> / c <spell> / u <item>            cast magic/cleric spell, use item
+inv / spells [m|c]                          inventory / spell list
+quit
+```
+
+Movement keys match the original manual: `R`/Ctrl-L right, `L`/Ctrl-H left,
+`U`/Ctrl-K up, `D`/Ctrl-J down.
 
 ## Architecture
 
 | Folder | Purpose |
 |--------|---------|
-| `Models/` | `Character`, `Attributes`, enums — mirrors the original data model |
-| `IO/` | `CharacterFile` — reads/writes original 640-byte `.CHR` files |
-| `Engine/` | `GameEngine` — high-level state machine (launcher/castle/dungeon) |
+| `Data/` | Recovered constant tables (races, classes, items, monsters, spells) |
+| `IO/` | `CharacterFile` and `LevelFile` readers/writers for original formats |
+| `Models/` | `Character`, `Attributes`, `DungeonMap`, item/monster/spell models |
+| `Engine/` | LFSR RNG, character generator, castle/dungeon engines, state machine |
 | `Program.cs` | Console UI |
+| `Verify.cs` | Self-checks (`--verify`) |
 
-## Porting approach
+## Reverse-engineering sources
 
-The original game is four CP/M overlays sharing a common runtime:
+The reconstruction work is committed under `docs/nemesis/`:
 
-| Overlay | Size | Role |
-|---------|------|------|
-| `NEMESIS.COM` | 9 KB | Launcher, character selection, overlay loading |
-| `PERSON.COM` | 14 KB | Character generation |
-| `CASTLE.COM` | 18 KB | Town menu, shops, hospital |
-| `DUNGEON.COM` | 32 KB | Exploration, combat, dungeon levels |
+- `RECONSTRUCTED-SOURCE.md` — recovered C source fragments and full item/monster tables
+- `CASTLE-CHARACTER.md` — character generation and castle logic
+- `DATA-FORMATS.md` — binary layouts of `LEVEL.*`, `.CHR`, and item files
+- `DUNGEON-LOGIC.md` — dungeon control flow, combat, spells and hazards
+- `decomp-*.c` / `disasm-*.txt` — Ghidra and linear disassembly of all four overlays
+- `game-files/` — the original CP/M data set used as verification fixtures
 
-Ghidra Z80 decompilation of all four is in `docs/nemesis/decomp-*.c` (the
-`.java` script that produces them is also there).  The linear `z80dis` sweeps
-are in `docs/nemesis/disasm-*.txt`.
-
-The port proceeds by:
-1. Identifying BDOS calls (file I/O, console I/O) and replacing them with
-   .NET `File`/`Console` equivalents.
-2. Mapping the shared runtime routines (string output, number formatting,
-   memory allocation) to C# helpers.
-3. Porting overlay-specific game logic function by function, using the
-   decompiled C as a guide and the running original game in VICE for behavior
-   verification.
-
-See `docs/nemesis/README.md` and `docs/nemesis/FIXES.md` for the full RE context.
+`docs/nemesis/README.md` and `docs/nemesis/FIXES.md` document the playable
+CP/M setup (FastBDOS, ADM-31 `TERM.DEF`, 1581/D81 game disk) used to verify
+behavior against the original game.
