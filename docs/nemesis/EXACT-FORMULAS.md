@@ -475,14 +475,21 @@ All ranges in this section are CASTLE.COM runtime addresses.
 
 ## 3.1 Armory item table basics
 
-Confirmed from disassembly around `0x0d90`, `0x1595`, and `0x1733`:
+Confirmed from disassembly around `0x0d90`, `0x1595`, `0x1733` and `0x2f8c`:
 
-- Item stride: `0x25` (37 bytes), base `0x80ea`.
-- Availability byte: `byte[0x80ea + 37*i + 0x20] == 0xff` means item is not sold/available.
+- Raw inventory/item records: stride `0x25` (37 bytes), base `0x80ea`.
+- Expanded runtime records: stride `0x27` (39 bytes), base `0x900f`.
+- `0x2f8c` copies an expanded record into a raw inventory slot; offsets `+0`,
+  `+2`, `+4`, `+6`, `+8`, `+10` and `+0x20` are preserved.
+- Availability byte: `byte[0x80ea + 37*i + 0x20] == 0xff` means an empty slot.
 - Shop selection checks `arg < 10` around `0x0da6` (armory stock band).
-- `0x1595(itemIndex)` reads `word[0x80ea + 37*i + 8]` into a local; this is the item's price/value word used by buy/sell paths.
+- Fields `+0`, `+2`, `+4` are the armor-class modifier, damage and base price
+  from `ITEMS.*`; `+6` and `+8` are spell-flag bitmasks.
+- `0x1595(index)` and `0x1733(itemIndex,out)` both compute a composite value
+  from those fields; `+8`/`+6` are **not** a plain price word.
 
-Confidence: **CONFIRMED** for stride/offsets; **HIGH** for interpreting `+8` as price.
+Confidence: **CONFIRMED** for strides, offsets and the composite-value
+arithmetic; **HIGH** for the field names (taken from the `ITEMS.*` records).
 
 ## 3.2 Armory buy price
 
@@ -491,18 +498,26 @@ Address range: armory buy path `0x0b4b`–`0x0d26` (string xrefs: `"Welcome to t
 Recovered control flow:
 
 ```c
-int price = word(item + 8);       // 0x80ea + 37*i + 8
+// 0x0bfb calls 0x1733(selectedItem, priceString).
+int price = 500 * abs(word(item + 0))      // armor-class modifier
+          + 100 * abs(word(item + 2))      // damage
+          +       word(item + 4);          // base price
+// When the dungeon spell tables are loaded, 0x1733 also adds 1000 for each
+// set bit in the +6/+8 spell masks; those counters are zero in CASTLE.COM.
+
 if (gold() < price) {
     print("Sorry you can not afford that item.");
     return;
 }
+// 0x0c52-0x0ca1 loops inventory slots 0..9, looking for +0x20 == 0xff.
+// 0x2f8c copies the purchased item into that slot, and 0x329a sets its
+// identified bit in 0x80d0.
 gold() -= price;
-add_item_to_inventory(i);
 ```
 
-A separate helper at `0x18ec` initializes a transaction record and compares a value against `word(0x9f73)` before committing; this looks like the buy-confirmation record rather than a different price formula.
-
-Confidence: **HIGH** that the price is the item-table word at `+8`; **UNCERTAIN** whether any class/level multiplier is applied before the affordability test. I did not fully decode every branch in `0x0b4b`–`0x0d26`, so do not port a multiplier assumption from this report.
+Confidence: **CONFIRMED** for the base formula and buy flow. The 1000-per-spell
+bonus is visible in the helper but its table/counter pairing is only relevant
+when the dungeon spell tables are present; it is not active in CASTLE.COM.
 
 ## 3.3 Armory / pawn sell price
 
@@ -518,8 +533,10 @@ Decoded core:
 // 0x80d0 is a bit array of identified/disclosed item-catalog entries.
 // 0x3310(ptr=0x80d0, bit=itemIndex) returns word(ptr + 2*(bit/16)) & (1 << (bit % 16)).
 if (known_bit(0x80d0, itemIndex)) {
-    // CASTLE.COM 0x0de8-0x0dfe
-    sell_value = word[0x80ea + 37*itemIndex + 8] + rand_lfsr() % 20;
+    // CASTLE.COM 0x0de8-0x0dfe calls 0x1595 for the base value, then:
+    base = item_value(index);       // see 0x1595 below
+    if (base == 0) base = lcg48_time_seeded() % 20;
+    sell_value = base + rand_lfsr() % 20;
 } else {
     // CASTLE.COM 0x0e01-0x0e10
     sell_value = lcg48_time_seeded() % 70;
@@ -528,23 +545,32 @@ printf("I'll give you %u gold pieces for that item", sell_value);
 // gold string at 0x8082 is updated by 0x38a7/0x33fe/0x343d afterwards.
 ```
 
+`0x1595(index)` computes the base value as:
+
+```c
+value = 1000 * popcount(spell masks at +6/+8)
+      + 100  * signed word(item + 2)        // damage; not abs(), unlike buy
+      + 500  * abs(word(item + 0))          // armor-class modifier
+      +        word(item + 4);              // base price
+```
+
 Helper evidence:
 
-- `0x1595(index)` reads the item price word `word[0x80ea + 37*index + 8]`.
 - `0x472c` is the same 15-bit LFSR as `DUNGEON.COM 0x6d72`; it uses the
   state words at `0x0597`/`0x0599` and returns a 15-bit value.
 - `0x4754` is the 48-bit LCG with multiplier `0xe09a0e0187c5` (the six bytes
   at `CASTLE.COM 0x480e`–`0x4813`).  Unlike the fixed boot state used by
   `DUNGEON.COM`, this instance is seeded from CP/M console status and the
-  clock, so its exact value is environment-specific; the algorithm and `% 70`
-  are still CONFIRMED.
+  clock, so its exact value is environment-specific; the algorithm and the
+  `% 20`/`% 70` remainders are still CONFIRMED.
 - `0x329a` sets the `0x80d0` bit when an item is bought (`0x0c90`); `0x3310`
   tests it for the pawn branch; `0x34ca` toggles it in the archives donation
   path (`0x14bd`).
 
 Confidence:
 
-- Identified formula `price + LFSR % 20`: **CONFIRMED**.
+- Identified formula `item_value() + LFSR % 20`: **CONFIRMED**.
+- Zero-value substitution `LCG48 % 20`: **CONFIRMED**.
 - Unidentified formula `LCG48 % 70`: **CONFIRMED**.
 - Bit-array address and set/test/toggle helpers: **CONFIRMED**.
 - Exact seed for the time-seeded LCG: **UNCERTAIN** by design; it depends on
@@ -624,7 +650,7 @@ Decoded fragments:
 
 - Donation is read as a decimal string via helper at `0x1b9c`.
 - Gold availability is checked and the error string printed when insufficient.
-- Helper `0x1595(index)` indexes `word[0x80ea + 37*i + 8]`, i.e. the same item price word used by the armory.
+- Helper `0x1595(index)` computes the same composite item value used by the armory and pawn shop (`500*|AC| + 100*damage + base price`, plus spell bonuses when those tables are loaded).
 - At `0x1465`–`0x1497`, a value is divided by `2` using signed divide `0x02cb` and compared against an item price before an inventory/availability update.
 
 Confidence: **UNCERTAIN** for the exact donation threshold. The `/2` is confirmed; the operand provenance and the comparison direction were not fully resolved.
@@ -641,10 +667,13 @@ These remain open and must not be guessed in a faithful port:
 4. **Spell effect vector map** — complete mapping from `0x7cad` vector words to spell IDs; only `vec[0] = 0x21c5` was decoded.
 5. **Spell level gate internals** — exact semantics of `0x5be8` against `0x80d6`/`0x80d8`.
 6. **Context mask values** — why combat passes `2` yet several healing spells have flags `1`; needs runtime or source-fragment confirmation.
-7. **Armory buy modifiers** — any class/level multiplier on `word[item+8]`.
-8. **Pawn time-seeded LCG seed** — the formula `LCG48 % 70` and the generator
-   are CONFIRMED, but its seed comes from CP/M console status and the clock, so
-   an exact value cannot be replayed outside the original environment.
+7. **Spell-flag bonus pairing** — the 1000-per-set-bit bonus in `0x1595`/`0x1733`
+   is visible, but which `+6`/`+8` mask pairs with which spell counter only
+   matters when the dungeon tables are loaded; it is inactive in CASTLE.COM.
+8. **Pawn time-seeded LCG seed** — the formulas `LCG48 % 70` and the zero-value
+   substitution `LCG48 % 20` are CONFIRMED, but the seed comes from CP/M
+   console status and the clock, so exact values cannot be replayed outside
+   the original environment.
 9. **Hospital stay/debit path** — exact HP restoration and gold debit after the stay prompt (`days` and `rate` are now CONFIRMED).
 10. **Inn debit** — whether `missing HP * 3` is days, gold, or both, and where the final gold subtraction occurs.
 11. **Archives donation threshold** — operand provenance for the confirmed `/2`.

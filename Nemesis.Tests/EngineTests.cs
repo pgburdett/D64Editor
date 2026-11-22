@@ -92,19 +92,19 @@ public sealed class EngineTests
 
         string buy = game.Buy("AXE");
         Assert.Contains("You buy AXE", buy);
-        Assert.Equal(990, game.Character.Gold);
+        // AXE value is 500*|AC 0| + 100*2 + 10 = 210.
+        Assert.Equal(790, game.Character.Gold);
         Assert.Contains((byte)ItemCatalog.All.First(i => i.Name == "AXE").Type, game.Character.ItemTypes);
 
         string sell = game.Sell("AXE");
         Assert.Contains("gold pieces", sell);
-        // Buying identifies the item, so the confirmed formula is
-        // price(10) + LFSR % 20, i.e. 10..29 gold.
+        // Buying identifies it, so the sale is 210 + LFSR % 20, i.e. 210..229.
         Assert.InRange(game.Character.Gold, 1000, 1019);
         Assert.DoesNotContain((byte)ItemCatalog.All.First(i => i.Name == "AXE").Type, game.Character.ItemTypes);
     }
 
     [Fact]
-    public void Castle_Sell_Identified_Item_Uses_Price_Plus_Lfsr_Remainder()
+    public void Castle_Sell_Identified_Item_Uses_Composite_Value_Plus_Lfsr_Remainder()
     {
         var castle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
         var c = new Character { Gold = 100 };
@@ -115,9 +115,9 @@ public sealed class EngineTests
 
         string msg = castle.Sell("AXE");
 
-        // LFSR from state 1 returns 2 then 4; price is 10.
-        Assert.Contains("12 gold pieces", msg);
-        Assert.Equal(112, c.Gold);
+        // LFSR from state 1 returns 2; AXE value is 500*0 + 100*2 + 10 = 210.
+        Assert.Contains("212 gold pieces", msg);
+        Assert.Equal(312, c.Gold);
     }
 
     [Fact]
@@ -141,13 +141,14 @@ public sealed class EngineTests
     public void Castle_Buy_Identifies_Item()
     {
         var castle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
-        var c = new Character { Gold = 100 };
+        var c = new Character { Gold = 1000 };
         castle.Bind(c);
         int index = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
 
         castle.Buy("AXE");
 
         Assert.True(c.ItemIdentified[index]);
+        Assert.Equal(790, c.Gold);
         Assert.Contains((byte)ItemCatalog.All[index].Type, c.ItemTypes);
     }
 

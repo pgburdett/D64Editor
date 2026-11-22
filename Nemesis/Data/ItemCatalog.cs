@@ -108,4 +108,17 @@ public static class ItemCatalog
 
     public static ItemDef? Find(string name) =>
         Array.Find(All, i => string.Equals(i.Name.Replace(" ", "_"), name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Composite item value decoded from CASTLE.COM 0x1595 and 0x1733:
+    /// 500 * abs(armor class) + 100 * damage + base price.  The buy path uses
+    /// the absolute damage value; the pawn path uses the signed value.  When
+    /// the dungeon spell tables are loaded the original also adds 1000 for
+    /// each set spell-flag bit, but those counters are zero in CASTLE.COM.
+    /// </summary>
+    public static int Value(ItemDef item, bool absoluteDamage = true)
+    {
+        int damage = absoluteDamage ? Math.Abs(item.Damage) : item.Damage;
+        return 500 * Math.Abs(item.AcModifier) + 100 * damage + item.Price;
+    }
 }

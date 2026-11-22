@@ -81,8 +81,8 @@ internal static class Verify
         pawnChar.ItemTypes[0] = (byte)ItemCatalog.All[axe].Type;
         pawnChar.ItemIdentified[axe] = false;
         string unidentifiedSale = pawnCastle.Sell("AXE");
-        Check("pawn identified price+rand%20, unidentified lcg48%70",
-            identifiedSale.Contains("12 gold pieces") &&
+        Check("pawn composite value+rand%20, unidentified lcg48%70",
+            identifiedSale.Contains("212 gold pieces") &&
             unidentifiedSale.Contains("57 gold pieces"));
 
         // Character file round-trip

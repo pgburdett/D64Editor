@@ -103,25 +103,39 @@ public sealed class CastleEngine
             string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
         if (index < 0) return $"Unknown item: {name}";
         var def = ItemCatalog.All[index];
-        if (def.Price <= 0) return "That item is not for sale.";
-        if (Character.Gold < def.Price) return "Sorry you can not afford that item.";
+        // CASTLE.COM 0x0bfb calls 0x1733 with the selected shop item; that
+        // routine returns 500*|AC| + 100*|damage| + price as a decimal string.
+        int price = ItemCatalog.Value(def, absoluteDamage: true);
+        if (price <= 0) return "That item is not for sale.";
+        if (Character.Gold < price) return "Sorry you can not afford that item.";
 
         int slot = Array.IndexOf(Character.ItemTypes, (byte)GameConstants.EmptyItem);
         if (slot < 0) return "You cannot carry any more items.";
 
-        Character.Gold -= def.Price;
+        Character.Gold -= price;
         Character.ItemTypes[slot] = (byte)def.Type;
         // CASTLE.COM 0x0c90 sets the 0x80d0 bit for a bought item, so it is
         // identified before any later pawn-shop visit.
         Character.ItemIdentified[index] = true;
-        Say($"You buy {def.Name} for {def.Price} gold pieces.");
-        return $"You buy {def.Name} for {def.Price} gold pieces.";
+        Say($"You buy {def.Name} for {price} gold pieces.");
+        return $"You buy {def.Name} for {price} gold pieces.";
+    }
+
+    /// <summary>
+    /// 0x1595 returns the composite item value, but substitutes the
+    /// time-seeded LCG remainder modulo 20 when that value is exactly zero.
+    /// </summary>
+    private int ItemValueOrFallback(ItemDef def)
+    {
+        int value = ItemCatalog.Value(def, absoluteDamage: false);
+        return value == 0 ? _pawnRng.Next() % 20 : value;
     }
 
     /// <summary>
     /// Sells an item using the confirmed pawn-shop formulas from CASTLE.COM
-    /// 0x0dd5-0x0e10: identified items fetch <c>price + LFSR % 20</c>, while
-    /// unidentified items fetch <c>LCG48 % 70</c>.
+    /// 0x0dd5-0x0e10: identified items fetch <c>item_value() + LFSR % 20</c>,
+    /// while unidentified items fetch <c>LCG48 % 70</c>.  <c>item_value()</c>
+    /// is the composite 500*|AC| + 100*damage + price routine at 0x1595.
     /// </summary>
     public string Sell(string name)
     {
@@ -134,8 +148,8 @@ public sealed class CastleEngine
         if (slot < 0) return $"You do not have {name}.";
 
         int price = Character.ItemIdentified[index]
-            ? def.Price + _rng.Next(20)   // 0x0de8-0x0dfe: 0x1595 + rand() % 20
-            : _pawnRng.Next() % 70;       // 0x0e01-0x0e10: LCG48() % 70
+            ? ItemValueOrFallback(def) + _rng.Next(20) // 0x0de8-0x0dfe
+            : _pawnRng.Next() % 70;                    // 0x0e01-0x0e10
 
         Character.ItemTypes[slot] = (byte)GameConstants.EmptyItem;
         Character.Gold += price;
