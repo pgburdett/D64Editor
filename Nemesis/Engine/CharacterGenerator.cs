@@ -29,7 +29,6 @@ public sealed class CharacterGenerator
             Name = name.ToUpperInvariant(),
             DungeonName = name.ToUpperInvariant(),
             Type = (CharacterType)typeIndex,
-            Sex = (_rng.Next(2) != 0) ? Sex.Male : Sex.Female,
         };
 
         // compute_stats(): stat = max(1, 3d6 + 2 * race_modifier)
@@ -43,6 +42,11 @@ public sealed class CharacterGenerator
             total += c.BaseAttributes[i];
         }
         c.CurrentAttributes = c.BaseAttributes.Clone();
+
+        // compute_stats() consumes RNG in this exact order: six stat rolls,
+        // then sex, then gold.  The previous scaffold drew sex first, which
+        // shifted every subsequent random value by one call.
+        c.Sex = (_rng.Next(2) != 0) ? Sex.Male : Sex.Female;
 
         // compute_stats(): gold = rand() % (200 - total_of_six_stats)
         c.Gold = _rng.Next(Math.Max(1, 200 - total));

@@ -1072,6 +1072,14 @@ embedded C fragment.  Only three direct `CALL 0x353e` sites exist in
 calls a separate `roll()` helper whose body was overlaid/discarded.  A 3d6
 roll is the working assumption in the port; it has not been proven from code.
 
+**Empirical check (2026-11-21):** an exhaustive search of all 2^32 possible
+LFSR seeds found *no* seed for which 3d6 rolls plus the confirmed Hobbit
+modifiers `(-1,-1,0,+1,+1,+1)` reproduce the six stats in `ARAGORN.CHR`
+(`12,10,11,12,8,15`).  Under 3d6 roughly 30 matches would be expected, so the
+3d6 assumption is probably wrong (or that shipped character was edited/
+generated under different rules).  The port keeps 3d6 as a documented
+best-effort placeholder rather than claiming fidelity.
+
 | Call | Site | Purpose |
 |---|---|---|
 | `init_rand()` | `main()` before character creation | seed RNG (0x36da) |
