@@ -11,8 +11,15 @@ namespace Nemesis.Engine;
 public sealed class CharacterGenerator
 {
     private readonly LfsrRandom _rng;
+    private readonly Lcg48Random _statRng;
 
-    public CharacterGenerator(LfsrRandom rng) => _rng = rng;
+    public CharacterGenerator(LfsrRandom rng, Lcg48Random? statRng = null)
+    {
+        _rng = rng;
+        // PERSON.COM uses the 48-bit LCG for roll() and the LFSR for the
+        // subsequent sex/gold/HP draws.  Both boot with state 1/0xffff59dc.
+        _statRng = statRng ?? new Lcg48Random();
+    }
 
     /// <summary>
     /// Creates a character.  When <paramref name="classIndex"/> is null, the
@@ -31,13 +38,14 @@ public sealed class CharacterGenerator
             Type = (CharacterType)typeIndex,
         };
 
-        // compute_stats(): stat = max(1, 3d6 + 2 * race_modifier)
+        // compute_stats(): stat = max(1, roll() + 2 * race_modifier),
+        // where roll() is the confirmed 4d5 helper at PERSON.COM 0x1a71.
         var race = GameTables.Races[typeIndex];
         int[] mods = [race.Str, race.Int, race.Wis, race.Cha, race.Con, race.Dex];
         int total = 0;
         for (int i = 0; i < 6; i++)
         {
-            int v = _rng.RollStats() + 2 * mods[i];
+            int v = _statRng.RollStats() + 2 * mods[i];
             c.BaseAttributes[i] = v <= 0 ? 1 : v;
             total += c.BaseAttributes[i];
         }

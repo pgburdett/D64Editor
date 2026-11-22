@@ -34,6 +34,19 @@ public sealed class Lcg48RandomTests
     }
 
     [Fact]
+    public void RollStats_Is_Confirmed_4d5()
+    {
+        var rng = new Lcg48Random();
+        int[] firstRolls = [9, 15, 8, 8, 12, 11];
+
+        for (int i = 0; i < firstRolls.Length; i++)
+            Assert.Equal(firstRolls[i], rng.RollStats());
+
+        for (int i = 0; i < 100; i++)
+            Assert.InRange(rng.RollStats(), 4, 20);
+    }
+
+    [Fact]
     public void Output_Is_Always_15Bit()
     {
         var rng = new Lcg48Random(0x1234_5678_9abcUL);

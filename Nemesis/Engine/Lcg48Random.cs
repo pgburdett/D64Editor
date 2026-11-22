@@ -41,4 +41,17 @@ public sealed class Lcg48Random
         _state = unchecked(0UL - product) & Mask;
         return (int)((_state >> 32) & 0x7fff);
     }
+
+    /// <summary>
+    /// The original <c>roll()</c> used by PERSON.COM's <c>compute_stats()</c>:
+    /// four independent 1..5 dice, sum 4..20.  Recovered from the loop at
+    /// PERSON.COM 0x1a71-0x1ad1 (initial counter 4, four LCG calls, each
+    /// contributing <c>rand() % 5 + 1</c>).
+    /// </summary>
+    public int RollStats()
+    {
+        int total = 0;
+        for (int i = 0; i < 4; i++) total += Next() % 5 + 1;
+        return total;
+    }
 }

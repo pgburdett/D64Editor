@@ -6,14 +6,14 @@
   - `D64Editor.Core/` — disk/image engine and format logic (library, `net10.0`, `LangVersion 12`, nullable enabled).
   - `D64Editor.App/` — Avalonia desktop UI (Exe, `net10.0`, `LangVersion 12`, nullable enabled, `Avalonia 11.3.4`). Entry point: `D64Editor.App/Program.cs`.
   - `Nemesis/` — console port of the 1981 CP/M game Nemesis (Exe, `net10.0`). Reverse-engineering work is in `docs/nemesis/`.
-  - `Nemesis.Tests/` — xUnit tests for the Nemesis port (43 tests).
+  - `Nemesis.Tests/` — xUnit tests for the Nemesis port (48 tests).
 - `D64Editor.App` references `D64Editor.Core`. Keep format/disk behavior changes in `Core` and UI changes in `App` unless there is a clear reason. `Nemesis` is standalone; `Nemesis.Tests` references it.
 
 ## Commands
 - Restore: `dotnet restore`
 - Build: `dotnet build` (or `dotnet build --no-restore` after restore)
 - Run UI: `dotnet run --project D64Editor.App`
-- Test: `dotnet test` / `dotnet test --no-build --verbosity normal` (43 xUnit tests in `Nemesis.Tests/`)
+- Test: `dotnet test` / `dotnet test --no-build --verbosity normal` (48 xUnit tests in `Nemesis.Tests/`)
 - Nemesis port self-check: `dotnet run --project Nemesis/Nemesis.csproj -- --verify` (20 checks)
 
 ## CI / environment notes
@@ -171,9 +171,9 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `Nemesis/` is a standalone .NET 10 console port of all four CP/M overlays (`PERSON`, `CASTLE`, `DUNGEON`, `NEMESIS`). It is not part of the D64Editor disk engine; it exists to preserve and exercise the reverse-engineering work.
 - Reference material lives in `docs/nemesis/`: five analysis reports (`RECONSTRUCTED-SOURCE.md`, `CASTLE-CHARACTER.md`, `DATA-FORMATS.md`, `DUNGEON-LOGIC.md`, `EXACT-FORMULAS.md`), Ghidra/decompiled C, disassemblies, and original game files in `docs/nemesis/game-files/` (used as test fixtures). `EXACT-FORMULAS.md` rates hand-decoded combat/spell/shop findings CONFIRMED/HIGH/UNCERTAIN; only recovered spell unit costs are applied in the port so far.
 - Source fragments embedded in `LEVEL.*`/`ITEMS.*` are primary evidence; Ghidra output is secondary/noisy and must be hand-verified against the linear disassembly.
-- Confirmed: stat order `STR INT WIS CHA CON DEX`, 15 races/classes, 32-bit LFSR at `DUNGEON.COM` 0x6d72, 48-bit combat LCG at 0x6c75 (multiplier `0xe09a0e0187c5`, boot state 1; ported in `Nemesis/Engine/Lcg48Random.cs` but not yet wired into combat), 26×22 × 3-byte map cells at file offset `0x1482` in all shipped `LEVEL.N` files, `.CHR` gold/experience as 10-char zero-padded decimal strings.
+- Confirmed: stat order `STR INT WIS CHA CON DEX`, 15 races/classes, 32-bit LFSR at `DUNGEON.COM` 0x6d72, 48-bit LCG at 0x6c75 (multiplier `0xe09a0e0187c5`, boot state 1; ported in `Nemesis/Engine/Lcg48Random.cs`; drives `roll()` = 4d5 from PERSON.COM 0x1a71, not yet wired into dungeon combat), 26×22 × 3-byte map cells at file offset `0x1482` in all shipped `LEVEL.N` files, `.CHR` gold/experience as 10-char zero-padded decimal strings.
 - Best-effort: combat arithmetic, spell level gating/durations, castle price formulas. Spell **unit costs** are confirmed from the runtime tables (`docs/nemesis/EXACT-FORMULAS.md`) and applied in `GameTables.SpellCatalog`. Preserve the original `valid()` ranger bug in `GameTables.IsValidClass` for fidelity.
-- `Nemesis/Verify.cs` (`--verify`, 20 checks) and `Nemesis.Tests/` (47 xUnit tests) both load the committed original game files; keep them passing when changing recovered tables or file I/O.
+- `Nemesis/Verify.cs` (`--verify`, 20 checks) and `Nemesis.Tests/` (48 xUnit tests) both load the committed original game files; keep them passing when changing recovered tables or file I/O.
 
 ## Known limitations
 - G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.

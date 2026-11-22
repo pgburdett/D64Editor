@@ -9,9 +9,10 @@ namespace Nemesis.Engine;
 /// The returned value is the low 15 bits of the new state (the original does
 /// this bytewise: low byte unchanged, high byte masked with 0x7f).
 ///
-/// Every random decision in the game (stats, HP, encounters, hazards, combat,
-/// item drops) goes through this generator, so using System.Random would make
-/// the port diverge from the original immediately.
+/// This generator drives sex/gold/HP at character creation and encounters,
+/// hazards and map generation in the dungeon.  Stat rolls use the separate
+/// 48-bit LCG (see <see cref="Lcg48Random"/>).  Using System.Random for either
+/// generator would make the port diverge from the original immediately.
 /// </summary>
 public sealed class LfsrRandom
 {
@@ -50,6 +51,10 @@ public sealed class LfsrRandom
         return total;
     }
 
-    /// <summary>The original roll() used by compute_stats(): almost certainly 3d6.</summary>
+    /// <summary>
+    /// Legacy 3d6 placeholder.  The original <c>roll()</c> is now known to be
+    /// 4d5 and lives on <see cref="Lcg48Random"/>; this method is kept only so
+    /// older callers/tests keep compiling.
+    /// </summary>
     public int RollStats() => Roll(3, 6);
 }

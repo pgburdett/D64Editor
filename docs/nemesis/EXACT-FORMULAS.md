@@ -525,7 +525,37 @@ These remain open and must not be guessed in a faithful port:
 9. **Hospital `days` and `rate`** — exact formulas before the two `%u` prints.
 10. **Inn debit** — whether `missing HP * 3` is days, gold, or both, and where the final gold subtraction occurs.
 11. **Archives donation threshold** — operand provenance for the confirmed `/2`.
-12. **RNG seed** — `init_rand()` seed source remains unresolved from prior work.
+12. **RNG seed used for the shipped `ARAGORN.CHR`** — the compiled default LFSR
+    seed (`0xffff59dc`) and the interactive `init_rand()` path are known, but
+    the seed actually entered for that saved character is not recorded.
+    `roll()` itself is now confirmed (4d5, section 5).
+
+---
+
+## 5. PERSON.COM `roll()` — CONFIRMED 4d5
+
+Address range: PERSON.COM `0x1a71`–`0x1ad1` (same runtime-library region as the
+LCG entry at `0x360e`).
+
+```c
+int roll(void) {           /* stat dice in compute_stats() */
+    int n = 4, sum = 0;
+    while (n > 0) {
+        sum += lcg_rand() % 5 + 1;   /* CALL 0x360e at 0x1aa3 */
+        --n;
+    }
+    return sum;                       /* 4..20 */
+}
+```
+
+Evidence: counter `4` stored at `0x1a7b`, four LCG calls with `DE % 5` plus one
+at `0x1aa7`–`0x1aae`, accumulator at `BC+2` returned at `0x1ac2`. The LCG is the
+same 48-bit generator as `DUNGEON.COM` (multiplier `0xe09a0e0187c5`, boot state
+1). Ported as `Lcg48Random.RollStats()`; `CharacterGenerator` now uses it for
+the six stats while the LFSR still drives sex/gold/HP.
+
+With the boot state the six rolls are `9,15,8,8,12,11`, so the earlier 3d6
+placeholder was wrong; `ARAGORN.CHR`'s stats require a custom seed or editing.
 
 ---
 

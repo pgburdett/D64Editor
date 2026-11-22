@@ -1062,23 +1062,38 @@ The C# port (`Nemesis/Engine/LfsrRandom.cs`) is a bit-exact translation;
 The port exposes the seed explicitly (`new <name> ... [seed]`) and defaults the
 `GameEngine` RNG to `0xffff59dc` for the no-seed path.
 
-#### 6.3 `roll()` — **still UNCERTAIN**
+#### 6.3 `roll()` — **CONFIRMED: 4d5**
 
 `roll()` is used only by `compute_stats()` (stat value =
 `max(1, roll() + 2 * xtype.factor[i])`).  No definition survives in any
-embedded C fragment.  Only three direct `CALL 0x353e` sites exist in
-`PERSON.COM`: 0x0983 (initial hits, `1 + rand() % (CON+STR)`), 0x1059 (sex) and
-0x107d (gold).  The six stat rolls must therefore be produced by a loop that
-calls a separate `roll()` helper whose body was overlaid/discarded.  A 3d6
-roll is the working assumption in the port; it has not been proven from code.
+embedded C fragment, but its compiled body *does* survive in `PERSON.COM` at
+runtime addresses `0x1a71`–`0x1ad1`, in the same runtime-library region as the
+48-bit LCG at `0x360e`:
 
-**Empirical check (2026-11-21):** an exhaustive search of all 2^32 possible
-LFSR seeds found *no* seed for which 3d6 rolls plus the confirmed Hobbit
-modifiers `(-1,-1,0,+1,+1,+1)` reproduce the six stats in `ARAGORN.CHR`
-(`12,10,11,12,8,15`).  Under 3d6 roughly 30 matches would be expected, so the
-3d6 assumption is probably wrong (or that shipped character was edited/
-generated under different rules).  The port keeps 3d6 as a documented
-best-effort placeholder rather than claiming fidelity.
+```c
+int roll(void) {
+    int n = 4, sum = 0;
+    while (n > 0) {
+        sum += lcg_rand() % 5 + 1;   /* CALL 0x360e, DE % 5, then +1 */
+        --n;
+    }
+    return sum;                       /* range 4..20 */
+}
+```
+
+The four LCG calls per stat are visible at `0x1aa3`; the loop counter is
+initialised to 4 at `0x1a7b` and decremented at `0x1abb`; the result is the
+accumulator at `BC+2`, returned via `0x1ac2`.  The multiplier and state are the
+same as `DUNGEON.COM`'s LCG (`0xe09a0e0187c5`, boot state 1).  The port's
+`Lcg48Random.RollStats()` is a direct translation.
+
+The earlier 3d6 placeholder was disproved twice: an exhaustive 2^32 LFSR-seed
+search found no match for `ARAGORN.CHR`, and the disassembly now shows 4d5
+directly.  With the default LCG state the six rolls are `9,15,8,8,12,11`,
+giving Hobbit stats `7,13,8,10,14,13` — not the shipped character's
+`12,10,11,12,8,15`, so that character was either rolled after a custom
+`init_rand()` seed or edited.  A matching LCG seed (536812) exists, but with
+only one hit in 2^96 candidate states it is not evidence of the original seed.
 
 | Call | Site | Purpose |
 |---|---|---|
@@ -1091,13 +1106,15 @@ best-effort placeholder rather than claiming fidelity.
 
 ## 7. Missing / incomplete sections (checklist for the port)
 
-Definitions **not present** in any fragment (only call sites survive):
+Definitions **not present** in any C fragment, but now recovered from machine
+code: `roll()` (4d5, section 6.3), `rand()` and the default seed
+(sections 6.1-6.2).
+
+Definitions still missing entirely:
 
 - `get_stats()` — presumably calls `compute_stats()`/`display_stats()` and a
   re-roll confirmation loop (`LEVEL.1` offset 2232 tail:
   `while(toupper(sgetchar()) != 'Y')`).
-- `roll()` — stat dice helper only (section 6.3); `rand()` and the default
-  seed are now recovered from machine code (sections 6.1-6.2).
 - `save_char()` — writes `PERSON` to `<name>.CHR`.
 - `getdef()` — load/set defaults.
 - `load_classes()` — populate `xclass[]` from data file.

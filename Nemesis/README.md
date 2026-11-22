@@ -30,12 +30,12 @@ supporting RNG/helper routines are ported.
 
 - **Confirmed:** control flow, stat order (`STR INT WIS CHA CON DEX`), type/class
   tables, gold/HP/age formulas, spell-user class sets, 3-byte map cell layout
-  (26×22), wall-bit movement, RNG algorithm, the compiled default RNG seed
-  (`0xffff59dc`, with `init_rand()` overriding it when a seed is entered), and
-  the 640-byte `.CHR` fields that are decoded.
-- **Best-effort:** the `roll()` dice expression (only its call site survives),
-  combat arithmetic, spell costs/durations, shop price formulas,
-  and hospital/inn rates.  The original helper routines for these were not
+  (26×22), wall-bit movement, both RNGs (15-bit LFSR and 48-bit LCG), the
+  compiled default LFSR seed (`0xffff59dc`, with `init_rand()` overriding it
+  when a seed is entered), the `roll()` stat dice (**4d5**, from the machine
+  code at `PERSON.COM 0x1a71`), and the 640-byte `.CHR` fields that are decoded.
+- **Best-effort:** combat arithmetic, spell level gating/durations, shop price
+  formulas, and hospital/inn rates.  The remaining helper routines were not
   fully recovered; the current model is documented in `Engine/DungeonEngine.cs`
   and `Engine/CastleEngine.cs`.
 - The original `valid()` ranger bug (testing the loop counter instead of the
