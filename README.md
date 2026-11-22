@@ -32,11 +32,10 @@ This is a C# port of the core disk engine and UI Components.
 22. [File Chain & Directory Display](#file-chain--directory-display)
 23. [Undo/Redo](#undoredo)
 24. [Packaging & OS Integration](#packaging--os-integration)
-25. [Nemesis C# port](#nemesis-c-port)
-26. [Verification & Testing](#verification--testing)
-27. [Known Limitations & Out-of-Scope Items](#known-limitations--out-of-scope-items)
-28. [Fidelity vs. Cleanup](#fidelity-vs-cleanup)
-29. [Contributing](#contributing)
+25. [Verification & Testing](#verification--testing)
+26. [Known Limitations & Out-of-Scope Items](#known-limitations--out-of-scope-items)
+27. [Fidelity vs. Cleanup](#fidelity-vs-cleanup)
+28. [Contributing](#contributing)
 
 ---
 
@@ -581,9 +580,9 @@ definition, not by corrupt files. Nemesis is now verified with **CPMFAST3.D71** 
 on `A:` and a rebuilt 1581/D81 game disk on `B:`, using an ADM-31 / type-6 `TERM.DEF` in the
 game directory; launch with `B:NEMESIS ARAGORN`. The title, menus, dungeon maps and combat
 screens all render and the game plays through to death/level transitions. See
-[`docs/nemesis/README.md`](docs/nemesis/README.md) for the exact setup; the game files are
-byte-exact when extracted. Pure line-oriented programs (MBASIC, Infocom Zork) run under the
-stock CP/M 3 BIOS too.
+[the Nemesis repository setup notes](../Nemesis/docs/nemesis/README.md) for the exact setup;
+the game files are byte-exact when extracted. Pure line-oriented programs (MBASIC, Infocom
+Zork) run under the stock CP/M 3 BIOS too.
 
 **Verified example — Zork II (Infocom INTERLOGIC version):**
 
@@ -904,24 +903,6 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 `ArchiveExtract` (zip/tar/tgz extraction), `D64Image.RenameDisk` and
 `D64Image.GetRawDataCopy()/RestoreRawData()` (snapshot support used elsewhere).
 
-## Nemesis C# port
-
-A separate console project, `Nemesis/`, ports the four CP/M overlays of the 1981 dungeon
-crawler **Nemesis** (PERSON, CASTLE, DUNGEON, NEMESIS) to .NET 10. It uses the exact
-recovered 32-bit LFSR, 15 race/class tables, 94 items, 75 monsters and 27 spells, plus a
-byte-exact `.CHR` reader/writer and the real 26×22 `LEVEL.N` maps.
-
-```bash
-dotnet build Nemesis/Nemesis.csproj
-dotnet run --project Nemesis/Nemesis.csproj -- docs/nemesis/game-files/ARAGORN.CHR
-dotnet run --project Nemesis/Nemesis.csproj -- --verify
-```
-
-The reverse-engineering evidence is committed under `docs/nemesis/` (analysis reports,
-disassemblies, decompiled C and original game files). Full details, commands and fidelity
-notes are in [`Nemesis/README.md`](Nemesis/README.md); the playable original-CP/M setup is in
-[`docs/nemesis/README.md`](docs/nemesis/README.md).
-
 ## Verification & Testing
 
 - All new format readers were verified by generating synthetic images of each format (with a matching GCR encoder for G64/NIB) and byte-comparing the parsed results.
@@ -930,8 +911,8 @@ notes are in [`Nemesis/README.md`](Nemesis/README.md); the playable original-CP/
 - CP/M extraction verified byte-for-byte against `ctools`: all 19 files on `MBASIC.d71` and all 10 files on the D64 system disk match exactly (non-strict and strict modes).
 - **End-to-end CP/M verified:** files written from Linux via `--cpm-new d71` (MBASIC.COM + WUMP.BAS), mounted as drive 9 (`B:`) in x128 with a CP/M system disk on drive 8 (`A:`), and run — MBASIC loaded and the WUMPUS game played to completion. See [CP/M Support](#cpm-support-c128-cpm).
 - **Line-oriented CP/M games verified:** Infocom **Zork II** (INTERLOGIC CP/M release: `ZORK2.COM` + `ZORK2.DAT`, configured with the generic `2DEFAULT`/`CONF2` terminal program) staged via `--ctools create d71`, mounted as `B:`, and played interactively in x128 — game banner, room descriptions, and `> look` all worked. See [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
-- **Full-screen CP/M game verified:** SuperSoft **Nemesis** with FastBDOS 3 on `A:` and a 1581/D81 game disk on `B:`; an ADM-31 `TERM.DEF` fixes the previously garbled menus, and the game was played through title, castle, dungeon and combat screens. See [`docs/nemesis/README.md`](docs/nemesis/README.md).
-- **Automated test suite:** `Nemesis.Tests/` contains 64 xUnit tests covering `.CHR` byte-exact round-trips, persisted identified/equipped bits, AC/fight/price words and item types, all 10 shipped `LEVEL.N` maps, recovered tables, both exact generators (the 15-bit LFSR and the 48-bit LCG, including the confirmed 4d5 `roll()`), the exact melee/monster-creation/kill-payout, hospital rate/HP/debit, free Inn stays and spell-pool restoration, composite item-value and pawn-sell helpers, equipped-item AC/fight bonuses, Archives exact-half donation, non-zero price eligibility and gold debit, and character/castle/dungeon engine behavior. The port also has 33 built-in checks available via `dotnet run --project Nemesis/Nemesis.csproj -- --verify`.
+- **Full-screen CP/M game verified:** SuperSoft **Nemesis** with FastBDOS 3 on `A:` and a 1581/D81 game disk on `B:`; an ADM-31 `TERM.DEF` fixes the previously garbled menus, and the game was played through title, castle, dungeon and combat screens. See [the Nemesis repository setup notes](../Nemesis/docs/nemesis/README.md).
+- **Nemesis port verification moved:** the 64 xUnit tests and 33 built-in checks for the separate C# port now live in `../Nemesis`; the D64Editor solution currently has no test projects.
 - Many behaviors (emulator/OpenCBM/real-drive flows, CP/M `.d81` mapping) remain unverified without external tools/hardware or real images.
 
 ---

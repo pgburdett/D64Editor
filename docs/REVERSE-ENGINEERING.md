@@ -1,7 +1,8 @@
 # Reverse Engineering Notes
 
 This directory documents reverse-engineering work on C64/C128 software, primarily
-CP/M games.  The detailed Nemesis work lives in [`nemesis/`](nemesis/README.md).
+CP/M games.  The detailed Nemesis work now lives in the sibling repository at
+[`../Nemesis/docs/nemesis/`](../../Nemesis/docs/nemesis/README.md).
 
 ## Tools
 
