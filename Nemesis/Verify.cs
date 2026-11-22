@@ -71,9 +71,20 @@ internal static class Verify
         hospitalGame.Character.Level = 5;
         hospitalGame.CastleCommand('B');
         string hospitalLog = string.Join("\n", hospitalGame.Castle.TakeLog());
-        Check("hospital days = missing HP, rate = (Level+1)*10",
+        hospitalGame.Character.HitPoints = 4;
+        hospitalGame.Character.Gold = 2000;
+        hospitalGame.Heal(20);
+        bool paid = hospitalGame.Character.HitPoints == 10 &&
+                    hospitalGame.Character.Gold == 2000 - 20 * 60;
+        hospitalGame.Character.HitPoints = 4;
+        hospitalGame.Character.Gold = 10;
+        string broke = hospitalGame.Heal(20);
+        Check("hospital days/rate, capped HP, full-stay debit and borrow branch",
             hospitalLog.Contains("wounds will take 6 days") &&
-            hospitalLog.Contains("rate of 60 gold per day"));
+            hospitalLog.Contains("rate of 60 gold per day") && paid &&
+            hospitalGame.Character.HitPoints == 1 &&
+            hospitalGame.Character.Gold == 0 &&
+            broke.Contains("break your legs"));
 
         var pawnCastle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
         var pawnChar = new Character { Gold = 100 };

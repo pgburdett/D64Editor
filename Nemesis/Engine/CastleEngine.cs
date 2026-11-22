@@ -213,8 +213,10 @@ public sealed class CastleEngine
 
     /// <summary>
     /// Pays for a stay at the confirmed rate of (Level + 1) * 10 gold per day.
-    /// The exact HP-restoration/debit branch is still best-effort; one HP per
-    /// day, capped at the missing HP, matches the confirmed day count.
+    /// CASTLE.COM 0x102c restores <c>min(days, missing HP)</c> and 0x1053..0x109b
+    /// debits <c>days * rate</c>, even when the stay exceeds the missing HP.  The
+    /// borrow branch at 0x10a1 zeroes the gold string and sets HP to 1; only the
+    /// intermediate wrapped subtraction is unobservable in this 32-bit port.
     /// </summary>
     public string Heal(int days)
     {
@@ -224,6 +226,8 @@ public sealed class CastleEngine
         if (Character.Gold < cost)
         {
             string fail = "As you are unable to pay your bill\n  we will have to break your legs !!";
+            Character.Gold = 0;
+            Character.HitPoints = 1;
             Say(fail);
             return fail;
         }

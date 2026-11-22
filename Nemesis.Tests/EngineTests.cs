@@ -241,6 +241,23 @@ public sealed class EngineTests
         Assert.Contains("restored", result);
         Assert.True(game.Character.HitPoints > 1);
         Assert.True(game.Character.Gold < 100);
+
+        // 0x102c caps healing at missing HP, but 0x1053 bills the full stay.
+        game.Character.HitPoints = 1;
+        game.Character.MaxHitPoints = 10;
+        game.Character.Gold = 1000;
+        game.Character.Level = 0;
+        game.Heal(20);
+        Assert.Equal(10, game.Character.HitPoints);
+        Assert.Equal(800, game.Character.Gold); // 20 * (0 + 1) * 10
+
+        // 0x10a1 zeroes gold and sets HP to 1 when the bill cannot be paid.
+        game.Character.HitPoints = 4;
+        game.Character.Gold = 10;
+        string broke = game.Heal(20);
+        Assert.Contains("break your legs", broke);
+        Assert.Equal(0, game.Character.Gold);
+        Assert.Equal(1, game.Character.HitPoints);
     }
 
     [Fact]

@@ -389,11 +389,11 @@ As you are unable to pay your bill
  we will have to break your legs !!
 ```
 
-Behavior inferred:
+Behavior:
 - If at full HP: `"You are in perfect physical shape"`.
-- Otherwise compute days needed and a per-day gold rate; display both.
-- Player enters stay length; if gold insufficient, refuses and prints the leg-breaking message.
-- **UNCERTAIN:** the exact rate formula (e.g. `rate = f(level)`) and healing-per-day amount.
+- Otherwise `days = max HP - current HP` and `rate = (Level + 1) * 10`; display both.
+- The stay prompt accepts a length; HP rises by `min(stay, missing HP)` and gold falls by `stay * rate`.
+- If gold is insufficient, the original prints the leg-breaking message, zeroes the gold string and sets HP to 1 (`0x10a1`).  These findings are **CONFIRMED** from `CASTLE.COM 0x0f5f`–`0x10e2`; the report's earlier uncertainty is obsolete.
 
 ### 3.4 Inn
 
@@ -411,7 +411,7 @@ Manual context: the Inn restores HP more slowly than the Hospital and is the **o
 
 Strings include `"How many gold pieces do you wish to donate ? "`.
 
-**CONFIRMED:** Archives disclose unidentified items either by spending a DISCLOSE magic/cleric spell or by donating gold. The gold path at `0x1332` checks the donation against the gold string at `0x8082`, debits it via the ten-digit decimal-subtract helper at `0x13f2`, requires the donation to exactly equal `item_value(slot) / 2` for the selected inventory slot A-J, then toggles that slot's `0x80d0` bit (XOR). The meaning of the required non-zero word at `inventory[slot] + 4` is still UNCERTAIN.
+**CONFIRMED:** Archives disclose unidentified items either by spending a DISCLOSE magic/cleric spell or by donating gold. The gold path at `0x1332` checks the donation against the gold string at `0x8082`, debits it via the ten-digit decimal-subtract helper at `0x13f2`, requires the donation to exactly equal `item_value(slot) / 2` for the selected inventory slot A-J, then toggles that slot's `0x80d0` bit (XOR). The required non-zero word at `inventory[slot] + 4` is the item's base price from `ITEMS.*`.
 
 ### 3.6 Dungeon entrance
 
@@ -455,7 +455,7 @@ Displays all fields from the character record (level, hits, experience, age, AC,
 - Dungeon chain and exit-save behavior at a high level.
 
 **Uncertain / not completed:**
-- Exact 640-byte on-disk field offsets beyond the decoded gold/EXP/stats/level/age/HP/magic/cleric, identified bit (`0x89`), equipped bit (`0x8b`), AC (`0x93`), inventory AC modifier (`record +0`) and inventory type (`record +0x20`) fields.
+- Exact 640-byte on-disk field offsets beyond the decoded gold/EXP/stats/level/age/HP/magic/cleric, identified bit (`0x89`), equipped bit (`0x8b`), AC (`0x93`), inventory AC/fight/price words (`record +0`/`+2`/`+4`) and inventory type (`record +0x20`) fields.
 - Inn rest cost and restoration amounts.
 - The meaning of the remaining non-type inventory words.  The record `+2` fight bonus, record `+4` base price and Archives gold debit (`0x13f2`) are now CONFIRMED.
 - Some class constructor “later raw fields” (108/24/100...) are almost certainly XP/age/item flags but were not decoded to named constants.

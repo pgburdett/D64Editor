@@ -25,8 +25,9 @@ spell, and castle pricing helpers with CONFIRMED/HIGH/UNCERTAIN confidence
 ratings. The recovered **spell unit costs** from the runtime tables are applied
 in `Data/GameTables.cs`.  The confirmed melee damage roll, kill payout and
 monster-template field layout are applied in `Engine/CombatRules.cs`,
-`Engine/DungeonEngine.cs` and `Data/MonsterCatalog.cs`; the remaining findings
-stay documentation until their supporting helpers are recovered.
+`Engine/DungeonEngine.cs`, `Data/MonsterCatalog.cs` and
+`Engine/CastleEngine.cs`; other findings are applied as their supporting helpers
+are recovered.
 
 ### Fidelity notes
 
@@ -38,19 +39,18 @@ stay documentation until their supporting helpers are recovered.
   code at `PERSON.COM 0x1a71`), melee damage (`f + power/2`, LCG remainder),
   kill payout (`v + rand() % (10*v)`, written to both sheet buffers), the DM.COM
   monster-template offsets, monster type/group/HP/attack creation and the
-  per-monster stat refresh on group advancement, hospital `days = missing HP`
-  and `rate = (Level+1)*10`, the composite buy/pawn item value, pawn sell formulas
-  (`item_value + LFSR%20` identified, `LCG48%70` unidentified), the per-inventory-slot
-  identified bits at `0x80d0`, the equipped bits at `0x80d2`, equipped-item AC
-  and fight bonuses, their reversal on sale, the item base price at record `+4`,
-  the Archives exact-half donation threshold and gold debit, and the 640-byte
+  per-monster stat refresh on group advancement, hospital `days = missing HP`,
+  `rate = (Level+1)*10`, `HP += min(stay, missing)`, `gold -= stay * rate` and
+  the insufficient-gold branch (gold 0, HP 1), the
+  composite buy/pawn item value, pawn sell formulas (`item_value + LFSR%20`
+  identified, `LCG48%70` unidentified), the per-inventory-slot identified bits
+  at `0x80d0`, the equipped bits at `0x80d2`, equipped-item AC and fight
+  bonuses, their reversal on sale, the item base price at record `+4`, the
+  Archives exact-half donation threshold and gold debit, and the 640-byte
   `.CHR` fields that are decoded.
 - **Best-effort:** the monster attack hit/miss test and special-attack branch,
-  spell level gating/durations, armory buy modifiers, and the hospital/inn
-  stay-debit paths.
-  Hospital `days`/`rate`, both pawn formulas, and the Archives exact-half
-  threshold and gold debit are confirmed; their final HP postings remain
-  best-effort.
+  spell level gating/durations, armory buy modifiers, and the inn stay-debit
+  path.
   The remaining helper routines were not fully recovered; the current model is
   documented in `Engine/DungeonEngine.cs` and `Engine/CastleEngine.cs`.
 - The original `valid()` ranger bug (testing the loop counter instead of the

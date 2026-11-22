@@ -642,6 +642,12 @@ days = missing;                          // CALL 0x0190 op00 at 0x0fca
 rate = (word(0x80a4) + 1) * 10;            // LEVEL + 1, CALL 0x023f at 0x0fec
 printf("Your wounds will take %u days to heal", days);
 printf("At a rate of %u gold per day", rate);
+
+stay = read_prompt_u16();                    // 0x1016..0x102b, string 0x1176
+cost = stay * rate;                          // 0x1053..0x1067, CALL 0x026b
+hp   = hp + min(stay, missing);              // 0x102c..0x1050
+gold = subtract_decimal10(gold, cost);       // 0x108e -> 0x320d
+if (borrow) { print("unable to pay..."); gold = 0; hp = 1; }  // 0x10a1..0x10ce
 ```
 
 Additional decoded helper at `0x1ab5`:
@@ -662,9 +668,16 @@ Confidence:
   argument order at `0x1f57` (`0x80a4` is `Level`; experience is the decimal
   string at `0x808d`) and the level-up store at DUNGEON.COM `0x147f`.  The
   earlier EXP-based rate and halved day count were guesses.
-- Final HP restoration/debit details after the stay prompt at `0x1176`:
-  **UNCERTAIN**.  The stay length is parsed by `0x38c0`, but the exact branch
-  that updates `0x80a6` and debits gold is not fully traced.
+- Final HP restoration after the stay prompt: **CONFIRMED**.  `0x102c`–`0x1050`
+  compares the entered stay with `missing` via `0x01f3`/`0x01a9`, adds
+  `min(stay, missing)` to `0x80a6`, and never exceeds max HP.
+- Final gold debit: **CONFIRMED**.  `0x1053` computes `stay * rate`, formats it
+  as `%010u`, and `0x320d` subtracts that string from the ten-digit gold string
+  at `0x8082`.  The helper writes a wrapped ten-digit difference when it returns
+  borrow, but the branch at `0x10a1` prints the "unable to pay" messages, copies
+  `"0000000000"` back over the gold string, and sets HP to 1, so only the final
+  state is observable.  The C# port mirrors that state (gold 0, HP 1); the
+  unobservable intermediate wrap is not modeled.
 
 ## 3.5 Inn pricing and restoration
 
@@ -763,9 +776,8 @@ These remain open and must not be guessed in a faithful port:
    substitution `LCG48 % 20` are CONFIRMED, but the seed comes from CP/M
    console status and the clock, so exact values cannot be replayed outside
    the original environment.
-9. **Hospital stay/debit path** — exact HP restoration and gold debit after the stay prompt (`days` and `rate` are now CONFIRMED).
-10. **Inn debit** — whether `missing HP * 3` is days, gold, or both, and where the final gold subtraction occurs.
-11. **RNG seed used for the shipped `ARAGORN.CHR`** — the compiled default LFSR
+9. **Inn debit** — whether `missing HP * 3` is days, gold, or both, and where the final gold subtraction occurs.
+10. **RNG seed used for the shipped `ARAGORN.CHR`** — the compiled default LFSR
     seed (`0xffff59dc`) and the interactive `init_rand()` path are known, but
     the seed actually entered for that saved character is not recorded.
     `roll()` itself is now confirmed (4d5, section 5).
