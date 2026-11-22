@@ -262,6 +262,10 @@ The character record is **640 bytes**. Source-level fields confirmed from the re
   | `0x5e` | BE16 | age (16) |
   | `0x64` | BE16 | current HITS (5) |
   | `0x66` | BE16 | O_HITS / maximum HITS (8) |
+  | `0x61` | LE16 | current magic units (runtime `0x80a8`); 0 for the Peasant sample |
+  | `0x63` | LE16 | current cleric units (runtime `0x80aa`); 0 for the Peasant sample |
+  | `0x79` | LE16 | stored magic maximum (runtime `0x80c0`) |
+  | `0x7b` | LE16 | stored cleric maximum (runtime `0x80c2`) |
   | `0x89` | LE16 | per-slot identified bits; bit N = slot N (all zero in sample) |
   | `0x8b` | LE16 | per-slot equipped/enchantment-active bits (all zero in sample) |
   | `0x93` | signed LE16 | displayed armor class (`0x000a` = 10 in sample) |
@@ -401,11 +405,18 @@ Strings:
 
 ```
 Welcome to the Inn
-Restoring magic and cleric unit
-...
+Restoring magic and cleric units
+It will take you %u days to heal.
+Do you wish to stay that long ?
 ```
 
-Manual context: the Inn restores HP more slowly than the Hospital and is the **only** place that restores spent Cleric and Magic units. Cost/restoration formulas not recovered before wrap-up.
+**CONFIRMED** from `CASTLE.COM 0x1204`–`0x12ae`: entering the Inn copies the
+stored magic/cleric maxima (`0x80c0`/`0x80c2`) into the displayed pools
+(`0x80a8`/`0x80aa`) before asking anything.  The displayed stay length is
+`3 * (max HP - current HP)` days.  Answering `Y` adds that many days to the day
+counter (365-day carry into age) and sets current HP to max; any other answer
+keeps the current HP.  There is **no gold charge** in this path.  The current
+pools map to `.CHR` `0x61`/`0x63` and their maxima to `0x79`/`0x7b`.
 
 ### 3.5 Archives
 
@@ -455,8 +466,8 @@ Displays all fields from the character record (level, hits, experience, age, AC,
 - Dungeon chain and exit-save behavior at a high level.
 
 **Uncertain / not completed:**
-- Exact 640-byte on-disk field offsets beyond the decoded gold/EXP/stats/level/age/HP/magic/cleric, identified bit (`0x89`), equipped bit (`0x8b`), AC (`0x93`), inventory AC/fight/price words (`record +0`/`+2`/`+4`) and inventory type (`record +0x20`) fields.
-- Inn rest cost and restoration amounts.
+- Exact 640-byte on-disk field offsets beyond the decoded gold/EXP/stats/level/age/HP, current and maximum magic/cleric pools (`0x61`/`0x63`/`0x79`/`0x7b`), identified bit (`0x89`), equipped bit (`0x8b`), AC (`0x93`), inventory AC/fight/price words (`record +0`/`+2`/`+4`) and inventory type (`record +0x20`) fields.
+- Inn 365-day age carry-over model (the stay length and HP restoration are CONFIRMED; the port keeps age in a separate field).
 - The meaning of the remaining non-type inventory words.  The record `+2` fight bonus, record `+4` base price and Archives gold debit (`0x13f2`) are now CONFIRMED.
 - Some class constructor “later raw fields” (108/24/100...) are almost certainly XP/age/item flags but were not decoded to named constants.
 

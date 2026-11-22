@@ -679,32 +679,37 @@ Confidence:
   state is observable.  The C# port mirrors that state (gold 0, HP 1); the
   unobservable intermediate wrap is not modeled.
 
-## 3.5 Inn pricing and restoration
+## 3.5 Inn stay and restoration — CONFIRMED
 
-Address range: `0x1204`–`0x1332` (strings `"Welcome to the Inn"` `0x12af`, `"Restoring magic and cleric units "` `0x12c2`, `"It will take you %u days to heal."` `0x12e4`, `"Do you wish to stay that long ?"` `0x1306`).
+Address range: `0x1204`–`0x12ae` (strings `"Welcome to the Inn"` `0x12af`, `"Restoring magic and cleric units "` `0x12c2`, `"It will take you %u days to heal."` `0x12e4`, `"Do you wish to stay that long ?"` `0x1306`).  The next routine begins at `0x1332` with the Archives.
 
 Decoded core:
 
 ```c
-word(0x80a8) = word(0x80c0);   // magic units saved/restored
-word(0x80aa) = word(0x80c2);   // cleric units saved/restored
+word(0x80a8) = word(0x80c0);   // current magic units = stored maximum
+word(0x80aa) = word(0x80c2);   // current cleric units = stored maximum
 
-missing = -(word(0x80a6)) + word(0x80be);   // 0x02fa + ADD at 0x122d..0x1238
-stayCost = signed_mul(missing, 3);          // DE=3, CALL 0x023f at 0x1239..0x123f
+missing = word(0x80be) - word(0x80a6);      // 0x122d..0x1238
+days = signed_mul(missing, 3);              // 0x1239..0x123f
+if (days == 0) return;                      // 0x1246..0x1253
 
-if (stayCost == 0) {
-    // no stay needed
-    goto 0x12a6;
-}
-printf("It will take you %u days to heal.", stayCost);
-// ... prompt "Do you wish to stay that long ?" at 0x1306 ...
+printf("It will take you %u days to heal.", days);   // 0x1263..0x1270
+if (toupper(get_nonzero_char()) != 'Y') return;      // 0x1286..0x1294
+advance_day_counter(days);                            // 0x1297 -> 0x1ab5
+word(0x80a6) = word(0x80be);                          // HP = max HP
 ```
 
-Confidence:
+There is **no gold prompt, gold comparison, or debit anywhere in this routine**.
+The earlier `missing * 3` value is the number of days displayed by the string at
+`0x12e4`, not a price.  Helper `0x1ab5` adds `days` to word `0x80cc` and carries
+every 365 days into word `0x80ca` (the displayed age), as in the hospital.
 
-- Copies of `0x80c0/0x80c2` into magic/cleric units: **CONFIRMED**.
-- `missing HP * 3`: **CONFIRMED** as the value computed at `0x122d`–`0x123f`.
-- Calling that value “days” is **HIGH** because the adjacent string says days; calling it “gold cost” is **UNCERTAIN**. The same value is used in the stay-confirmation flow, but the final debit path was not fully traced.
+The spell pools are restored before the question, so declining the stay still
+leaves magic/cleric units full; only the HP restoration and day advance are
+skipped.  The C# port mirrors this (`CastleEngine.Inn`/`Rest`) using stored
+maxima at `.CHR` `0x79`/`0x7b` and current pools at `0x61`/`0x63`; it does not
+model the 365-day age carry-over because its age lives in a separate
+character-sheet field.
 
 ## 3.6 Archives donation
 
@@ -776,8 +781,7 @@ These remain open and must not be guessed in a faithful port:
    substitution `LCG48 % 20` are CONFIRMED, but the seed comes from CP/M
    console status and the clock, so exact values cannot be replayed outside
    the original environment.
-9. **Inn debit** — whether `missing HP * 3` is days, gold, or both, and where the final gold subtraction occurs.
-10. **RNG seed used for the shipped `ARAGORN.CHR`** — the compiled default LFSR
+9. **RNG seed used for the shipped `ARAGORN.CHR`** — the compiled default LFSR
     seed (`0xffff59dc`) and the interactive `init_rand()` path are known, but
     the seed actually entered for that saved character is not recorded.
     `roll()` itself is now confirmed (4d5, section 5).

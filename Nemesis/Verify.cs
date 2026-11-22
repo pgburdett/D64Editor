@@ -86,6 +86,25 @@ internal static class Verify
             hospitalGame.Character.Gold == 0 &&
             broke.Contains("break your legs"));
 
+        var innGame = new GameEngine();
+        innGame.NewCharacter("GUEST", 0, Alignment.Neutral, 8, 11);
+        var inn = innGame.Character!;
+        inn.Gold = 500;
+        inn.MaxMagicUnits = 0xffff;
+        inn.MaxClericUnits = 123;
+        inn.MagicUnits = 3;
+        inn.ClericUnits = 4;
+        inn.MaxHitPoints = 10;
+        inn.HitPoints = 7;
+        innGame.CastleCommand('C');
+        string innLog = string.Join("\n", innGame.Castle.TakeLog());
+        string innResult = innGame.Rest();
+        Check("inn days=3*missing, free stay, full HP and spell maxima",
+            innLog.Contains("It will take you 9 days to heal.") &&
+            innResult.Contains("recover 3 hits") &&
+            inn.MagicUnits == 0xffff && inn.ClericUnits == 123 &&
+            inn.HitPoints == 10 && inn.Gold == 500);
+
         var pawnCastle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
         var pawnChar = new Character { Gold = 100 };
         pawnCastle.Bind(pawnChar);
@@ -154,6 +173,9 @@ internal static class Verify
                 c.BaseAttributes.Constitution == 8 && c.BaseAttributes.Dexterity == 15);
             Check("gold/exp parsed from padded decimal strings",
                 c.Gold == 117 && c.Experience == 0, $"gold={c.Gold} exp={c.Experience}");
+            Check("spell pools read from confirmed .CHR offsets",
+                c.MagicUnits == 0 && c.ClericUnits == 0 &&
+                c.MaxMagicUnits == 0 && c.MaxClericUnits == 0);
 
             c.ItemIdentified[0] = true;
             c.ItemIdentified[9] = true;

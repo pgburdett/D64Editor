@@ -107,7 +107,10 @@ public sealed class CharacterFileTests
             Age = 42,
             HitPoints = 17,
             MaxHitPoints = 20,
-            MagicUnits = 0xffff,
+            MagicUnits = 0x1111,
+            ClericUnits = 0x2222,
+            MaxMagicUnits = 0xffff,
+            MaxClericUnits = 0x3333,
         };
         c.BaseAttributes.Strength = 11;
         c.BaseAttributes.Intelligence = 18;
@@ -122,6 +125,20 @@ public sealed class CharacterFileTests
         Assert.Equal(c.Gold, CharacterFile.Read(bytes).Gold);
         Assert.Equal(c.Name, CharacterFile.Read(bytes).Name);
         Assert.Equal(c.BaseAttributes.Intelligence, CharacterFile.Read(bytes).BaseAttributes.Intelligence);
+
+        var roundTrip = CharacterFile.Read(bytes);
+        Assert.Equal(0x11, bytes[0x61]);
+        Assert.Equal(0x11, bytes[0x62]);
+        Assert.Equal(0x22, bytes[0x63]);
+        Assert.Equal(0x22, bytes[0x64]);
+        Assert.Equal(0xff, bytes[0x79]);
+        Assert.Equal(0xff, bytes[0x7a]);
+        Assert.Equal(0x33, bytes[0x7b]);
+        Assert.Equal(0x33, bytes[0x7c]);
+        Assert.Equal(c.MagicUnits, roundTrip.MagicUnits);
+        Assert.Equal(c.ClericUnits, roundTrip.ClericUnits);
+        Assert.Equal(c.MaxMagicUnits, roundTrip.MaxMagicUnits);
+        Assert.Equal(c.MaxClericUnits, roundTrip.MaxClericUnits);
     }
 
     [Fact]

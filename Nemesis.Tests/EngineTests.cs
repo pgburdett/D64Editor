@@ -261,6 +261,38 @@ public sealed class EngineTests
     }
 
     [Fact]
+    public void Castle_Inn_Restores_Pools_And_Is_Free()
+    {
+        var game = new GameEngine();
+        game.NewCharacter("GUEST", 0, Alignment.Neutral, 8, 11);
+        var c = game.Character!;
+        c.Gold = 500;
+        c.MaxMagicUnits = 0xffff;
+        c.MaxClericUnits = 123;
+        c.MagicUnits = 3;
+        c.ClericUnits = 4;
+        c.MaxHitPoints = 10;
+        c.HitPoints = 6;
+
+        game.CastleCommand('C');
+        var log = string.Join("\n", game.Castle.TakeLog());
+        Assert.Contains("It will take you 12 days to heal", log);
+        Assert.Equal(0xffff, c.MagicUnits);
+        Assert.Equal(123, c.ClericUnits);
+        Assert.Equal(500, c.Gold);
+
+        string accepted = game.Rest();
+        Assert.Contains("recover 4 hits", accepted);
+        Assert.Equal(10, c.HitPoints);
+        Assert.Equal(500, c.Gold);
+
+        c.HitPoints = 6;
+        string declined = game.Rest(false);
+        Assert.Contains("decline", declined);
+        Assert.Equal(6, c.HitPoints);
+    }
+
+    [Fact]
     public void Castle_Hospital_Uses_Confirmed_Days_And_Rate_Formulas()
     {
         var game = new GameEngine();

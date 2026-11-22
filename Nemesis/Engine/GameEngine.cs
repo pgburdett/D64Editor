@@ -170,7 +170,7 @@ public sealed class GameEngine
     public string Buy(string name) => CastleAction(() => _castle.Buy(name));
     public string Sell(string name) => CastleAction(() => _castle.Sell(name));
     public string Heal(int days) => CastleAction(() => _castle.Heal(days));
-    public string Rest() => CastleAction(() => _castle.Rest());
+    public string Rest(bool stay = true) => CastleAction(() => _castle.Rest(stay));
     public string Donate(int amount, int slot = -1) => CastleAction(() => _castle.Donate(amount, slot));
     public string CharacterSheet() => Character == null ? "No character." : _castle.CharacterSheet();
     public string Inventory() => Dungeon.ListInventory();

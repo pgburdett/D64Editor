@@ -41,16 +41,16 @@ are recovered.
   monster-template offsets, monster type/group/HP/attack creation and the
   per-monster stat refresh on group advancement, hospital `days = missing HP`,
   `rate = (Level+1)*10`, `HP += min(stay, missing)`, `gold -= stay * rate` and
-  the insufficient-gold branch (gold 0, HP 1), the
-  composite buy/pawn item value, pawn sell formulas (`item_value + LFSR%20`
-  identified, `LCG48%70` unidentified), the per-inventory-slot identified bits
-  at `0x80d0`, the equipped bits at `0x80d2`, equipped-item AC and fight
-  bonuses, their reversal on sale, the item base price at record `+4`, the
-  Archives exact-half donation threshold and gold debit, and the 640-byte
-  `.CHR` fields that are decoded.
+  the insufficient-gold branch (gold 0, HP 1), free Inn stays of `3 * missing HP`
+  days with spell pools restored from `.CHR` `0x79`/`0x7b`, the composite
+  buy/pawn item value, pawn sell formulas (`item_value + LFSR%20` identified,
+  `LCG48%70` unidentified), the per-inventory-slot identified bits at `0x80d0`,
+  the equipped bits at `0x80d2`, equipped-item AC and fight bonuses, their
+  reversal on sale, the item base price at record `+4`, the Archives exact-half
+  donation threshold and gold debit, and the 640-byte `.CHR` fields that are
+  decoded.
 - **Best-effort:** the monster attack hit/miss test and special-attack branch,
-  spell level gating/durations, armory buy modifiers, and the inn stay-debit
-  path.
+  spell level gating/durations and armory buy modifiers.
   The remaining helper routines were not fully recovered; the current model is
   documented in `Engine/DungeonEngine.cs` and `Engine/CastleEngine.cs`.
 - The original `valid()` ranger bug (testing the loop counter instead of the
@@ -71,7 +71,7 @@ dotnet run --project Nemesis/Nemesis.csproj -- docs/nemesis/game-files/ARAGORN.C
 dotnet run --project Nemesis/Nemesis.csproj -- --verify
 ```
 
-`--verify` runs 31 self-checks covering the tables, both RNGs, exact
+`--verify` runs 33 self-checks covering the tables, both RNGs, exact
 melee/monster-creation/payout/hospital-rate/pawn arithmetic, `.CHR` round-trip
 and real `LEVEL.0` map loading.
 

@@ -128,8 +128,24 @@ public sealed class Character
     /// Equipped item modifiers are added to this base value.
     /// </summary>
     public int ArmorClass { get; set; } = 10;
+
+    /// <summary>
+    /// Current magic units displayed by CASTLE.COM 0x1fce (runtime 0x80a8,
+    /// `.CHR` offset 0x61).  The Inn copies the stored maximum into this word.
+    /// </summary>
     public int MagicUnits { get; set; }
+
+    /// <summary>
+    /// Current cleric units displayed by CASTLE.COM 0x1fe8 (runtime 0x80aa,
+    /// `.CHR` offset 0x63).  The Inn copies the stored maximum into this word.
+    /// </summary>
     public int ClericUnits { get; set; }
+
+    /// <summary>Stored magic maximum at runtime 0x80c0 / `.CHR` 0x79.</summary>
+    public int MaxMagicUnits { get; set; }
+
+    /// <summary>Stored cleric maximum at runtime 0x80c2 / `.CHR` 0x7b.</summary>
+    public int MaxClericUnits { get; set; }
 
     /// <summary>Item type per inventory slot; 255 = empty.</summary>
     public byte[] ItemTypes { get; set; } = Enumerable.Repeat((byte)255, MaxItems).ToArray();

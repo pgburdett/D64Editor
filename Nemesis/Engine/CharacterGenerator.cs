@@ -84,8 +84,10 @@ public sealed class CharacterGenerator
         c.ItemMask2 |= klass.ItemMask2;
 
         // init_char()
-        c.MagicUnits = selected is 4 or 5 or 9 or 12 ? 0xffff : 0;
-        c.ClericUnits = selected is 0 or 1 or 7 or 9 or 10 or 12 ? 0xffff : 0;
+        c.MaxMagicUnits = selected is 4 or 5 or 9 or 12 ? 0xffff : 0;
+        c.MaxClericUnits = selected is 0 or 1 or 7 or 9 or 10 or 12 ? 0xffff : 0;
+        c.MagicUnits = c.MaxMagicUnits;
+        c.ClericUnits = c.MaxClericUnits;
         c.ArmorClass = 10;
         c.Level = 0;
         c.DungeonLevel = -1;

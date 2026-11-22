@@ -245,32 +245,41 @@ public sealed class CastleEngine
     {
         if (Character == null) return;
         Say("Welcome to the Inn");
-        Say("Restoring magic and cleric unit");
-        Say($"You have {Character.Gold} gold pieces.");
+        Say("Restoring magic and cleric units");
+
+        // CASTLE.COM 0x120c copies the stored maxima into the displayed pools
+        // before the stay question, so the pools are restored either way.
+        Character.MagicUnits = Character.MaxMagicUnits;
+        Character.ClericUnits = Character.MaxClericUnits;
+
+        int days = 3 * (Character.MaxHitPoints - Character.HitPoints);
+        if (days == 0) return;
+        Say($"It will take you {days} days to heal.");
+        Say("Do you wish to stay that long ?");
     }
 
-    /// <summary>Restores spell pools (the only place that does so) and some HP.</summary>
-    public string Rest()
+    /// <summary>
+    /// CASTLE.COM 0x1204 restores both spell pools to their stored maxima, then
+    /// offers a stay of <c>3 * missing HP</c> days.  Accepting advances the day
+    /// counter and sets current HP to max; there is no gold charge.  The day
+    /// counter's 365-day age rollover is confirmed at 0x1ab5 but is not modeled
+    /// because this port keeps age in a separate character-sheet field.
+    /// </summary>
+    public string Rest(bool stay = true)
     {
         if (Character == null) return "No character.";
-        const int cost = 10;
-        if (Character.Gold < cost) return "You cannot afford a room.";
-        Character.Gold -= cost;
-        int healed = Math.Min(Character.MaxHitPoints - Character.HitPoints, 1 + _rng.Next(4));
-        Character.HitPoints += healed;
-        if (CanCast(Character.Class)) Character.MagicUnits = 0xffff;
-        if (CanCastCleric(Character.Class)) Character.ClericUnits = 0xffff;
-        string msg = $"You rest and recover {healed} hits. Magic and cleric units restored.";
+        Character.MagicUnits = Character.MaxMagicUnits;
+        Character.ClericUnits = Character.MaxClericUnits;
+
+        int missing = Character.MaxHitPoints - Character.HitPoints;
+        if (missing <= 0) return "You are in perfect physical shape.";
+        if (!stay) return "You decline the stay.";
+
+        Character.HitPoints = Character.MaxHitPoints;
+        string msg = $"You rest and recover {missing} hits. Magic and cleric units restored.";
         Say(msg);
         return msg;
     }
-
-    private static bool CanCast(CharacterClass c) => c is CharacterClass.Mage or
-        CharacterClass.Minstrel or CharacterClass.Ranger or CharacterClass.Sage;
-
-    private static bool CanCastCleric(CharacterClass c) => c is CharacterClass.Cleric or
-        CharacterClass.Demondim or CharacterClass.Paladin or CharacterClass.Ranger or
-        CharacterClass.Raver or CharacterClass.Sage;
 
     // -------------------------------------------------------------- archives ---
 

@@ -18,6 +18,10 @@ namespace Nemesis.IO;
 ///   0x5e   age (BE16)
 ///   0x64   current hit points (BE16)
 ///   0x66   maximum hit points (BE16)
+///   0x61   current magic units (LE16, runtime 0x80a8)
+///   0x63   current cleric units (LE16, runtime 0x80aa)
+///   0x79   maximum magic units (LE16, runtime 0x80c0)
+///   0x7b   maximum cleric units (LE16, runtime 0x80c2)
 ///   0x89   per-inventory-slot identified bits (LE16 word, runtime 0x80d0)
 ///   0x8b   per-slot equipped/enchantment-active bits (LE16, runtime 0x80d2)
 ///   0x93   displayed armor class (signed LE16, runtime 0x80da)
@@ -38,6 +42,10 @@ public static class CharacterFile
     private const int GoldOffset = 0x3b;
     private const int ExpOffset = 0x46;
     private const int StatOffset = 0x50;
+    private const int MagicUnitsOffset = 0x61;
+    private const int ClericUnitsOffset = 0x63;
+    private const int MaxMagicUnitsOffset = 0x79;
+    private const int MaxClericUnitsOffset = 0x7b;
     private const int IdentifiedOffset = 0x89;
     private const int EquippedOffset = 0x8b;
     private const int ArmorClassOffset = 0x93;
@@ -74,10 +82,13 @@ public static class CharacterFile
         c.HitPoints = ReadBE16(data, 0x64);
         c.MaxHitPoints = ReadBE16(data, 0x66);
 
-        // Magic/cleric spell pools: 0xffff means unlimited.  Store the raw
-        // 16-bit value so stale bytes in sample files still round-trip.
-        c.MagicUnits = ReadBE16(data, 0x70);
-        c.ClericUnits = ReadBE16(data, 0x72);
+        // CASTLE.COM 0x1fce/0x1fe8 display 0x80a8/0x80aa, and the Inn copies
+        // 0x80c0/0x80c2 into them.  Subtracting the 0x8047 save-buffer base
+        // gives these four little-endian .CHR offsets.  0xffff means unlimited.
+        c.MagicUnits = ReadLE16(data, MagicUnitsOffset);
+        c.ClericUnits = ReadLE16(data, ClericUnitsOffset);
+        c.MaxMagicUnits = ReadLE16(data, MaxMagicUnitsOffset);
+        c.MaxClericUnits = ReadLE16(data, MaxClericUnitsOffset);
         c.ArmorClass = ReadLE16Signed(data, ArmorClassOffset);
 
         // 0x80d0 and 0x80d2 are inside the 640-byte save buffer at 0x8047.
@@ -126,8 +137,10 @@ public static class CharacterFile
         WriteBE16(data, 0x5e, c.Age);
         WriteBE16(data, 0x64, c.HitPoints);
         WriteBE16(data, 0x66, c.MaxHitPoints);
-        WriteBE16(data, 0x70, c.MagicUnits);
-        WriteBE16(data, 0x72, c.ClericUnits);
+        WriteLE16(data, MagicUnitsOffset, c.MagicUnits);
+        WriteLE16(data, ClericUnitsOffset, c.ClericUnits);
+        WriteLE16(data, MaxMagicUnitsOffset, c.MaxMagicUnits);
+        WriteLE16(data, MaxClericUnitsOffset, c.MaxClericUnits);
         WriteLE16(data, ArmorClassOffset, c.ArmorClass);
 
         ushort identified = 0;
@@ -161,9 +174,11 @@ public static class CharacterFile
 
     private static int ReadBE16(byte[] d, int o) => (d[o] << 8) | d[o + 1];
 
+    private static int ReadLE16(byte[] d, int o) => d[o] | (d[o + 1] << 8);
+
     private static int ReadLE16Signed(byte[] d, int o)
     {
-        int v = d[o] | (d[o + 1] << 8);
+        int v = ReadLE16(d, o);
         return v >= 0x8000 ? v - 0x10000 : v;
     }
 
