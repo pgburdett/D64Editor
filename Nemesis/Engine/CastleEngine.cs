@@ -6,17 +6,35 @@ namespace Nemesis.Engine;
 /// <summary>
 /// Port of CASTLE.COM.  The menu strings and branch structure are confirmed
 /// from the compiled program.  `docs/nemesis/EXACT-FORMULAS.md` records the
-/// hand-decoded hospital early-out, armory price word, and inn `missing*3`
-/// value; debit paths and rates remain best-effort.
+/// hand-decoded hospital early-out, armory price word, confirmed pawn sell
+/// formulas, and inn `missing*3` value; debit paths remain best-effort.
 /// </summary>
 public sealed class CastleEngine
 {
     private readonly LfsrRandom _rng;
+    private readonly Lcg48Random _pawnRng;
 
     public Character? Character { get; private set; }
     public List<string> Log { get; } = [];
 
-    public CastleEngine(LfsrRandom rng) => _rng = rng;
+    public CastleEngine(LfsrRandom rng, Lcg48Random? pawnRng = null)
+    {
+        _rng = rng;
+        // The original seeds this generator from CP/M console status and the
+        // clock at 0x4754.  Its algorithm and multiplier match Lcg48Random;
+        // only the seed is environment-specific, so the port uses a
+        // time-derived odd seed while keeping the exact step and modulus.
+        _pawnRng = pawnRng ?? new Lcg48Random(SeedFromEnvironment());
+    }
+
+    private static ulong SeedFromEnvironment()
+    {
+        ulong ticks = unchecked((ulong)DateTime.UtcNow.Ticks);
+        ulong tickCount = unchecked((ulong)Environment.TickCount);
+        ulong seed = unchecked(ticks * 0x9e37_79b9_7f4a_7c15UL) ^
+                     unchecked(tickCount * 0xbf58_476d_1ce4_e5b9UL);
+        return (seed & 0x0000_ffff_ffff_ffffUL) | 1UL;
+    }
 
     public void Bind(Character c)
     {
@@ -81,9 +99,10 @@ public sealed class CastleEngine
     public string Buy(string name)
     {
         if (Character == null) return "No character.";
-        var def = ItemCatalog.All.FirstOrDefault(x =>
+        int index = Array.FindIndex(ItemCatalog.All, x =>
             string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
-        if (def == null) return $"Unknown item: {name}";
+        if (index < 0) return $"Unknown item: {name}";
+        var def = ItemCatalog.All[index];
         if (def.Price <= 0) return "That item is not for sale.";
         if (Character.Gold < def.Price) return "Sorry you can not afford that item.";
 
@@ -92,21 +111,32 @@ public sealed class CastleEngine
 
         Character.Gold -= def.Price;
         Character.ItemTypes[slot] = (byte)def.Type;
+        // CASTLE.COM 0x0c90 sets the 0x80d0 bit for a bought item, so it is
+        // identified before any later pawn-shop visit.
+        Character.ItemIdentified[index] = true;
         Say($"You buy {def.Name} for {def.Price} gold pieces.");
         return $"You buy {def.Name} for {def.Price} gold pieces.";
     }
 
-    /// <summary>Sells an item by catalog name for half its listed value.</summary>
+    /// <summary>
+    /// Sells an item using the confirmed pawn-shop formulas from CASTLE.COM
+    /// 0x0dd5-0x0e10: identified items fetch <c>price + LFSR % 20</c>, while
+    /// unidentified items fetch <c>LCG48 % 70</c>.
+    /// </summary>
     public string Sell(string name)
     {
         if (Character == null) return "No character.";
-        var def = ItemCatalog.All.FirstOrDefault(x =>
+        int index = Array.FindIndex(ItemCatalog.All, x =>
             string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
-        if (def == null) return $"Unknown item: {name}";
+        if (index < 0) return $"Unknown item: {name}";
+        var def = ItemCatalog.All[index];
         int slot = Array.IndexOf(Character.ItemTypes, (byte)def.Type);
         if (slot < 0) return $"You do not have {name}.";
 
-        int price = Math.Max(1, def.Price / 2);
+        int price = Character.ItemIdentified[index]
+            ? def.Price + _rng.Next(20)   // 0x0de8-0x0dfe: 0x1595 + rand() % 20
+            : _pawnRng.Next() % 70;       // 0x0e01-0x0e10: LCG48() % 70
+
         Character.ItemTypes[slot] = (byte)GameConstants.EmptyItem;
         Character.Gold += price;
         string msg = $"I'll give you {price} gold pieces for that item";
@@ -215,10 +245,13 @@ public sealed class CastleEngine
         for (int i = 0; i < Character.ItemTypes.Length; i++)
         {
             if (Character.ItemTypes[i] == GameConstants.EmptyItem) continue;
-            var def = ItemCatalog.All.FirstOrDefault(x => x.Type == Character.ItemTypes[i]);
-            if (def != null)
+            int index = Array.FindIndex(ItemCatalog.All, x => x.Type == Character.ItemTypes[i]);
+            if (index >= 0)
             {
-                string msg = $"The archivist reveals: {def.Name}";
+                // The original donation path toggles the same 0x80d0 bit for
+                // the selected item (0x14bd -> 0x34ca).
+                Character.ItemIdentified[index] = true;
+                string msg = $"The archivist reveals: {ItemCatalog.All[index].Name}";
                 Say(msg);
                 return msg;
             }

@@ -129,6 +129,13 @@ public sealed class Character
     /// <summary>Item type per inventory slot; 255 = empty.</summary>
     public byte[] ItemTypes { get; set; } = Enumerable.Repeat((byte)255, MaxItems).ToArray();
 
+    /// <summary>
+    /// Identified/disclosed bit per item catalog entry.  This mirrors the bit
+    /// array at CASTLE.COM 0x80d0: buying an item or donating to disclose it
+    /// sets the bit, and the pawn shop uses it to choose the sell formula.
+    /// </summary>
+    public bool[] ItemIdentified { get; set; } = new bool[Data.ItemCatalog.All.Length];
+
     /// <summary>Opaque per-item data (kept raw until the item loader is decoded).</summary>
     public byte[] Inventory { get; set; } = new byte[MaxItems * 16];
 

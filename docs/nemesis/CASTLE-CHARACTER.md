@@ -344,7 +344,11 @@ Item data records recovered from `ITEMS.C-0` give item type, level, name, and a 
 ```
 
 - **CONFIRMED:** sell price is printed via `%u` (`"I'll give you %u gold pieces..."`), so it is computed and displayed, not a fixed table string.
-- **UNCERTAIN:** exact buy-price table and sell-price formula (likely price/2 or similar) were not fully recovered.
+- **CONFIRMED (see `EXACT-FORMULAS.md` 3.3):** identified items sell for
+  `item price + LFSR % 20`; unidentified items sell for `LCG48 % 70`.  The
+  identified flag is the `0x80d0` bit array, set when an item is bought and
+  toggled by the archives disclosure path.  Only the time-seeded LCG's initial
+  value remains environment-specific.
 
 ### 3.3 Hospital
 

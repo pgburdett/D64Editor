@@ -97,7 +97,58 @@ public sealed class EngineTests
 
         string sell = game.Sell("AXE");
         Assert.Contains("gold pieces", sell);
+        // Buying identifies the item, so the confirmed formula is
+        // price(10) + LFSR % 20, i.e. 10..29 gold.
+        Assert.InRange(game.Character.Gold, 1000, 1019);
         Assert.DoesNotContain((byte)ItemCatalog.All.First(i => i.Name == "AXE").Type, game.Character.ItemTypes);
+    }
+
+    [Fact]
+    public void Castle_Sell_Identified_Item_Uses_Price_Plus_Lfsr_Remainder()
+    {
+        var castle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
+        var c = new Character { Gold = 100 };
+        castle.Bind(c);
+        int index = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
+        c.ItemTypes[0] = (byte)ItemCatalog.All[index].Type;
+        c.ItemIdentified[index] = true;
+
+        string msg = castle.Sell("AXE");
+
+        // LFSR from state 1 returns 2 then 4; price is 10.
+        Assert.Contains("12 gold pieces", msg);
+        Assert.Equal(112, c.Gold);
+    }
+
+    [Fact]
+    public void Castle_Sell_Unidentified_Item_Uses_Lcg48_Remainder()
+    {
+        var castle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
+        var c = new Character { Gold = 100 };
+        castle.Bind(c);
+        int index = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
+        c.ItemTypes[0] = (byte)ItemCatalog.All[index].Type;
+        c.ItemIdentified[index] = false;
+
+        string msg = castle.Sell("AXE");
+
+        // LCG48 from state 1 returns 8037; 8037 % 70 == 57.
+        Assert.Contains("57 gold pieces", msg);
+        Assert.Equal(157, c.Gold);
+    }
+
+    [Fact]
+    public void Castle_Buy_Identifies_Item()
+    {
+        var castle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
+        var c = new Character { Gold = 100 };
+        castle.Bind(c);
+        int index = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
+
+        castle.Buy("AXE");
+
+        Assert.True(c.ItemIdentified[index]);
+        Assert.Contains((byte)ItemCatalog.All[index].Type, c.ItemTypes);
     }
 
     [Fact]

@@ -6,15 +6,15 @@
   - `D64Editor.Core/` — disk/image engine and format logic (library, `net10.0`, `LangVersion 12`, nullable enabled).
   - `D64Editor.App/` — Avalonia desktop UI (Exe, `net10.0`, `LangVersion 12`, nullable enabled, `Avalonia 11.3.4`). Entry point: `D64Editor.App/Program.cs`.
   - `Nemesis/` — console port of the 1981 CP/M game Nemesis (Exe, `net10.0`). Reverse-engineering work is in `docs/nemesis/`.
-  - `Nemesis.Tests/` — xUnit tests for the Nemesis port (55 tests).
+  - `Nemesis.Tests/` — xUnit tests for the Nemesis port (58 tests).
 - `D64Editor.App` references `D64Editor.Core`. Keep format/disk behavior changes in `Core` and UI changes in `App` unless there is a clear reason. `Nemesis` is standalone; `Nemesis.Tests` references it.
 
 ## Commands
 - Restore: `dotnet restore`
 - Build: `dotnet build` (or `dotnet build --no-restore` after restore)
 - Run UI: `dotnet run --project D64Editor.App`
-- Test: `dotnet test` / `dotnet test --no-build --verbosity normal` (55 xUnit tests in `Nemesis.Tests/`)
-- Nemesis port self-check: `dotnet run --project Nemesis/Nemesis.csproj -- --verify` (25 checks)
+- Test: `dotnet test` / `dotnet test --no-build --verbosity normal` (58 xUnit tests in `Nemesis.Tests/`)
+- Nemesis port self-check: `dotnet run --project Nemesis/Nemesis.csproj -- --verify` (26 checks)
 
 ## CI / environment notes
 - `.github/workflows/dotnet.yml` runs on `ubuntu-latest` (push/PR to `master`) with .NET SDK `10.0.x`: `dotnet restore`, `dotnet build --no-restore`, `dotnet test --no-build --verbosity normal`.
@@ -169,17 +169,17 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 
 ## Nemesis C# port notes
 - `Nemesis/` is a standalone .NET 10 console port of all four CP/M overlays (`PERSON`, `CASTLE`, `DUNGEON`, `NEMESIS`). It is not part of the D64Editor disk engine; it exists to preserve and exercise the reverse-engineering work.
-- Reference material lives in `docs/nemesis/`: five analysis reports (`RECONSTRUCTED-SOURCE.md`, `CASTLE-CHARACTER.md`, `DATA-FORMATS.md`, `DUNGEON-LOGIC.md`, `EXACT-FORMULAS.md`), Ghidra/decompiled C, disassemblies, and original game files in `docs/nemesis/game-files/` (used as test fixtures). `EXACT-FORMULAS.md` rates hand-decoded combat/spell/shop findings CONFIRMED/HIGH/UNCERTAIN; spell unit costs plus the confirmed melee damage, monster creation/refresh, kill-payout formulas and monster-template offsets are applied in the port.
+- Reference material lives in `docs/nemesis/`: five analysis reports (`RECONSTRUCTED-SOURCE.md`, `CASTLE-CHARACTER.md`, `DATA-FORMATS.md`, `DUNGEON-LOGIC.md`, `EXACT-FORMULAS.md`), Ghidra/decompiled C, disassemblies, and original game files in `docs/nemesis/game-files/` (used as test fixtures). `EXACT-FORMULAS.md` rates hand-decoded combat/spell/shop findings CONFIRMED/HIGH/UNCERTAIN; spell unit costs plus the confirmed melee damage, monster creation/refresh, kill-payout, hospital day/rate and pawn-sell formulas and monster-template offsets are applied in the port.
 - Source fragments embedded in `LEVEL.*`/`ITEMS.*` are primary evidence; Ghidra output is secondary/noisy and must be hand-verified against the linear disassembly.
 - Confirmed: stat order `STR INT WIS CHA CON DEX`, 15 races/classes, 32-bit LFSR at `DUNGEON.COM` 0x6d72, 48-bit LCG at 0x6c75 (multiplier `0xe09a0e0187c5`, boot state 1; ported in `Nemesis/Engine/Lcg48Random.cs`; drives `roll()` = 4d5 from PERSON.COM 0x1a71, exact melee damage, and monster creation/refresh rolls), 26×22 × 3-byte map cells at file offset `0x1482` in all shipped `LEVEL.N` files, `.CHR` gold/experience as 10-char zero-padded decimal strings.
-- Best-effort: monster attack hit/miss and special-attack branches, spell level gating/durations, castle price formulas. Monster type/group/HP/attack creation and group-advance refreshes are CONFIRMED and applied in `CombatRules.cs`. Spell **unit costs** are confirmed from the runtime tables (`docs/nemesis/EXACT-FORMULAS.md`) and applied in `GameTables.SpellCatalog`. Preserve the original `valid()` ranger bug in `GameTables.IsValidClass` for fidelity.
-- `Nemesis/Verify.cs` (`--verify`, 25 checks) and `Nemesis.Tests/` (55 xUnit tests) both load the committed original game files; keep them passing when changing recovered tables or file I/O.
+- Best-effort: monster attack hit/miss and special-attack branches, spell level gating/durations, armory buy modifiers, and castle debit paths. Monster type/group/HP/attack creation and group-advance refreshes are CONFIRMED and applied in `CombatRules.cs`. Pawn sell formulas (`price+LFSR%20` identified, `LCG48%70` unidentified), hospital days/rate, melee damage and kill payout are CONFIRMED. Spell **unit costs** are confirmed from the runtime tables (`docs/nemesis/EXACT-FORMULAS.md`) and applied in `GameTables.SpellCatalog`. Preserve the original `valid()` ranger bug in `GameTables.IsValidClass` for fidelity.
+- `Nemesis/Verify.cs` (`--verify`, 26 checks) and `Nemesis.Tests/` (58 xUnit tests) both load the committed original game files; keep them passing when changing recovered tables or file I/O.
 
 ## Known limitations
 - G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.
 - CMD container write-back works for all partition types; richer in-container editing workflows remain incremental.
 - From-scratch CP/M (`--cpm-new`) is data-only (no boot code/CCP/BDOS). File layout is correct (byte-exact extraction verified vs ctools as a cross-check); use `--cpm-bootable` with a system-disk donor or the two-drive x128 setup (system disk on 8, data disk on 9) for running files. `.d81` writing is in-process only.
-- Legacy CP/M 2.2 full-screen games other than Nemesis may still render poorly under CP/M 3.0. Nemesis itself is now verified playable with FastBDOS 3 (`CPMFAST3.D71`) plus an ADM-31 type-6 `TERM.DEF` on a 1581/D81 `B:` disk; see `docs/nemesis/README.md`. The C# port's monster hit/miss/special-attack, spell and shop formulas, and the hospital stay-debit path remain best-effort; melee damage, monster stat creation/refresh, hospital days/rate, and kill payout are exact.
+- Legacy CP/M 2.2 full-screen games other than Nemesis may still render poorly under CP/M 3.0. Nemesis itself is now verified playable with FastBDOS 3 (`CPMFAST3.D71`) plus an ADM-31 type-6 `TERM.DEF` on a 1581/D81 `B:` disk; see `docs/nemesis/README.md`. The C# port's monster hit/miss/special-attack, spell and armory buy formulas, and the hospital/inn stay-debit paths remain best-effort; melee damage, monster stat creation/refresh, hospital days/rate, pawn sell formulas, and kill payout are exact.
 - Broader inter-tab/window disk-to-disk drag-and-drop not fully implemented.
 - Undo/redo coverage not comprehensive across all edit paths.
 - Native OS print dialog and built-in updater/installer not implemented (platform-dependent).

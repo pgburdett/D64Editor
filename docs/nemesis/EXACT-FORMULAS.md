@@ -506,19 +506,49 @@ Confidence: **HIGH** that the price is the item-table word at `+8`; **UNCERTAIN*
 
 ## 3.3 Armory / pawn sell price
 
-Address range: pawn-shop path `0x0edc`–`0x0f6a` (strings `"Welcome to the Pawn Shop"` `0x0edc`, `"Which item do you wish to sell ?"` `0x0f0c`, `"I'll give you %u gold pieces for that item"` `0x0f2e`).
+Address range: pawn-shop path `0x0d70`–`0x0ed3` (strings `"Welcome to the Pawn Shop"` `0x0edc`, `"Which item do you wish to sell ?"` `0x0f0c`, `"I'll give you %u gold pieces for that item"` `0x0f2e`).
 
-Path evidence:
+The earlier note called the arithmetic here UNCERTAIN because it focused on the
+formatting helpers `0x38a7`/`0x33fe`/`0x343d`.  Those are string/format helpers;
+the actual price arithmetic is in the branch at `0x0dd5`–`0x0e10`.
+
+Decoded core:
 
 ```c
-// 0x0eb3/0x0ebe/0x0ecb call helpers 0x38a7, 0x33fe, 0x343d
-// on locals at +6 and on 0x8082 gold string buffer.
-sell_value = item_price_from_inventory(item);
+// 0x80d0 is a bit array of identified/disclosed item-catalog entries.
+// 0x3310(ptr=0x80d0, bit=itemIndex) returns word(ptr + 2*(bit/16)) & (1 << (bit % 16)).
+if (known_bit(0x80d0, itemIndex)) {
+    // CASTLE.COM 0x0de8-0x0dfe
+    sell_value = word[0x80ea + 37*itemIndex + 8] + rand_lfsr() % 20;
+} else {
+    // CASTLE.COM 0x0e01-0x0e10
+    sell_value = lcg48_time_seeded() % 70;
+}
 printf("I'll give you %u gold pieces for that item", sell_value);
-gold += sell_value;
+// gold string at 0x8082 is updated by 0x38a7/0x33fe/0x343d afterwards.
 ```
 
-Confidence: **UNCERTAIN**. The string path and helper calls are located, but the exact arithmetic inside `0x38a7`/`0x33fe`/`0x343d` was not decoded in this pass.
+Helper evidence:
+
+- `0x1595(index)` reads the item price word `word[0x80ea + 37*index + 8]`.
+- `0x472c` is the same 15-bit LFSR as `DUNGEON.COM 0x6d72`; it uses the
+  state words at `0x0597`/`0x0599` and returns a 15-bit value.
+- `0x4754` is the 48-bit LCG with multiplier `0xe09a0e0187c5` (the six bytes
+  at `CASTLE.COM 0x480e`–`0x4813`).  Unlike the fixed boot state used by
+  `DUNGEON.COM`, this instance is seeded from CP/M console status and the
+  clock, so its exact value is environment-specific; the algorithm and `% 70`
+  are still CONFIRMED.
+- `0x329a` sets the `0x80d0` bit when an item is bought (`0x0c90`); `0x3310`
+  tests it for the pawn branch; `0x34ca` toggles it in the archives donation
+  path (`0x14bd`).
+
+Confidence:
+
+- Identified formula `price + LFSR % 20`: **CONFIRMED**.
+- Unidentified formula `LCG48 % 70`: **CONFIRMED**.
+- Bit-array address and set/test/toggle helpers: **CONFIRMED**.
+- Exact seed for the time-seeded LCG: **UNCERTAIN** by design; it depends on
+  the CP/M console/clock at run time.
 
 ## 3.4 Hospital pricing and healing
 
@@ -612,7 +642,9 @@ These remain open and must not be guessed in a faithful port:
 5. **Spell level gate internals** — exact semantics of `0x5be8` against `0x80d6`/`0x80d8`.
 6. **Context mask values** — why combat passes `2` yet several healing spells have flags `1`; needs runtime or source-fragment confirmation.
 7. **Armory buy modifiers** — any class/level multiplier on `word[item+8]`.
-8. **Pawn sell formula** — exact arithmetic in `0x38a7`/`0x33fe`/`0x343d` path.
+8. **Pawn time-seeded LCG seed** — the formula `LCG48 % 70` and the generator
+   are CONFIRMED, but its seed comes from CP/M console status and the clock, so
+   an exact value cannot be replayed outside the original environment.
 9. **Hospital stay/debit path** — exact HP restoration and gold debit after the stay prompt (`days` and `rate` are now CONFIRMED).
 10. **Inn debit** — whether `missing HP * 3` is days, gold, or both, and where the final gold subtraction occurs.
 11. **Archives donation threshold** — operand provenance for the confirmed `/2`.

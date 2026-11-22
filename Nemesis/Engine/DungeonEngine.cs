@@ -570,6 +570,22 @@ public sealed class DungeonEngine
 
     // ----------------------------------------------------------------- items ---
 
+    /// <summary>
+    /// Identifies an item by catalog name.  This sets the same per-item bit
+    /// that CASTLE.COM 0x80d0 uses for pawn-shop pricing.
+    /// </summary>
+    public string Disclose(string name)
+    {
+        if (Character == null) return "No character.";
+        int index = Array.FindIndex(ItemCatalog.All, x =>
+            string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (index < 0) return $"Unknown item: {name}";
+        Character.ItemIdentified[index] = true;
+        string msg = $"You now know: {ItemCatalog.All[index].Name}";
+        Say(msg);
+        return msg;
+    }
+
     public string UseItem(string name)
     {
         if (Character == null) return "No character.";

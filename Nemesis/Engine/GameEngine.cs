@@ -135,6 +135,15 @@ public sealed class GameEngine
         return result;
     }
 
+    public string Disclose(string name)
+    {
+        RequireDungeon();
+        if (!InDungeon) return "You are not in the dungeon.";
+        string result = _dungeon.Disclose(name);
+        Message = null;
+        return result;
+    }
+
     public void Stairs(int delta)
     {
         RequireDungeon();

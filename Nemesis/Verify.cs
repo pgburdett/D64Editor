@@ -71,6 +71,20 @@ internal static class Verify
             hospitalLog.Contains("wounds will take 6 days") &&
             hospitalLog.Contains("rate of 60 gold per day"));
 
+        var pawnCastle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
+        var pawnChar = new Character { Gold = 100 };
+        pawnCastle.Bind(pawnChar);
+        int axe = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
+        pawnChar.ItemTypes[0] = (byte)ItemCatalog.All[axe].Type;
+        pawnChar.ItemIdentified[axe] = true;
+        string identifiedSale = pawnCastle.Sell("AXE");
+        pawnChar.ItemTypes[0] = (byte)ItemCatalog.All[axe].Type;
+        pawnChar.ItemIdentified[axe] = false;
+        string unidentifiedSale = pawnCastle.Sell("AXE");
+        Check("pawn identified price+rand%20, unidentified lcg48%70",
+            identifiedSale.Contains("12 gold pieces") &&
+            unidentifiedSale.Contains("57 gold pieces"));
+
         // Character file round-trip
         string sample = Path.Combine(repoRoot, "docs/nemesis/game-files/ARAGORN.CHR");
         if (File.Exists(sample))
