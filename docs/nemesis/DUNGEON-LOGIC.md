@@ -122,7 +122,8 @@ Display format strings at `0x46e8`, `0x4702`, and `0x4718` confirm the character
 Globals strongly associated with the sheet:
 
 - `0x8098`–`0x80a2`: STR/INT/WIS/CHA/CON/DEX **[high]**
-- `0x80a4`: experience **[high]**
+- `0x80a4`: character level **[confirmed by CASTLE.COM 0x1f5b `Level:` argument and DUNGEON.COM 0x147f level-up store]**
+- `0x808d`: experience as a zero-padded decimal string **[confirmed by CASTLE.COM 0x1f69 `Expr:` argument]**
 - `0x80a6`: current HITS/HP **[confirmed by pit/death code]**
 - `0x80a8`: magic units **[high]**
 - `0x80aa`: cleric units **[high]**
@@ -442,7 +443,8 @@ combat_loop(monster):
 
     if monster dead:
         print "You killed 1"
-        award experience (uses 0x80a4, level 0x80bc, monster table near 0x838f)
+        award experience (uses character level 0x80a4, dungeon level 0x80bc,
+        monster table near 0x838f; experience string at 0x808d)
         return victory
 
     if player HP (0x80a6) <= 0:
@@ -456,8 +458,8 @@ combat_loop(monster):
 Confirmed anchors:
 
 - `0x28ba` reads the payout base from `0x838f + ...`, calls `rand()`, multiplies `10 * base` via `0x023f`, then takes `rand() % (10 * base)` via `0x020f` and adds the base. Superseded by the operand-aware decoding in `EXACT-FORMULAS.md` section 1.5. **[confirmed]**
-- `0x25ab` combines experience (`0x80a4`) and a stat/global (`0x80a2`, likely DEX) and adds `100` (`0x64`). This looks like an experience/level threshold calculation, not direct melee damage. **[medium]**
-- `0x26c7` on kill also reads `0x80a4` and level `0x80bc`, indexing a table near `0x838f`; consistent with **experience award**. **[high]**
+- `0x25ab` combines character level (`0x80a4`) and a stat/global (`0x80a2`, likely DEX) and adds `100` (`0x64`). This looks like an experience/level threshold calculation, not direct melee damage. **[medium]**
+- `0x26c7` on kill reads character level `0x80a4` and dungeon level `0x80bc`, indexing a table near `0x838f`; consistent with a level-scaled **experience award**. **[high]**
 - `0x2b64` prints `"You %s 1"` and calls `0x6d41(1)`, likely a short delay/animation after a kill. **[medium]**
 - `0x80a6` is current HP: pit damage subtracts/adds it, and `<= 0` calls `0x2c4b`. **[confirmed]**
 
@@ -467,7 +469,8 @@ Working (but **unverified**) porting model:
 to_hit  ≈ rand() + DEX/level/weapon bonuses >= monster_AC
 damage  ≈ max(0, (rand() % 10) + STR/weapon/spell bonus)
 healing ≈ rand-based roll clamped to max HP
-EXP     ≈ monster-table value scaled by level, added to 0x80a4
+EXP     ≈ monster-table value scaled by level, added to the string at 0x808d
+LEVEL   ≈ incremented/stored at 0x80a4 when the threshold is reached
 ```
 
 Do not treat these formulas as byte-exact yet; the helper routines must be decoded before a faithful port can rely on them.

@@ -79,8 +79,9 @@ Important globals:
 
 | Address | Meaning used here | Confidence |
 |---:|---|---|
+| `0x808d` | experience as a zero-padded decimal string | CONFIRMED (character-sheet `Expr:` argument at CASTLE.COM `0x1f69`) |
 | `0x80a2` | DEX stat (last of STR/INT/WIS/CHA/CON/DEX at `0x8098`–`0x80a2`) | HIGH |
-| `0x80a4` | experience | HIGH |
+| `0x80a4` | character level | CONFIRMED (character-sheet `Level:` argument at CASTLE.COM `0x1f5b`; level-up store at DUNGEON.COM `0x147f`) |
 | `0x80a6` | current HP / HITS | CONFIRMED |
 | `0x80a8` | magic units | HIGH |
 | `0x80aa` | cleric units | HIGH |
@@ -311,7 +312,7 @@ Address range: DUNGEON.COM `0x25ab`–`0x25d9`.
 ```c
 // r is positive 15-bit from 0x6c75(1)
 uint16_t r = rnd_6c75(1);
-int32_t product = (int32_t)word(0x80a2) * (int32_t)word(0x80a4); // DEX * EXP
+int32_t product = (int32_t)word(0x80a2) * (int32_t)word(0x80a4); // DEX * LEVEL
 int32_t scaled  = product * arg;
 uint16_t result = 100 + signed_rem(r, scaled);
 ```
@@ -590,7 +591,7 @@ if (word(0x80be) == word(0x80a6)) {       // max HP == current HP
 
 missing = word(0x80be) - word(0x80a6);    // 0x02fa + ADD at 0x0fa4..0x0faf
 days = missing;                          // CALL 0x0190 op00 at 0x0fca
-rate = (word(0x80a4) + 1) * 10;            // EXP + 1, CALL 0x023f at 0x0fec
+rate = (word(0x80a4) + 1) * 10;            // LEVEL + 1, CALL 0x023f at 0x0fec
 printf("Your wounds will take %u days to heal", days);
 printf("At a rate of %u gold per day", rate);
 ```
@@ -608,9 +609,11 @@ Confidence:
 
 - Full-HP early-out and `missing HP` calculation: **CONFIRMED**.
 - Day-count rollover `/365` and `%365`: **CONFIRMED**.
-- `days = missing HP` and `rate = (EXP + 1) * 10`: **CONFIRMED** from the two
-  `printf` argument paths at `0x0fca` and `0x0fe5`.  The earlier level-based
-  rate and halved day count were guesses.
+- `days = missing HP` and `rate = (Level + 1) * 10`: **CONFIRMED** from the two
+  `printf` argument paths at `0x0fca` and `0x0fe5`, plus the character-sheet
+  argument order at `0x1f57` (`0x80a4` is `Level`; experience is the decimal
+  string at `0x808d`) and the level-up store at DUNGEON.COM `0x147f`.  The
+  earlier EXP-based rate and halved day count were guesses.
 - Final HP restoration/debit details after the stay prompt at `0x1176`:
   **UNCERTAIN**.  The stay length is parsed by `0x38c0`, but the exact branch
   that updates `0x80a6` and debits gold is not fully traced.

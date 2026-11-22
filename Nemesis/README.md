@@ -39,7 +39,7 @@ stay documentation until their supporting helpers are recovered.
   kill payout (`v + rand() % (10*v)`, written to both sheet buffers), the DM.COM
   monster-template offsets, monster type/group/HP/attack creation and the
   per-monster stat refresh on group advancement, hospital `days = missing HP`
-  and `rate = (EXP+1)*10`, the composite buy/pawn item value, pawn sell formulas
+  and `rate = (Level+1)*10`, the composite buy/pawn item value, pawn sell formulas
   (`item_value + LFSR%20` identified, `LCG48%70` unidentified), and the
   640-byte `.CHR` fields that are decoded.
 - **Best-effort:** the monster attack hit/miss test and special-attack branch,

@@ -174,13 +174,13 @@ public sealed class EngineTests
         game.NewCharacter("PATIENT", 0, Alignment.Neutral, 8, 11);
         game.Character!.HitPoints = 4;
         game.Character.MaxHitPoints = 10;
-        game.Character.Experience = 5;
+        game.Character.Level = 5;
 
         game.CastleCommand('B');
         var log = string.Join("\n", game.Castle.TakeLog());
 
         // CASTLE.COM 0x0fca prints missing HP as days; 0x0fec multiplies
-        // (EXP + 1) by ten for the daily rate.
+        // (Level + 1) by ten for the daily rate.  0x80a4 is the level.
         Assert.Contains("wounds will take 6 days", log);
         Assert.Contains("rate of 60 gold per day", log);
     }

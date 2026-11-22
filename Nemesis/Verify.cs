@@ -64,10 +64,10 @@ internal static class Verify
         hospitalGame.NewCharacter("PATIENT", 0, Alignment.Neutral, 8, 11);
         hospitalGame.Character!.HitPoints = 4;
         hospitalGame.Character.MaxHitPoints = 10;
-        hospitalGame.Character.Experience = 5;
+        hospitalGame.Character.Level = 5;
         hospitalGame.CastleCommand('B');
         string hospitalLog = string.Join("\n", hospitalGame.Castle.TakeLog());
-        Check("hospital days = missing HP, rate = (EXP+1)*10",
+        Check("hospital days = missing HP, rate = (Level+1)*10",
             hospitalLog.Contains("wounds will take 6 days") &&
             hospitalLog.Contains("rate of 60 gold per day"));
 

@@ -172,25 +172,25 @@ public sealed class CastleEngine
         }
         // Confirmed from CASTLE.COM 0x0f5f-0x0ff7: the "%u days" argument is
         // word(0x80be) - word(0x80a6) (missing HP), and the "%u gold per day"
-        // argument is (word(0x80a4) + 1) * 10 (experience + 1, times ten via
-        // the signed-multiply helper 0x023f).  The earlier level-based rate
-        // and halved day count were guesses.
+        // argument is (word(0x80a4) + 1) * 10.  The character-sheet printf at
+        // 0x1f57 proves 0x80a4 is LEVEL (experience is the string at 0x808d),
+        // and the level-up loop at DUNGEON.COM 0x13b4/0x147f increments it.
         int missing = Character.MaxHitPoints - Character.HitPoints;
-        int rate = (Character.Experience + 1) * 10;
+        int rate = (Character.Level + 1) * 10;
         Say($"Your wounds will take {missing} days to heal");
         Say($"At a rate of {rate} gold per day");
         Say("Please enter the length of your stay --");
     }
 
     /// <summary>
-    /// Pays for a stay at the confirmed rate of (EXP + 1) * 10 gold per day.
+    /// Pays for a stay at the confirmed rate of (Level + 1) * 10 gold per day.
     /// The exact HP-restoration/debit branch is still best-effort; one HP per
     /// day, capped at the missing HP, matches the confirmed day count.
     /// </summary>
     public string Heal(int days)
     {
         if (Character == null) return "No character.";
-        int rate = (Character.Experience + 1) * 10;
+        int rate = (Character.Level + 1) * 10;
         int cost = days * rate;
         if (Character.Gold < cost)
         {
