@@ -8,8 +8,9 @@ namespace Nemesis.Engine;
 /// Port of DUNGEON.COM.  The original keeps authoritative state in three
 /// globals (X=0x80b8, Y=0x80ba, level=0x80bc) over a 26x22 grid of 3-byte
 /// cells.  Control flow (movement, stairs, hazards, encounters, combat) follows
-/// the disassembly; combat arithmetic is the documented best-effort model
-/// because the original helper routines are not fully decoded.
+/// the disassembly.  Spell unit costs and the kill-payout shape are decoded in
+/// `docs/nemesis/EXACT-FORMULAS.md`; the melee damage roll below is still a
+/// best-effort model because the original 48-bit LCG at 0x6c75 is not ported.
 /// </summary>
 public sealed class DungeonEngine
 {

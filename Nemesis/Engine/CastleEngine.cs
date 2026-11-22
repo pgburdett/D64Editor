@@ -5,8 +5,9 @@ namespace Nemesis.Engine;
 
 /// <summary>
 /// Port of CASTLE.COM.  The menu strings and branch structure are confirmed
-/// from the compiled program; the shop price formulas are best-effort where
-/// the original arithmetic was not fully decoded.
+/// from the compiled program.  `docs/nemesis/EXACT-FORMULAS.md` records the
+/// hand-decoded hospital early-out, armory price word, and inn `missing*3`
+/// value; debit paths and rates remain best-effort.
 /// </summary>
 public sealed class CastleEngine
 {
