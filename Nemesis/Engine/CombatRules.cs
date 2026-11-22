@@ -25,7 +25,7 @@ public static class CombatRules
 
     /// <summary>
     /// Full F value used by the FIGHT command.  DUNGEON.COM 0x7db7 computes
-    /// the base <c>(STR+DEX)/10</c>, then 0x7df0-0x7e0a adds the signed BE16 at
+    /// the base <c>(STR+DEX)/10</c>, then 0x7df0-0x7e0a adds the signed LE16 at
     /// each equipped inventory record +2.  The AC modifiers at record +0 are
     /// not part of F.
     /// </summary>

@@ -155,7 +155,7 @@ Then the `F` command calls:
 result = melee_attack(word(0xa2f6));   // CALL 0x25dc at 0x7a13
 ```
 
-The FIGHT command then adds the signed BE16 word at inventory record `+2` for
+The FIGHT command then adds the signed LE16 word at inventory record `+2` for
 every slot whose `0x80d2` equipped bit is set (`0x7df0`–`0x7e0a`) before calling
 `0x25dc`.  This is **CONFIRMED** and is implemented in
 `CombatRules.FightStrength(stats, equipped, modifiers)`.
@@ -489,8 +489,8 @@ Confirmed from disassembly around `0x0d90`, `0x1595`, `0x1733` and `0x2f8c`:
   `+2`, `+4`, `+6`, `+8`, `+10` and `+0x20` are preserved.
 - Availability byte: `byte[0x80ea + 37*i + 0x20] == 0xff` means an empty slot.
 - Shop selection checks `arg < 10` around `0x0da6` (armory stock band).
-- Fields `+0`, `+2`, `+4` are the armor-class modifier, damage and base price
-  from `ITEMS.*`; `+6` and `+8` are spell-flag bitmasks.
+- Fields `+0`, `+2`, `+4` are little-endian armor-class modifier, damage and
+  base price from `ITEMS.*`; `+6` and `+8` are spell-flag bitmasks.
 - `0x1595(index)` and `0x1733(itemIndex,out)` both compute a composite value
   from those fields; `+8`/`+6` are **not** a plain price word.
 
@@ -587,7 +587,7 @@ Confidence:
   bit N = inventory slot N).  The adjacent `0x80d2` word at `0x8b` is also
   persistent; it is the per-slot equipped/enchantment-active flag (see below).
   Inventory slot records begin at `0xa3`, are `0x25` bytes each, carry a signed
-  big-endian AC modifier at record `+0`, and carry the item type at `+0x20`
+  little-endian AC modifier at record `+0`, and carry the item type at `+0x20`
   with `0xff` for an empty slot.
 - Exact seed for the time-seeded LCG: **UNCERTAIN** by design; it depends on
   the CP/M console/clock at run time.
@@ -606,17 +606,24 @@ It marks an item whose enchantment is currently active/equipped:
 
 The displayed AC is the signed LE16 global `0x80da` (`.CHR` offset `0x93`);
 `CASTLE.COM 0x1f79` prints it with `"Age: %u AC: %d Gold: "`.  `DUNGEON.COM
-0x3a08` adds each equipped item's signed BE16 word at record `+0` to that AC,
+0x3a08` adds each equipped item's signed LE16 word at record `+0` to that AC,
 and `CASTLE.COM 0x0e79`–`0x0e94` subtracts the same word when an equipped item
 is pawned.
 
-The signed BE16 word at record `+2` is the **fight-strength bonus**.  The FIGHT
+The signed LE16 word at record `+2` is the **fight-strength bonus**.  The FIGHT
 command recomputes base F as `(STR+DEX)/10` into `0xa2f6` at `0x7db7`, then
 `0x7df0`–`0x7e0a` loops over all ten slots, tests `0x80d2`, and adds record `+2`
 for every equipped item before calling `0x25dc`.  Unequipping subtracts it at
 `0x3809`.  The C# port persists this word at `.CHR` `0xa3 + slot*0x25 + 2`,
 adds it only for equipped slots in `CombatRules.FightStrength`, and clears it
 when an item is sold.
+
+The signed LE16 word at record `+4` is the item's **base price** from the
+`ITEMS.*` text records.  It is copied from expanded catalog record `+4` by the
+same routine at `DUNGEON.COM 0x3253`, used as the non-zero "equippable" test at
+`0x35c4`, and required to be non-zero by the Archives disclosure branch at
+`CASTLE.COM 0x14ae`.  This resolves the previously unresolved `record +4`
+branch condition.
 
 ## 3.4 Hospital pricing and healing
 
@@ -731,8 +738,8 @@ Confidence:
 - Identified bit is indexed by inventory slot: **CONFIRMED** by every call site
   (`0x0c90`, `0x0dd5`, `0x0e5d`, `0x14bd`).
 - The word at `inventory[slot] + 4` must be non-zero: **CONFIRMED** as a branch
-  condition, but that field's meaning is **UNCERTAIN**; the port does not model
-  it.
+  condition and as the item's base price copied from `ITEMS.*`; the port
+  persists it and skips zero-price slots.
 - Debiting the donation from the gold string at `0x8082` (`0x13f2`):
   **CONFIRMED** by the decimal-subtract helper `0x320d` writing its result back
   to that global string; the port's `Gold -= amount` is faithful.
@@ -758,10 +765,7 @@ These remain open and must not be guessed in a faithful port:
    the original environment.
 9. **Hospital stay/debit path** — exact HP restoration and gold debit after the stay prompt (`days` and `rate` are now CONFIRMED).
 10. **Inn debit** — whether `missing HP * 3` is days, gold, or both, and where the final gold subtraction occurs.
-11. **Archives `record + 4` word** — the exact-half threshold, gold debit and
-    per-slot bit are CONFIRMED, but the meaning of the required non-zero
-    `inventory[slot] + 4` word remains unresolved.
-12. **RNG seed used for the shipped `ARAGORN.CHR`** — the compiled default LFSR
+11. **RNG seed used for the shipped `ARAGORN.CHR`** — the compiled default LFSR
     seed (`0xffff59dc`) and the interactive `init_rand()` path are known, but
     the seed actually entered for that saved character is not recorded.
     `roll()` itself is now confirmed (4d5, section 5).

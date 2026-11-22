@@ -152,18 +152,25 @@ public sealed class Character
     public bool[] ItemEquipped { get; set; } = new bool[MaxItems];
 
     /// <summary>
-    /// Signed big-endian AC modifier at inventory record +0.  DUNGEON.COM
+    /// Signed little-endian AC modifier at inventory record +0.  DUNGEON.COM
     /// 0x3a08 adds it to the displayed AC when the slot is equipped, and
     /// CASTLE.COM 0x0e79 subtracts it when an equipped item is sold.
     /// </summary>
     public int[] ItemAcModifier { get; set; } = new int[MaxItems];
 
     /// <summary>
-    /// Signed big-endian fight-strength modifier at inventory record +2.
+    /// Signed little-endian fight-strength modifier at inventory record +2.
     /// DUNGEON.COM 0x7df0-0x7e0a adds it to F (0xa2f6) for every equipped slot
     /// before calling the melee routine; 0x3809 subtracts it when unequipped.
     /// </summary>
     public int[] ItemFModifier { get; set; } = new int[MaxItems];
+
+    /// <summary>
+    /// Signed little-endian base price at inventory record +4.  DUNGEON.COM
+    /// 0x35c4 uses it as the equippable-item test, and CASTLE.COM 0x14ae
+    /// requires it to be non-zero when disclosing an item in the Archives.
+    /// </summary>
+    public int[] ItemPrice { get; set; } = new int[MaxItems];
 
     /// <summary>Opaque per-item data (kept raw until the item loader is decoded).</summary>
     public byte[] Inventory { get; set; } = new byte[MaxItems * 16];

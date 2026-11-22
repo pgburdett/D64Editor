@@ -106,13 +106,28 @@ internal static class Verify
         var archiveCastle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
         var archiveChar = new Character { Gold = 1000 };
         archiveCastle.Bind(archiveChar);
-        int axeValue = ItemCatalog.Value(ItemCatalog.All[axe], absoluteDamage: false);
-        archiveChar.ItemTypes[0] = (byte)ItemCatalog.All[axe].Type;
+        var axeDef = ItemCatalog.All[axe];
+        int axeValue = ItemCatalog.Value(axeDef, absoluteDamage: false);
+        archiveChar.ItemTypes[0] = (byte)axeDef.Type;
+        archiveChar.ItemAcModifier[0] = axeDef.AcModifier;
+        archiveChar.ItemFModifier[0] = axeDef.Damage;
+        archiveChar.ItemPrice[0] = axeDef.Price;
         string wrongDonation = archiveCastle.Donate(axeValue / 2 + 1, 0);
         string rightDonation = archiveCastle.Donate(axeValue / 2, 0);
         Check("archives donation requires exact half value and sets slot bit",
             wrongDonation.Contains("asks for") &&
             rightDonation.Contains("archivist reveals") && archiveChar.ItemIdentified[0]);
+
+        var freeItemCastle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
+        var freeItemChar = new Character { Gold = 1000 };
+        freeItemCastle.Bind(freeItemChar);
+        freeItemChar.ItemTypes[0] = (byte)axeDef.Type;
+        freeItemChar.ItemAcModifier[0] = axeDef.AcModifier;
+        freeItemChar.ItemFModifier[0] = axeDef.Damage;
+        freeItemChar.ItemPrice[0] = 0;
+        Check("archives rejects an item with zero base price",
+            freeItemCastle.Donate(axeValue / 2, 0).Contains("nothing to disclose") &&
+            !freeItemChar.ItemIdentified[0] && freeItemChar.Gold == 1000);
 
         // Character file round-trip
         string sample = Path.Combine(repoRoot, "docs/nemesis/game-files/ARAGORN.CHR");
@@ -136,14 +151,16 @@ internal static class Verify
             c.ArmorClass = 8;
             c.ItemAcModifier[0] = -2;
             c.ItemFModifier[0] = 3;
+            c.ItemPrice[0] = 10;
             c.ItemTypes[0] = 42;
             byte[] modified = CharacterFile.Write(c);
-            Check("identified/equipped bits, AC and item types persist at confirmed .CHR offsets",
+            Check("identified/equipped bits, AC, price and item types persist at confirmed .CHR offsets",
                 modified[0x89] == 0x01 && modified[0x8a] == 0x02 &&
                 modified[0x8b] == 0x01 && modified[0x8c] == 0x02 &&
                 modified[0x93] == 0x08 && modified[0x94] == 0x00 &&
-                modified[0xa3] == 0xff && modified[0xa4] == 0xfe &&
-                modified[0xa3 + 0x02] == 0x00 && modified[0xa3 + 0x03] == 0x03 &&
+                modified[0xa3] == 0xfe && modified[0xa4] == 0xff &&
+                modified[0xa3 + 0x02] == 0x03 && modified[0xa3 + 0x03] == 0x00 &&
+                modified[0xa3 + 0x04] == 0x0a && modified[0xa3 + 0x05] == 0x00 &&
                 modified[0xa3 + 0x20] == 42);
         }
         else Check("sample .CHR exists", false, sample);

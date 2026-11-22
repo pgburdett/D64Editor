@@ -114,6 +114,13 @@ public sealed class CastleEngine
 
         Character.Gold -= price;
         Character.ItemTypes[slot] = (byte)def.Type;
+        // The catalog copy at DUNGEON.COM 0x3253 fills the raw inventory slot
+        // with the AC modifier, damage/power and base price words.  Persist
+        // them so later AC, fight and item_value() calculations use the item
+        // that was actually bought.
+        Character.ItemAcModifier[slot] = def.AcModifier;
+        Character.ItemFModifier[slot] = def.Damage;
+        Character.ItemPrice[slot] = def.Price;
         // CASTLE.COM 0x0c90 sets the 0x80d0 bit for the inventory slot, so it
         // is identified before any later pawn-shop visit.
         Character.ItemIdentified[slot] = true;
@@ -171,6 +178,8 @@ public sealed class CastleEngine
         Character.ItemAcModifier[slot] = 0;
         if (slot < Character.ItemFModifier.Length)
             Character.ItemFModifier[slot] = 0;
+        if (slot < Character.ItemPrice.Length)
+            Character.ItemPrice[slot] = 0;
 
         Character.Gold += price;
         string msg = $"I'll give you {price} gold pieces for that item";
@@ -276,11 +285,11 @@ public sealed class CastleEngine
 
     /// <summary>
     /// Discloses one inventory item.  CASTLE.COM 0x1465-0x1499 computes
-    /// <c>0x1595(slot) / 2</c>, formats it as <c>%010u</c>, and compares that
-    /// string with the entered donation; only an exact match reaches the
-    /// identified-bit toggle at 0x14bd (0x34ca uses XOR).  The bit is indexed
-    /// by SLOT, not catalog entry.  The original also checks an unmapped
-    /// inventory word at +4.
+    /// <c>0x1595(slot) / 2</c> from the persisted inventory words, formats it
+    /// as <c>%010u</c>, and compares that string with the entered donation;
+    /// only an exact match reaches the identified-bit toggle at 0x14bd
+    /// (0x34ca uses XOR).  The bit is indexed by SLOT, not catalog entry.  The
+    /// base price at record +4 must also be non-zero (0x14ae).
     /// </summary>
     public string Donate(int amount, int slot)
     {
@@ -288,7 +297,11 @@ public sealed class CastleEngine
         if (amount <= 0) return "You must donate something.";
         if (Character.Gold < amount) return "You do not have that much gold.";
         if (slot < 0 || slot >= Character.ItemTypes.Length ||
-            Character.ItemTypes[slot] == GameConstants.EmptyItem)
+            Character.ItemTypes[slot] == GameConstants.EmptyItem ||
+            slot >= Character.ItemAcModifier.Length ||
+            slot >= Character.ItemFModifier.Length ||
+            slot >= Character.ItemPrice.Length ||
+            Character.ItemPrice[slot] == 0)
         {
             string none = "You have nothing to disclose.";
             Say(none);
@@ -303,7 +316,14 @@ public sealed class CastleEngine
             return none;
         }
 
-        int required = ItemCatalog.Value(def, absoluteDamage: false) / 2;
+        // 0x1595 reads the AC modifier, damage and base price out of the
+        // inventory record, so use the persisted words rather than a catalog
+        // lookup.  The pawn path uses signed damage (absoluteDamage: false).
+        int required = ItemCatalog.Value(
+            Character.ItemAcModifier[slot],
+            Character.ItemFModifier[slot],
+            Character.ItemPrice[slot],
+            absoluteDamage: false) / 2;
         if (amount != required)
         {
             string wrong = $"The archivist asks for {required} gold pieces.";
@@ -326,9 +346,14 @@ public sealed class CastleEngine
         for (int i = 0; i < Character.ItemTypes.Length; i++)
         {
             if (Character.ItemTypes[i] == GameConstants.EmptyItem) continue;
-            var def = ItemCatalog.All.FirstOrDefault(x => x.Type == Character.ItemTypes[i]);
-            if (def != null && ItemCatalog.Value(def, absoluteDamage: false) / 2 == amount)
-                return i;
+            if (i >= Character.ItemAcModifier.Length ||
+                i >= Character.ItemFModifier.Length ||
+                i >= Character.ItemPrice.Length ||
+                Character.ItemPrice[i] == 0) continue;
+            int value = ItemCatalog.Value(
+                Character.ItemAcModifier[i], Character.ItemFModifier[i],
+                Character.ItemPrice[i], absoluteDamage: false);
+            if (value / 2 == amount) return i;
         }
         return -1;
     }

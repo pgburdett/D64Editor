@@ -21,9 +21,9 @@ namespace Nemesis.IO;
 ///   0x89   per-inventory-slot identified bits (LE16 word, runtime 0x80d0)
 ///   0x8b   per-slot equipped/enchantment-active bits (LE16, runtime 0x80d2)
 ///   0x93   displayed armor class (signed LE16, runtime 0x80da)
-///   0xa3   inventory records, 0x25 bytes each; AC modifier is a signed BE16
-///          at record +0, fight bonus at +2, item type at +0x20, and 0xff
-///          marks an empty slot
+///   0xa3   inventory records, 0x25 bytes each; AC modifier, fight bonus and
+///          base price are signed LE16 at record +0, +2 and +4; item type is
+///          at +0x20, and 0xff marks an empty slot
 ///
 /// The save buffer starts at runtime 0x8047: NEMESIS.COM loads five 128-byte
 /// records into it and CASTLE.COM/DUNGEON.COM write the same buffer back on
@@ -45,6 +45,7 @@ public static class CharacterFile
     private const int ItemSlotSize = 0x25;
     private const int ItemSlotAcOffset = 0;
     private const int ItemSlotFOffset = 2;
+    private const int ItemSlotPriceOffset = 4;
     private const int ItemSlotTypeOffset = 0x20;
     private const int NumericWidth = 10;
 
@@ -91,15 +92,17 @@ public static class CharacterFile
             c.ItemEquipped[i] = (equipped & (1 << i)) != 0;
         }
 
-        // The expanded inventory records start at 0x80ea.  Record +0 is a
-        // signed big-endian AC modifier and record +2 is the signed fight
-        // bonus, both applied while the slot is equipped.  Record +0x20 is the
-        // item type and 0xff marks an empty slot.
+        // The expanded inventory records start at 0x80ea.  Records +0, +2 and
+        // +4 are signed little-endian AC modifier, fight bonus and base price.
+        // The catalog-copy routine at DUNGEON.COM 0x3253 writes these words
+        // low-byte first, and the item-effect routines read them the same way.
+        // Record +0x20 is the item type and 0xff marks an empty slot.
         for (int slot = 0; slot < Character.MaxItems; slot++)
         {
             int record = ItemSlotOffset + slot * ItemSlotSize;
-            c.ItemAcModifier[slot] = ReadBE16Signed(data, record + ItemSlotAcOffset);
-            c.ItemFModifier[slot] = ReadBE16Signed(data, record + ItemSlotFOffset);
+            c.ItemAcModifier[slot] = ReadLE16Signed(data, record + ItemSlotAcOffset);
+            c.ItemFModifier[slot] = ReadLE16Signed(data, record + ItemSlotFOffset);
+            c.ItemPrice[slot] = ReadLE16Signed(data, record + ItemSlotPriceOffset);
             c.ItemTypes[slot] = data[record + ItemSlotTypeOffset];
         }
 
@@ -143,9 +146,11 @@ public static class CharacterFile
         {
             int record = ItemSlotOffset + slot * ItemSlotSize;
             if (slot < c.ItemAcModifier.Length)
-                WriteBE16(data, record + ItemSlotAcOffset, c.ItemAcModifier[slot]);
+                WriteLE16(data, record + ItemSlotAcOffset, c.ItemAcModifier[slot]);
             if (slot < c.ItemFModifier.Length)
-                WriteBE16(data, record + ItemSlotFOffset, c.ItemFModifier[slot]);
+                WriteLE16(data, record + ItemSlotFOffset, c.ItemFModifier[slot]);
+            if (slot < c.ItemPrice.Length)
+                WriteLE16(data, record + ItemSlotPriceOffset, c.ItemPrice[slot]);
             data[record + ItemSlotTypeOffset] = c.ItemTypes[slot];
         }
 
@@ -155,12 +160,6 @@ public static class CharacterFile
     public static void Save(Character c, string path) => File.WriteAllBytes(path, Write(c));
 
     private static int ReadBE16(byte[] d, int o) => (d[o] << 8) | d[o + 1];
-
-    private static int ReadBE16Signed(byte[] d, int o)
-    {
-        int v = ReadBE16(d, o);
-        return v >= 0x8000 ? v - 0x10000 : v;
-    }
 
     private static int ReadLE16Signed(byte[] d, int o)
     {

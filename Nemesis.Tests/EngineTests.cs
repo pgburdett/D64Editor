@@ -174,6 +174,9 @@ public sealed class EngineTests
         Assert.True(c.ItemIdentified[0]);
         Assert.Equal(790, c.Gold);
         Assert.Contains((byte)ItemCatalog.All[index].Type, c.ItemTypes);
+        Assert.Equal(ItemCatalog.All[index].AcModifier, c.ItemAcModifier[0]);
+        Assert.Equal(ItemCatalog.All[index].Damage, c.ItemFModifier[0]);
+        Assert.Equal(ItemCatalog.All[index].Price, c.ItemPrice[0]);
     }
 
     [Fact]
@@ -183,8 +186,12 @@ public sealed class EngineTests
         var c = new Character { Gold = 1000 };
         castle.Bind(c);
         int index = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
-        int value = ItemCatalog.Value(ItemCatalog.All[index], absoluteDamage: false);
-        c.ItemTypes[0] = (byte)ItemCatalog.All[index].Type;
+        var def = ItemCatalog.All[index];
+        int value = ItemCatalog.Value(def, absoluteDamage: false);
+        c.ItemTypes[0] = (byte)def.Type;
+        c.ItemAcModifier[0] = def.AcModifier;
+        c.ItemFModifier[0] = def.Damage;
+        c.ItemPrice[0] = def.Price;
 
         string wrong = castle.Donate(value / 2 + 1, 0);
         Assert.Contains("asks for", wrong);
@@ -199,6 +206,26 @@ public sealed class EngineTests
         // 0x34ca is XOR, so a second identical donation clears the bit.
         castle.Donate(value / 2, 0);
         Assert.False(c.ItemIdentified[0]);
+    }
+
+    [Fact]
+    public void Castle_Donate_Rejects_Zero_Price_Item()
+    {
+        var castle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
+        var c = new Character { Gold = 1000 };
+        castle.Bind(c);
+        var def = ItemCatalog.All.First(i => i.Name == "AXE");
+        int value = ItemCatalog.Value(def, absoluteDamage: false);
+        c.ItemTypes[0] = (byte)def.Type;
+        c.ItemAcModifier[0] = def.AcModifier;
+        c.ItemFModifier[0] = def.Damage;
+        c.ItemPrice[0] = 0; // CASTLE.COM 0x14ae rejects this slot.
+
+        string result = castle.Donate(value / 2, 0);
+
+        Assert.Contains("nothing to disclose", result);
+        Assert.False(c.ItemIdentified[0]);
+        Assert.Equal(1000, c.Gold);
     }
 
     [Fact]

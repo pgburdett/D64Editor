@@ -116,9 +116,17 @@ public static class ItemCatalog
     /// the dungeon spell tables are loaded the original also adds 1000 for
     /// each set spell-flag bit, but those counters are zero in CASTLE.COM.
     /// </summary>
-    public static int Value(ItemDef item, bool absoluteDamage = true)
+    public static int Value(ItemDef item, bool absoluteDamage = true) =>
+        Value(item.AcModifier, item.Damage, item.Price, absoluteDamage);
+
+    /// <summary>
+    /// Computes the same composite value from the persisted inventory record
+    /// fields.  CASTLE.COM 0x1595 reads the AC modifier, damage and base price
+    /// out of the inventory slot, not out of a catalog lookup.
+    /// </summary>
+    public static int Value(int acModifier, int damage, int price, bool absoluteDamage)
     {
-        int damage = absoluteDamage ? Math.Abs(item.Damage) : item.Damage;
-        return 500 * Math.Abs(item.AcModifier) + 100 * damage + item.Price;
+        int signedDamage = absoluteDamage ? Math.Abs(damage) : damage;
+        return 500 * Math.Abs(acModifier) + 100 * signedDamage + price;
     }
 }
