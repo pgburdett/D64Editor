@@ -79,6 +79,16 @@ public sealed class GameTablesTests
     }
 
     [Fact]
+    public void Spell_Unit_Costs_Match_Disassembled_Runtime_Tables()
+    {
+        int[] cleric = [2, 4, 4, 8, 8, 8, 10, 10, 10, 20, 15, 10];
+        int[] magic = [2, 4, 4, 6, 8, 10, 10, 14, 16, 15, 20, 25, 20, 10, 10];
+
+        Assert.Equal(cleric, SpellCatalog.Cleric.Select(s => s.UnitCost));
+        Assert.Equal(magic, SpellCatalog.Magic.Select(s => s.UnitCost));
+    }
+
+    [Fact]
     public void Recovered_Data_Catalogs_Are_Populated()
     {
         Assert.Equal(94, ItemCatalog.All.Length);

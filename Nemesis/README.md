@@ -20,6 +20,12 @@ spells) lives in `Data/`.  The exact 32-bit LFSR from `DUNGEON.COM` is in
 `Engine/LfsrRandom.cs` — using `System.Random` would diverge from the original
 immediately.
 
+`docs/nemesis/EXACT-FORMULAS.md` records a hand disassembly of the combat,
+spell, and castle pricing helpers with CONFIRMED/HIGH/UNCERTAIN confidence
+ratings. The recovered **spell unit costs** from the runtime tables are applied
+in `Data/GameTables.cs`; the other findings remain documentation until their
+supporting RNG/helper routines are ported.
+
 ### Fidelity notes
 
 - **Confirmed:** control flow, stat order (`STR INT WIS CHA CON DEX`), type/class

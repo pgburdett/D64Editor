@@ -117,16 +117,20 @@ public sealed record SpellDef(int Index, string Name, SpellSchool School, int Mi
 
 public static class SpellCatalog
 {
+    // Unit costs are decoded from the runtime spell tables in DUNGEON.COM
+    // (cleric 0xa240, magic 0xa290; see docs/nemesis/EXACT-FORMULAS.md).
+    // MinLevel values remain best-effort: the 5th byte in each spell record
+    // equals the spell's own index, so its role as a level gate is uncertain.
     public static readonly SpellDef[] Cleric =
     [
-        new(1,  "LIGHT",      SpellSchool.Cleric, 1,  5, "Light the dungeon room."),
-        new(2,  "CURE",       SpellSchool.Cleric, 1,  5, "Restore hit points."),
-        new(3,  "DAMAGE",     SpellSchool.Cleric, 3,  8, "Damage one monster."),
-        new(4,  "PROTECT",    SpellSchool.Cleric, 5, 10, "Raise armor class."),
-        new(5,  "HEAL",       SpellSchool.Cleric, 8, 10, "Restore more hit points."),
-        new(6,  "CLEANSE",    SpellSchool.Cleric, 9, 10, "Remove an adverse condition."),
+        new(1,  "LIGHT",      SpellSchool.Cleric, 1,  2, "Light the dungeon room."),
+        new(2,  "CURE",       SpellSchool.Cleric, 1,  4, "Restore hit points."),
+        new(3,  "DAMAGE",     SpellSchool.Cleric, 3,  4, "Damage one monster."),
+        new(4,  "PROTECT",    SpellSchool.Cleric, 5,  8, "Raise armor class."),
+        new(5,  "HEAL",       SpellSchool.Cleric, 8,  8, "Restore more hit points."),
+        new(6,  "CLEANSE",    SpellSchool.Cleric, 9,  8, "Remove an adverse condition."),
         new(7,  "RESTORE",    SpellSchool.Cleric, 11, 10, "Restore drained attributes."),
-        new(8,  "ATTACK",     SpellSchool.Cleric, 12, 12, "Offensive combat spell."),
+        new(8,  "ATTACK",     SpellSchool.Cleric, 12, 10, "Offensive combat spell."),
         new(9,  "DISPELL",    SpellSchool.Cleric, 10, 10, "Stop monsters attacking."),
         new(10, "HOLY WORD",  SpellSchool.Cleric, 20, 20, "Powerful attack spell."),
         new(11, "SILENCE",    SpellSchool.Cleric, 0x18,15, "Prevent spell casting."),
@@ -135,21 +139,21 @@ public static class SpellCatalog
 
     public static readonly SpellDef[] Magic =
     [
-        new(1,  "LIGHT",            SpellSchool.Magic, 1,  5, "Light the dungeon room."),
-        new(2,  "DAMAGE",           SpellSchool.Magic, 2,  5, "Damage one monster."),
-        new(3,  "SLEEP",            SpellSchool.Magic, 4, 10, "Sleep a group of monsters."),
-        new(4,  "SHIELD",           SpellSchool.Magic, 5,  8, "Raise armor class."),
-        new(5,  "STRENGTH",         SpellSchool.Magic, 1,  5, "Raise strength."),
+        new(1,  "LIGHT",            SpellSchool.Magic, 1,  2, "Light the dungeon room."),
+        new(2,  "DAMAGE",           SpellSchool.Magic, 2,  4, "Damage one monster."),
+        new(3,  "SLEEP",            SpellSchool.Magic, 4,  4, "Sleep a group of monsters."),
+        new(4,  "SHIELD",           SpellSchool.Magic, 5,  6, "Raise armor class."),
+        new(5,  "STRENGTH",         SpellSchool.Magic, 1,  8, "Raise strength."),
         new(6,  "FIREBALL",         SpellSchool.Magic, 10, 10, "Damage monsters with fire."),
         new(7,  "LIGHTNING",        SpellSchool.Magic, 10, 10, "Damage monsters with lightning."),
-        new(8,  "SPEED",            SpellSchool.Magic, 14, 10, "Raise dexterity."),
-        new(9,  "LEVITATE",         SpellSchool.Magic, 16, 10, "Float over pits."),
+        new(8,  "SPEED",            SpellSchool.Magic, 14, 14, "Raise dexterity."),
+        new(9,  "LEVITATE",         SpellSchool.Magic, 16, 16, "Float over pits."),
         new(10, "FEAR",             SpellSchool.Magic, 0x18,15, "Frighten monsters."),
         new(11, "CLOUDKILL",        SpellSchool.Magic, 20, 20, "Poison gas cloud."),
         new(12, "POWER WORD",       SpellSchool.Magic, 25, 25, "Powerful attack spell."),
         new(13, "TELEPORT",         SpellSchool.Magic, 20, 20, "Move to another place."),
         new(14, "DISCLOSE",         SpellSchool.Magic, 10, 10, "Identify an item."),
-        new(15, "FIRE PROTECTION",  SpellSchool.Magic, 12, 12, "Protect against flame."),
+        new(15, "FIRE PROTECTION",  SpellSchool.Magic, 12, 10, "Protect against flame."),
     ];
 
     public static IEnumerable<SpellDef> All => Cleric.Concat(Magic);

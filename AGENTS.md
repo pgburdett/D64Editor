@@ -169,11 +169,11 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 
 ## Nemesis C# port notes
 - `Nemesis/` is a standalone .NET 10 console port of all four CP/M overlays (`PERSON`, `CASTLE`, `DUNGEON`, `NEMESIS`). It is not part of the D64Editor disk engine; it exists to preserve and exercise the reverse-engineering work.
-- Reference material lives in `docs/nemesis/`: four analysis reports (`RECONSTRUCTED-SOURCE.md`, `CASTLE-CHARACTER.md`, `DATA-FORMATS.md`, `DUNGEON-LOGIC.md`), Ghidra/decompiled C, disassemblies, and original game files in `docs/nemesis/game-files/` (used as test fixtures).
+- Reference material lives in `docs/nemesis/`: five analysis reports (`RECONSTRUCTED-SOURCE.md`, `CASTLE-CHARACTER.md`, `DATA-FORMATS.md`, `DUNGEON-LOGIC.md`, `EXACT-FORMULAS.md`), Ghidra/decompiled C, disassemblies, and original game files in `docs/nemesis/game-files/` (used as test fixtures). `EXACT-FORMULAS.md` rates hand-decoded combat/spell/shop findings CONFIRMED/HIGH/UNCERTAIN; only recovered spell unit costs are applied in the port so far.
 - Source fragments embedded in `LEVEL.*`/`ITEMS.*` are primary evidence; Ghidra output is secondary/noisy and must be hand-verified against the linear disassembly.
 - Confirmed: stat order `STR INT WIS CHA CON DEX`, 15 races/classes, 32-bit LFSR at `DUNGEON.COM` 0x6d72, 26×22 × 3-byte map cells at file offset `0x1482` in all shipped `LEVEL.N` files, `.CHR` gold/experience as 10-char zero-padded decimal strings.
-- Best-effort: combat arithmetic, spell costs/durations, castle price formulas. Preserve the original `valid()` ranger bug in `GameTables.IsValidClass` for fidelity.
-- `Nemesis/Verify.cs` (`--verify`, 20 checks) and `Nemesis.Tests/` (43 xUnit tests) both load the committed original game files; keep them passing when changing recovered tables or file I/O.
+- Best-effort: combat arithmetic, spell level gating/durations, castle price formulas. Spell **unit costs** are confirmed from the runtime tables (`docs/nemesis/EXACT-FORMULAS.md`) and applied in `GameTables.SpellCatalog`. Preserve the original `valid()` ranger bug in `GameTables.IsValidClass` for fidelity.
+- `Nemesis/Verify.cs` (`--verify`, 20 checks) and `Nemesis.Tests/` (44 xUnit tests) both load the committed original game files; keep them passing when changing recovered tables or file I/O.
 
 ## Known limitations
 - G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.
