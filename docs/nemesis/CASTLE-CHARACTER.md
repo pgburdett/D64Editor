@@ -248,9 +248,28 @@ The character record is **640 bytes**. Source-level fields confirmed from the re
 **Raw byte offsets — PARTIAL / UNCERTAIN.** Z80 code uses a global base pointer at `0x0115` plus offsets:
 - `+0x300` = start of the in-memory `xclass`/`xtype` table arena (15 records × `0x48` bytes); `+0x738` = table count. This is runtime scratch, not the saved 640-byte record.
 - Name/type/class strings are written near `+0x73`, `+0x92`; other touched offsets include `+0xa7`, `+0xe5`, `+0xe9`, `+0xed`, `+0xef`, `+0x107`.
-- The `ARAGORN.CHR` sample in the repo is a 640-byte placeholder/garbage file and was **not** usable as a reliable layout oracle.
+- The `ARAGORN.CHR` sample is a genuine 640-byte saved character and **is** a usable layout oracle (the earlier "placeholder/garbage" assessment was wrong). Confirmed directly from its bytes:
 
-The exact byte-for-byte 640-byte serialization needs one more pass over `save_char()`/`load_char()` in `PERSON.COM`; that was not completed before wrap-up.
+  | Offset | Width | Value / meaning |
+  |---|---|---|
+  | `0x12` | ASCIIZ | character name (`"aragorn"`) |
+  | `0x27` | ASCIIZ | type name (`"Hobbit"`) |
+  | `0x31` | ASCIIZ | class name (`"Peasant"`) |
+  | `0x3b` | 10 chars | gold, zero-padded decimal (`"0000000117"`) |
+  | `0x46` | 10 chars | experience, zero-padded decimal (`"0000000000"`) |
+  | `0x50..0x5b` | 6 × BE16 | STR=12, INT=10, WIS=11, CHA=12, CON=8, DEX=15 |
+  | `0x5c` | BE16 | level (0) |
+  | `0x5e` | BE16 | age (16) |
+  | `0x64` | BE16 | current HITS (5) |
+  | `0x66` | BE16 | O_HITS / maximum HITS (8) |
+
+  The `0xffff` pairs around `0x71..0x74` are plausibly `p_mspell`/`p_cspell`
+  and/or the `p_item[]` initial `255` values, but cannot be disambiguated from
+  a single sample. The C# reader therefore keeps the whole file in `RawData`
+  and only writes back fields it has confirmed, giving byte-exact round-trips.
+
+The exact byte-for-byte meaning of the remaining fields still needs a pass over
+`save_char()`/`load_char()` in `PERSON.COM`; that was not completed.
 
 ---
 
