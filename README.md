@@ -32,10 +32,11 @@ This is a C# port of the core disk engine and UI Components.
 22. [File Chain & Directory Display](#file-chain--directory-display)
 23. [Undo/Redo](#undoredo)
 24. [Packaging & OS Integration](#packaging--os-integration)
-25. [Verification & Testing](#verification--testing)
-26. [Known Limitations & Out-of-Scope Items](#known-limitations--out-of-scope-items)
-27. [Fidelity vs. Cleanup](#fidelity-vs-cleanup)
-28. [Contributing](#contributing)
+25. [Nemesis C# port](#nemesis-c-port)
+26. [Verification & Testing](#verification--testing)
+27. [Known Limitations & Out-of-Scope Items](#known-limitations--out-of-scope-items)
+28. [Fidelity vs. Cleanup](#fidelity-vs-cleanup)
+29. [Contributing](#contributing)
 
 ---
 
@@ -573,13 +574,16 @@ The practical consequence, verified with several real games:
 |---------|-----------|--------------------------|
 | **MBASIC / BASIC programs** (e.g. WUMPUS) | line-oriented | ✅ runs to completion |
 | **Infocom Zork I/II/III** (CP/M INTERLOGIC) | line-oriented | ✅ runs, fully interactive |
-| **Nemesis** (SuperSoft, CP/M 2.2) | full-screen cursor positioning | ❌ menus render garbled |
+| **Nemesis** (SuperSoft, CP/M 2.2) | full-screen cursor positioning | ✅ readable and playable with FastBDOS 3 + ADM-31 `TERM.DEF` |
 
-This distinction is a property of the **program's terminal usage**, not of file transfer:
-all three were staged onto D71 images through the same CP/M image-creation path, and their
-files extract byte-for-byte. If a game's display looks corrupted, first check whether it's
-a full-screen program — trying a different `TERM.DEF` will not help, because the limit is
-in the console BIOS, not the terminal definition.
+The earlier garbling was caused by the stock CP/M 3 console BIOS plus a mismatched terminal
+definition, not by corrupt files. Nemesis is now verified with **CPMFAST3.D71** (FastBIOS 3.0)
+on `A:` and a rebuilt 1581/D81 game disk on `B:`, using an ADM-31 / type-6 `TERM.DEF` in the
+game directory; launch with `B:NEMESIS ARAGORN`. The title, menus, dungeon maps and combat
+screens all render and the game plays through to death/level transitions. See
+[`docs/nemesis/README.md`](docs/nemesis/README.md) for the exact setup; the game files are
+byte-exact when extracted. Pure line-oriented programs (MBASIC, Infocom Zork) run under the
+stock CP/M 3 BIOS too.
 
 **Verified example — Zork II (Infocom INTERLOGIC version):**
 
@@ -900,6 +904,24 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 `ArchiveExtract` (zip/tar/tgz extraction), `D64Image.RenameDisk` and
 `D64Image.GetRawDataCopy()/RestoreRawData()` (snapshot support used elsewhere).
 
+## Nemesis C# port
+
+A separate console project, `Nemesis/`, ports the four CP/M overlays of the 1981 dungeon
+crawler **Nemesis** (PERSON, CASTLE, DUNGEON, NEMESIS) to .NET 10. It uses the exact
+recovered 32-bit LFSR, 15 race/class tables, 94 items, 75 monsters and 27 spells, plus a
+byte-exact `.CHR` reader/writer and the real 26×22 `LEVEL.N` maps.
+
+```bash
+dotnet build Nemesis/Nemesis.csproj
+dotnet run --project Nemesis/Nemesis.csproj -- docs/nemesis/game-files/ARAGORN.CHR
+dotnet run --project Nemesis/Nemesis.csproj -- --verify
+```
+
+The reverse-engineering evidence is committed under `docs/nemesis/` (analysis reports,
+disassemblies, decompiled C and original game files). Full details, commands and fidelity
+notes are in [`Nemesis/README.md`](Nemesis/README.md); the playable original-CP/M setup is in
+[`docs/nemesis/README.md`](docs/nemesis/README.md).
+
 ## Verification & Testing
 
 - All new format readers were verified by generating synthetic images of each format (with a matching GCR encoder for G64/NIB) and byte-comparing the parsed results.
@@ -907,9 +929,10 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 - REL create/resize verified against synthetic D64 images.
 - CP/M extraction verified byte-for-byte against `ctools`: all 19 files on `MBASIC.d71` and all 10 files on the D64 system disk match exactly (non-strict and strict modes).
 - **End-to-end CP/M verified:** files written from Linux via `--cpm-new d71` (MBASIC.COM + WUMP.BAS), mounted as drive 9 (`B:`) in x128 with a CP/M system disk on drive 8 (`A:`), and run — MBASIC loaded and the WUMPUS game played to completion. See [CP/M Support](#cpm-support-c128-cpm).
-- **Line-oriented CP/M games verified:** Infocom **Zork II** (INTERLOGIC CP/M release: `ZORK2.COM` + `ZORK2.DAT`, configured with the generic `2DEFAULT`/`CONF2` terminal program) staged via `--ctools create d71`, mounted as `B:`, and played interactively in x128 — game banner, room descriptions, and `> look` all worked. This confirms the disk/file pipeline is correct and that only full-screen cursor-positioning programs (e.g. Nemesis) are affected by the console-BIOS terminal limitation. See [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
+- **Line-oriented CP/M games verified:** Infocom **Zork II** (INTERLOGIC CP/M release: `ZORK2.COM` + `ZORK2.DAT`, configured with the generic `2DEFAULT`/`CONF2` terminal program) staged via `--ctools create d71`, mounted as `B:`, and played interactively in x128 — game banner, room descriptions, and `> look` all worked. See [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
+- **Full-screen CP/M game verified:** SuperSoft **Nemesis** with FastBDOS 3 on `A:` and a 1581/D81 game disk on `B:`; an ADM-31 `TERM.DEF` fixes the previously garbled menus, and the game was played through title, castle, dungeon and combat screens. See [`docs/nemesis/README.md`](docs/nemesis/README.md).
+- **Automated test suite:** `Nemesis.Tests/` contains 43 xUnit tests covering `.CHR` byte-exact round-trips, all 10 shipped `LEVEL.N` maps, recovered tables, the exact LFSR, and character/castle/dungeon engine behavior. The port also has 20 built-in checks available via `dotnet run --project Nemesis/Nemesis.csproj -- --verify`.
 - Many behaviors (emulator/OpenCBM/real-drive flows, CP/M `.d81` mapping) remain unverified without external tools/hardware or real images.
-- No automated test suite (no `*Test*`/`*.Tests*` projects); CI runs `dotnet test` for completeness.
 
 ---
 
@@ -931,7 +954,7 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 - OpenCBM transfer requires OpenCBM installed and a real drive.
 - Real CP/M disk verification requires real C128 CP/M images/templates and hardware. For emulator smoke-testing, VICE `x128` is used with two drives (system disk on 8, data disk on 9); see [CP/M Support](#cpm-support-c128-cpm).
 - ctools and libdsk-enabled cpmtools are optional external tools you install yourself; they are used only by the explicit `--ctools`/`--cpm-cpmtools` verbs. All default `--cpm-*` commands and `cpm*` script commands run in-process and need no external tools.
-- **CP/M 2.2 full-screen programs** (e.g. SuperSoft Nemesis) render garbled under C128 CP/M 3.0 in x128: the console BIOS does not implement the cursor-addressing escape sequences they emit, and editing `TERM.DEF` does not help. Line-oriented programs (MBASIC, Infocom Zork) and plain BASIC work correctly. This is an emulator/system console limitation, not file corruption — see [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
+- **Other CP/M 2.2 full-screen programs** may still render poorly under the stock C128 CP/M 3.0 BIOS. Nemesis is the verified exception: FastBDOS 3 plus an ADM-31 `TERM.DEF` makes it fully readable and playable. Line-oriented programs (MBASIC, Infocom Zork) and plain BASIC work under the stock BIOS — see [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
 - Graphics viewer enhancements (zoom/pan, richer format/export controls) beyond current zoom + BMP save.
 
 ---

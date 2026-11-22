@@ -1022,24 +1022,62 @@ files above are the cleanest transcription.
 
 ## 6. Random number generation
 
-**Confirmed call sites only — the implementations are not in any fragment:**
+#### 6.1 `rand()` — **CONFIRMED from machine code**
+
+`DUNGEON.COM` 0x353e (`disasm-DUNGEON.txt`, runtime address = file offset + 0x100)
+holds the complete generator; the identical routine is at 0x353e in `PERSON.COM`.
+The state is a 32-bit LFSR kept as two little-endian words at 0x0597 (low) and
+0x0599 (high):
+
+```c
+/* runtime addresses 0x353e-0x3565 */
+unsigned rand(void) {
+    unsigned fb = ((*(byte*)0x0597 & 0x08) != 0) ^ ((*(byte*)0x0597 & 0x40) != 0);
+    unsigned state = ((*(unsigned*)0x0599 << 16) | *(unsigned*)0x0597);
+    state = (state << 1) | fb;
+    *(unsigned*)0x0597 = (unsigned)state;
+    *(unsigned*)0x0599 = state >> 16;
+    return (*(unsigned*)0x0597) & 0x7fff;          /* high byte masked 0x7f */
+}
+```
+
+`AND 0x48` followed by `JP z` / `JP pe` / `SCF` implements XOR of bits 3 and 6
+of the low byte.  `RLA` through both words implements the 32-bit shift.  The
+`0x7f` mask on the returned high byte is why `rand()` never exceeds 0x7fff.
+The C# port (`Nemesis/Engine/LfsrRandom.cs`) is a bit-exact translation;
+`System.Random` must **not** be substituted.
+
+#### 6.2 Seed / `init_rand()` — **CONFIRMED (default seed), HIGH (interactive path)**
+
+- The `.COM` image initialises 0x0597..0x059a to `0xff` (`disasm-PERSON.txt`
+  lines 762-765).  At 0x035f, `LD HL,0x59dc / LD (0x0597),HL` overwrites only
+  the low word, so the boot state is **`0xffff59dc`**.
+- `init_rand()` at 0x36da reads a decimal seed from the console (`CALL 0x030a`,
+  typically `atoi`).  If the parsed value is nonzero it is stored into both
+  words (0x36e2-0x36e8).  If zero, the program prompts again, converts the
+  entered string through the 6-byte bignum routine at 0x3658-0x36c7, masks the
+  top byte with `0x7f` (0x36bd-0x36c1) and stores that (0x3704-0x3707).
+  Pressing Enter therefore leaves the compiled default `0xffff59dc` intact.
+
+The port exposes the seed explicitly (`new <name> ... [seed]`) and defaults the
+`GameEngine` RNG to `0xffff59dc` for the no-seed path.
+
+#### 6.3 `roll()` — **still UNCERTAIN**
+
+`roll()` is used only by `compute_stats()` (stat value =
+`max(1, roll() + 2 * xtype.factor[i])`).  No definition survives in any
+embedded C fragment.  Only three direct `CALL 0x353e` sites exist in
+`PERSON.COM`: 0x0983 (initial hits, `1 + rand() % (CON+STR)`), 0x1059 (sex) and
+0x107d (gold).  The six stat rolls must therefore be produced by a loop that
+calls a separate `roll()` helper whose body was overlaid/discarded.  A 3d6
+roll is the working assumption in the port; it has not been proven from code.
 
 | Call | Site | Purpose |
 |---|---|---|
-| `init_rand()` | `main()` before character creation | seed RNG |
-| `roll()` | `compute_stats()` | stat dice; result clamped so `roll()+2*factor >= 1` |
+| `init_rand()` | `main()` before character creation | seed RNG (0x36da) |
+| `roll()` | `compute_stats()` | stat dice; clamped so `roll()+2*factor >= 1` |
 | `rand()` | `compute_stats()` | sex (`rand()%2`), gold (`rand()%(200-tot)`) |
 | `rand()` | `init_char()` | initial hits (`1 + rand() % (CON+STR)`) |
-
-**[INFERRED]** `roll()` is a dice roller (almost certainly 3d6 given the
-stat range and the `+2*factor` racial modifier).  `init_rand()` most likely
-seeds a Z8000/Z80 library LCG from a clock/counter — no seed expression,
-multiplier or state variable survives in the LEVEL fragments.  The Z80 machine
-code embedded in `LEVEL.1` around offsets 1750–2200 is a compiled runtime
-overlay and may contain the actual `rand`/`roll` bodies, but it has not been
-decoded here.  For the C# port, use `System.Random` with a per-character seed
-and keep the *modulo* semantics (`% CON+STR`, `% (200-tot)`, `% 2`) byte-faithful
-in `init_char()`/`compute_stats()`.
 
 ---
 
@@ -1050,7 +1088,8 @@ Definitions **not present** in any fragment (only call sites survive):
 - `get_stats()` — presumably calls `compute_stats()`/`display_stats()` and a
   re-roll confirmation loop (`LEVEL.1` offset 2232 tail:
   `while(toupper(sgetchar()) != 'Y')`).
-- `roll()`, `rand()`, `init_rand()` — RNG (section 6).
+- `roll()` — stat dice helper only (section 6.3); `rand()` and the default
+  seed are now recovered from machine code (sections 6.1-6.2).
 - `save_char()` — writes `PERSON` to `<name>.CHR`.
 - `getdef()` — load/set defaults.
 - `load_classes()` — populate `xclass[]` from data file.

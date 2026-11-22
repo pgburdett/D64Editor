@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "D64Editor.App", "D64Editor.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nemesis", "Nemesis\Nemesis.csproj", "{09EDF779-A98A-47FA-92E6-43B2E7BF00B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nemesis.Tests", "Nemesis.Tests\Nemesis.Tests.csproj", "{76115E60-AE96-4860-B330-CDFCCACC2520}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{09EDF779-A98A-47FA-92E6-43B2E7BF00B1}.Release|x64.Build.0 = Release|Any CPU
 		{09EDF779-A98A-47FA-92E6-43B2E7BF00B1}.Release|x86.ActiveCfg = Release|Any CPU
 		{09EDF779-A98A-47FA-92E6-43B2E7BF00B1}.Release|x86.Build.0 = Release|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Debug|x64.Build.0 = Debug|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Debug|x86.Build.0 = Debug|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Release|x64.ActiveCfg = Release|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Release|x64.Build.0 = Release|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Release|x86.ActiveCfg = Release|Any CPU
+		{76115E60-AE96-4860-B330-CDFCCACC2520}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

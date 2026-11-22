@@ -15,7 +15,10 @@ public sealed class GameEngine
 {
     public enum Screen { Launcher, CharacterGen, Castle, Dungeon, GameOver }
 
-    private readonly LfsrRandom _rng = new();
+    // PERSON.COM boots with 0xffff59dc in the LFSR state (compiled default
+    // 0x59dc in the low word, 0xffff from the .COM image in the high word).
+    // init_rand() at 0x36da replaces it when the user enters a seed.
+    private readonly LfsrRandom _rng = new(0xffff59dcu);
     private readonly CharacterGenerator _generator;
     private readonly CastleEngine _castle;
     private readonly DungeonEngine _dungeon;
