@@ -41,13 +41,15 @@ stay documentation until their supporting helpers are recovered.
   per-monster stat refresh on group advancement, hospital `days = missing HP`
   and `rate = (Level+1)*10`, the composite buy/pawn item value, pawn sell formulas
   (`item_value + LFSR%20` identified, `LCG48%70` unidentified), the per-inventory-slot
-  identified bits at `0x80d0`, the Archives exact-half donation threshold, and the
-  640-byte `.CHR` fields that are decoded.
+  identified bits at `0x80d0`, the equipped bits at `0x80d2`, the equipped-item
+  AC reversal on sale, the Archives exact-half donation threshold and gold
+  debit, and the 640-byte `.CHR` fields that are decoded.
 - **Best-effort:** the monster attack hit/miss test and special-attack branch,
   spell level gating/durations, armory buy modifiers, the hospital/inn stay-debit
-  paths, and the Archives final gold debit. Hospital `days`/`rate`, both pawn
-  formulas and the Archives exact-half threshold are confirmed; their final
-  gold/HP postings remain best-effort.
+  paths, and the meaning of the Archives-required `inventory[slot] + 4` word.
+  Hospital `days`/`rate`, both pawn formulas, and the Archives exact-half
+  threshold and gold debit are confirmed; their final HP postings remain
+  best-effort.
   The remaining helper routines were not fully recovered; the current model is
   documented in `Engine/DungeonEngine.cs` and `Engine/CastleEngine.cs`.
 - The original `valid()` ranger bug (testing the loop counter instead of the
@@ -55,9 +57,9 @@ stay documentation until their supporting helpers are recovered.
 - Undecoded `.CHR` bytes are retained in `Character.RawData`, so save/load is
   byte-exact for untouched files.  The save buffer starts at runtime `0x8047`,
   so the per-slot identified bits (`0x80d0`) are persisted at `.CHR` offset
-  `0x89`, and inventory item types are read/written at
-  `0xa3 + slot*0x25 + 0x20`.  The adjacent `0x80d2` flag word is preserved but
-  its meaning is still uncertain.
+  `0x89`, the equipped bits (`0x80d2`) at `0x8b`, and base AC (`0x80da`) at
+  `0x93`.  Inventory records start at `0xa3`; each has a signed big-endian AC
+  modifier at `+0` and its item type at `+0x20`.
 
 ## Building and running
 
@@ -67,7 +69,7 @@ dotnet run --project Nemesis/Nemesis.csproj -- docs/nemesis/game-files/ARAGORN.C
 dotnet run --project Nemesis/Nemesis.csproj -- --verify
 ```
 
-`--verify` runs 28 self-checks covering the tables, both RNGs, exact
+`--verify` runs 29 self-checks covering the tables, both RNGs, exact
 melee/monster-creation/payout/hospital-rate/pawn arithmetic, `.CHR` round-trip
 and real `LEVEL.0` map loading.
 

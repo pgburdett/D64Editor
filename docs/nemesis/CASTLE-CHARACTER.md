@@ -263,7 +263,9 @@ The character record is **640 bytes**. Source-level fields confirmed from the re
   | `0x64` | BE16 | current HITS (5) |
   | `0x66` | BE16 | O_HITS / maximum HITS (8) |
   | `0x89` | LE16 | per-slot identified bits; bit N = slot N (all zero in sample) |
-  | `0x8b` | LE16 | second flag word, tested/cleared by the pawn path; meaning UNCERTAIN |
+  | `0x8b` | LE16 | per-slot equipped/enchantment-active bits (all zero in sample) |
+  | `0x93` | signed LE16 | displayed armor class (`0x000a` = 10 in sample) |
+  | `0xa3 + slot*0x25 + 0x00` | signed BE16 | AC modifier applied while that slot is equipped |
   | `0xa3 + slot*0x25 + 0x20` | byte | inventory item type; `0xff` = empty slot |
 
   The inventory records are 37 bytes each.  In `ARAGORN.CHR` their non-type
@@ -273,11 +275,12 @@ The character record is **640 bytes**. Source-level fields confirmed from the re
 **Save/load direction — CONFIRMED:** `NEMESIS.COM 0x093f` reads five 128-byte
 records into runtime `0x8047` via `0x2090`; `CASTLE.COM 0x1b12` writes the same
 buffer back via `0x4820` on exit.  The runtime globals map to file offsets by
-subtracting `0x8047`, so `0x80d0` is `.CHR` offset `0x89` and `0x80ea` is
-offset `0xa3`.  The C# reader/writer therefore persists identified bits and
-inventory item types there while keeping all other bytes in `RawData` for
-byte-exact round-trips.  The exact meaning of the `0x8b` flag word and of the
-remaining non-type inventory bytes is still UNCERTAIN.
+subtracting `0x8047`, so `0x80d0` is `.CHR` offset `0x89`, `0x80d2` is `0x8b`,
+`0x80da` is `0x93`, and `0x80ea` is `0xa3`.  The C# reader/writer therefore
+persists identified/equipped bits, base AC, item AC modifiers and inventory
+item types there while keeping all other bytes in `RawData` for byte-exact
+round-trips.  The meaning of the parallel `record +2` bonus (`0xa2f6`) and of
+the remaining non-type inventory bytes is still UNCERTAIN.
 
 ---
 
@@ -360,7 +363,10 @@ Item data records recovered from `ITEMS.C-0` give item type, level, name, and a 
   the archives disclosure path.  Only the time-seeded LCG's initial value remains
   environment-specific. The save buffer starts at runtime `0x8047`, so the
   identified bit word maps to `.CHR` offset `0x89` and is persisted; the C#
-  port serializes `Character.ItemIdentified` there.
+  port serializes `Character.ItemIdentified` there.  If the slot's `0x80d2`
+  equipped bit is set, the pawn path also subtracts the item's record `+0` AC
+  modifier from the displayed AC (`.CHR` offset `0x93`) and clears the bit
+  (`0x0e6b`–`0x0ea3`).
 
 ### 3.3 Hospital
 
@@ -399,7 +405,7 @@ Manual context: the Inn restores HP more slowly than the Hospital and is the **o
 
 Strings include `"How many gold pieces do you wish to donate ? "`.
 
-**CONFIRMED:** Archives disclose unidentified items either by spending a DISCLOSE magic/cleric spell or by donating gold. The gold path at `0x1332` requires the donation to exactly equal `item_value(slot) / 2` for the selected inventory slot A-J, then toggles that slot's `0x80d0` bit (XOR). The final debit of the donation from the gold string remains UNCERTAIN.
+**CONFIRMED:** Archives disclose unidentified items either by spending a DISCLOSE magic/cleric spell or by donating gold. The gold path at `0x1332` checks the donation against the gold string at `0x8082`, debits it via the ten-digit decimal-subtract helper at `0x13f2`, requires the donation to exactly equal `item_value(slot) / 2` for the selected inventory slot A-J, then toggles that slot's `0x80d0` bit (XOR). The meaning of the required non-zero word at `inventory[slot] + 4` is still UNCERTAIN.
 
 ### 3.6 Dungeon entrance
 
@@ -443,9 +449,9 @@ Displays all fields from the character record (level, hits, experience, age, AC,
 - Dungeon chain and exit-save behavior at a high level.
 
 **Uncertain / not completed:**
-- Exact 640-byte on-disk field offsets beyond the decoded gold/EXP/stats/level/age/HP/magic/cleric, identified-bit (`0x89`), and inventory type (`0xa3 + slot*0x25 + 0x20`) fields.
+- Exact 640-byte on-disk field offsets beyond the decoded gold/EXP/stats/level/age/HP/magic/cleric, identified bit (`0x89`), equipped bit (`0x8b`), AC (`0x93`), inventory AC modifier (`record +0`) and inventory type (`record +0x20`) fields.
 - Inn rest cost and restoration amounts.
-- The final gold debit after an Archives donation, the meaning of the required `inventory[slot] + 4` word, and the second flag word at `.CHR` offset `0x8b`.
+- The meaning of the required `inventory[slot] + 4` word and the parallel item bonus at `record +2` (global `0xa2f6`).  The Archives gold debit (`0x13f2`) is now CONFIRMED.
 - Some class constructor “later raw fields” (108/24/100...) are almost certainly XP/age/item flags but were not decoded to named constants.
 
 No source files were modified; only this report was written.

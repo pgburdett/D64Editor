@@ -122,6 +122,26 @@ public sealed class EngineTests
     }
 
     [Fact]
+    public void Castle_Sell_Equipped_Item_Reverses_Ac_Modifier()
+    {
+        var castle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
+        var c = new Character { Gold = 100, ArmorClass = 8 };
+        castle.Bind(c);
+        int index = Array.FindIndex(ItemCatalog.All, i => i.Name == "AXE");
+        c.ItemTypes[0] = (byte)ItemCatalog.All[index].Type;
+        c.ItemIdentified[0] = true;
+        c.ItemEquipped[0] = true;
+        c.ItemAcModifier[0] = -2;
+
+        string msg = castle.Sell("AXE");
+
+        Assert.Contains("212 gold pieces", msg);
+        Assert.Equal(10, c.ArmorClass);          // 8 - (-2)
+        Assert.False(c.ItemEquipped[0]);         // 0x0e9c clears the bit
+        Assert.False(c.ItemIdentified[0]);
+    }
+
+    [Fact]
     public void Castle_Sell_Unidentified_Item_Uses_Lcg48_Remainder()
     {
         var castle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));

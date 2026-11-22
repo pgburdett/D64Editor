@@ -155,6 +155,16 @@ public sealed class CastleEngine
 
         Character.ItemTypes[slot] = (byte)GameConstants.EmptyItem;
         Character.ItemIdentified[slot] = false;        // 0x0e5d clears the bit
+
+        // CASTLE.COM 0x0e6b-0x0e94: selling an equipped item reverses the AC
+        // modifier that DUNGEON.COM 0x3a08 added when it was equipped.  0x0e9c
+        // then clears the 0x80d2 slot bit.
+        if (Character.ItemEquipped[slot])
+        {
+            Character.ArmorClass -= Character.ItemAcModifier[slot];
+            Character.ItemEquipped[slot] = false;
+        }
+
         Character.Gold += price;
         string msg = $"I'll give you {price} gold pieces for that item";
         Say(msg);

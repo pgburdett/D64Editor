@@ -122,6 +122,11 @@ public sealed class Character
     public int Gold { get; set; }
     public int HitPoints { get; set; } = 1;
     public int MaxHitPoints { get; set; } = 1;
+
+    /// <summary>
+    /// Displayed AC from runtime 0x80da / `.CHR` offset 0x93 (signed LE16).
+    /// Equipped item modifiers are added to this base value.
+    /// </summary>
     public int ArmorClass { get; set; } = 10;
     public int MagicUnits { get; set; }
     public int ClericUnits { get; set; }
@@ -137,6 +142,21 @@ public sealed class Character
     /// it is persisted at `.CHR` offset 0x89 as a little-endian bit word.
     /// </summary>
     public bool[] ItemIdentified { get; set; } = new bool[MaxItems];
+
+    /// <summary>
+    /// Equipped/enchantment-active bit per inventory slot (runtime 0x80d2,
+    /// `.CHR` offset 0x8b).  The bit is set when an enchanted item is used,
+    /// printed as a leading '+' in inventories, and cleared when the item is
+    /// sold or dropped.  The pawn path also reverses its AC contribution.
+    /// </summary>
+    public bool[] ItemEquipped { get; set; } = new bool[MaxItems];
+
+    /// <summary>
+    /// Signed big-endian AC modifier at inventory record +0.  DUNGEON.COM
+    /// 0x3a08 adds it to the displayed AC when the slot is equipped, and
+    /// CASTLE.COM 0x0e79 subtracts it when an equipped item is sold.
+    /// </summary>
+    public int[] ItemAcModifier { get; set; } = new int[MaxItems];
 
     /// <summary>Opaque per-item data (kept raw until the item loader is decoded).</summary>
     public byte[] Inventory { get; set; } = new byte[MaxItems * 16];

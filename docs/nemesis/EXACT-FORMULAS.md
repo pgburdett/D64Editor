@@ -579,12 +579,33 @@ Confidence:
   `NEMESIS.COM 0x093f` reads five 128-byte records into runtime `0x8047` via
   `0x2090`, and `CASTLE.COM 0x1b12` writes that same buffer back via `0x4820`.
   The `0x80d0` bit word therefore maps to file offset `0x89` (little endian,
-  bit N = inventory slot N); the adjacent `0x80d2` word at `0x8b` is a second
-  flag array whose meaning is still UNCERTAIN. Inventory slot records begin at
-  `0xa3`, are `0x25` bytes each, and carry the item type at record `+0x20`
+  bit N = inventory slot N).  The adjacent `0x80d2` word at `0x8b` is also
+  persistent; it is the per-slot equipped/enchantment-active flag (see below).
+  Inventory slot records begin at `0xa3`, are `0x25` bytes each, carry a signed
+  big-endian AC modifier at record `+0`, and carry the item type at `+0x20`
   with `0xff` for an empty slot.
 - Exact seed for the time-seeded LCG: **UNCERTAIN** by design; it depends on
   the CP/M console/clock at run time.
+
+### 3.3.1 Equipped-item flag and AC modifier — CONFIRMED
+
+`0x80d2` is a second per-slot bit word (`.CHR` offset `0x8b`, little endian).
+It marks an item whose enchantment is currently active/equipped:
+
+- `DUNGEON.COM 0x35c4` sets the slot bit with `0x5cd6` (OR-mask) when the item
+  record has a non-zero `+4` word, then applies its effects via `0x3a08`.
+- `DUNGEON.COM 0x36ba`, `0x37e6` and `CASTLE.COM 0x0e9c` clear it with `0x5c5a`
+  when the item is dropped, unequipped, or sold.
+- Both inventory listings (`CASTLE.COM 0x1bfe`, `DUNGEON.COM 0x47da`) print `+`
+  for a set bit and a space otherwise.
+
+The displayed AC is the signed LE16 global `0x80da` (`.CHR` offset `0x93`);
+`CASTLE.COM 0x1f79` prints it with `"Age: %u AC: %d Gold: "`.  `DUNGEON.COM
+0x3a08` adds each equipped item's signed BE16 word at record `+0` to that AC,
+and `CASTLE.COM 0x0e79`–`0x0e94` subtracts the same word when an equipped item
+is pawned.  The C# port persists the flag at `0x8b`, base AC at `0x93`, item AC
+modifiers at record `+0`, and reverses the modifier on sale.  The parallel
+`record +2` bonus applied to `0xa2f6` remains UNCERTAIN.
 
 ## 3.4 Hospital pricing and healing
 
@@ -661,9 +682,13 @@ Address range: `0x1332`–`0x14d2` (strings `"Welcome to the Game Master's Archi
 Decoded core:
 
 ```c
-// 0x1392 reads the donation string into the local buffer; 0x13b6 pads it,
-// 0x13d5/0x13f7 compare it with the gold string at 0x8082.
+// 0x1392 reads the donation string into the local buffer; 0x13b6 pads it.
+// 0x320d is a ten-digit decimal subtract helper that writes the difference
+// back into its second argument and returns the borrow.
+// 0x13dd subtracts from a local copy; 0x13f2 subtracts from the real gold
+// string at 0x8082.
 if (donation > gold) { print("You don't have that much gold."); return; }
+gold -= donation;                                       // 0x13f2 -> 0x8082
 
 // 0x1418 reads an item letter A-J, 0x1434 converts it to a slot 0..9.
 if (letter == '\n') return;
@@ -680,10 +705,13 @@ if (strcmp(donation_string, buf) == 0 &&             // 0x1492 -> 0x320d
 }
 ```
 
-The comparison helper `0x320d` walks ten zero-padded decimal digits from the
-least significant end, so a non-zero result means the donation string does not
-match the required string (the `0x13e4` branch prints the insufficient-gold
-error for that comparison).
+The decimal helper `0x320d` walks ten zero-padded decimal digits from the least
+significant end, subtracting the first argument from the second, storing the
+difference back into the second argument, and returning any borrow.  A borrow
+from `0x13dd` means the donation exceeds gold and prints the insufficient-gold
+error; `0x13f2` repeats the subtraction against the real gold string at
+`0x8082`, which is the confirmed final debit.  Later calls at `0x1492` compare
+the entered amount with the formatted `item_value(slot) / 2` string.
 
 Confidence:
 
@@ -694,9 +722,9 @@ Confidence:
 - The word at `inventory[slot] + 4` must be non-zero: **CONFIRMED** as a branch
   condition, but that field's meaning is **UNCERTAIN**; the port does not model
   it.
-- Actual debiting of the donation from the gold string: **UNCERTAIN**; no
-  confirmed store was found in this path, so the port's `Gold -= amount` is a
-  best-effort behavior.
+- Debiting the donation from the gold string at `0x8082` (`0x13f2`):
+  **CONFIRMED** by the decimal-subtract helper `0x320d` writing its result back
+  to that global string; the port's `Gold -= amount` is faithful.
 
 ---
 
@@ -719,16 +747,17 @@ These remain open and must not be guessed in a faithful port:
    the original environment.
 9. **Hospital stay/debit path** — exact HP restoration and gold debit after the stay prompt (`days` and `rate` are now CONFIRMED).
 10. **Inn debit** — whether `missing HP * 3` is days, gold, or both, and where the final gold subtraction occurs.
-11. **Archives donation debit** — the exact-half threshold and per-slot bit are
-    CONFIRMED, but the final gold-string debit and the meaning of the required
-    `inventory[slot] + 4` word remain unresolved.
+11. **Archives `record + 4` word** — the exact-half threshold, gold debit and
+    per-slot bit are CONFIRMED, but the meaning of the required non-zero
+    `inventory[slot] + 4` word remains unresolved.
 12. **RNG seed used for the shipped `ARAGORN.CHR`** — the compiled default LFSR
     seed (`0xffff59dc`) and the interactive `init_rand()` path are known, but
     the seed actually entered for that saved character is not recorded.
     `roll()` itself is now confirmed (4d5, section 5).
-13. **`0x80d2` second flag word** — its `.CHR` offset (`0x8b`) is confirmed by
-    the save-buffer mapping, and the pawn path tests/clears it at `0x0e6b`/
-    `0x0e9c`, but which game state it represents remains UNCERTAIN.
+13. **Second equipped-item modifier** — `DUNGEON.COM 0x3a42` also adds the
+    signed BE16 word at inventory record `+2` to the global `0xa2f6` when an
+    item is equipped, but the meaning of `0xa2f6` is still UNCERTAIN; the pawn
+    path does not reverse that word.
 
 ---
 

@@ -18,9 +18,11 @@ namespace Nemesis.IO;
 ///   0x5e   age (BE16)
 ///   0x64   current hit points (BE16)
 ///   0x66   maximum hit points (BE16)
-///   0x89   per-inventory-slot identified bits (little-endian 16-bit word)
-///   0xa3   inventory records, 0x25 bytes each; item type is at record +0x20
-///          and 0xff marks an empty slot
+///   0x89   per-inventory-slot identified bits (LE16 word, runtime 0x80d0)
+///   0x8b   per-slot equipped/enchantment-active bits (LE16, runtime 0x80d2)
+///   0x93   displayed armor class (signed LE16, runtime 0x80da)
+///   0xa3   inventory records, 0x25 bytes each; AC modifier is a signed BE16
+///          at record +0, item type is at +0x20, and 0xff marks an empty slot
 ///
 /// The save buffer starts at runtime 0x8047: NEMESIS.COM loads five 128-byte
 /// records into it and CASTLE.COM/DUNGEON.COM write the same buffer back on
@@ -36,8 +38,11 @@ public static class CharacterFile
     private const int ExpOffset = 0x46;
     private const int StatOffset = 0x50;
     private const int IdentifiedOffset = 0x89;
+    private const int EquippedOffset = 0x8b;
+    private const int ArmorClassOffset = 0x93;
     private const int ItemSlotOffset = 0xa3;
     private const int ItemSlotSize = 0x25;
+    private const int ItemSlotAcOffset = 0;
     private const int ItemSlotTypeOffset = 0x20;
     private const int NumericWidth = 10;
 
@@ -70,19 +75,29 @@ public static class CharacterFile
         // 16-bit value so stale bytes in sample files still round-trip.
         c.MagicUnits = ReadBE16(data, 0x70);
         c.ClericUnits = ReadBE16(data, 0x72);
+        c.ArmorClass = ReadLE16Signed(data, ArmorClassOffset);
 
-        // 0x80d0 is inside the 640-byte save buffer at 0x8047, so the
-        // per-slot identified bits are persistent.  The Z80 word is little
-        // endian and bit N corresponds to inventory slot N.
+        // 0x80d0 and 0x80d2 are inside the 640-byte save buffer at 0x8047.
+        // Both Z80 words are little endian and bit N is inventory slot N.
         ushort identified = (ushort)(data[IdentifiedOffset] |
                                      (data[IdentifiedOffset + 1] << 8));
+        ushort equipped = (ushort)(data[EquippedOffset] |
+                                   (data[EquippedOffset + 1] << 8));
         for (int i = 0; i < Character.MaxItems; i++)
+        {
             c.ItemIdentified[i] = (identified & (1 << i)) != 0;
+            c.ItemEquipped[i] = (equipped & (1 << i)) != 0;
+        }
 
-        // The expanded inventory records start at 0x80ea; their item-type
-        // index is at record +0x20 and 0xff marks an empty slot.
+        // The expanded inventory records start at 0x80ea.  Record +0 is a
+        // signed big-endian AC modifier applied while the slot is equipped;
+        // record +0x20 is the item type and 0xff marks an empty slot.
         for (int slot = 0; slot < Character.MaxItems; slot++)
-            c.ItemTypes[slot] = data[ItemSlotOffset + slot * ItemSlotSize + ItemSlotTypeOffset];
+        {
+            int record = ItemSlotOffset + slot * ItemSlotSize;
+            c.ItemAcModifier[slot] = ReadBE16Signed(data, record + ItemSlotAcOffset);
+            c.ItemTypes[slot] = data[record + ItemSlotTypeOffset];
+        }
 
         return c;
     }
@@ -106,15 +121,27 @@ public static class CharacterFile
         WriteBE16(data, 0x66, c.MaxHitPoints);
         WriteBE16(data, 0x70, c.MagicUnits);
         WriteBE16(data, 0x72, c.ClericUnits);
+        WriteLE16(data, ArmorClassOffset, c.ArmorClass);
 
         ushort identified = 0;
-        for (int i = 0; i < Character.MaxItems && i < c.ItemIdentified.Length; i++)
-            if (c.ItemIdentified[i]) identified |= (ushort)(1 << i);
+        ushort equipped = 0;
+        for (int i = 0; i < Character.MaxItems; i++)
+        {
+            if (i < c.ItemIdentified.Length && c.ItemIdentified[i]) identified |= (ushort)(1 << i);
+            if (i < c.ItemEquipped.Length && c.ItemEquipped[i]) equipped |= (ushort)(1 << i);
+        }
         data[IdentifiedOffset] = (byte)identified;
         data[IdentifiedOffset + 1] = (byte)(identified >> 8);
+        data[EquippedOffset] = (byte)equipped;
+        data[EquippedOffset + 1] = (byte)(equipped >> 8);
 
         for (int slot = 0; slot < Character.MaxItems && slot < c.ItemTypes.Length; slot++)
-            data[ItemSlotOffset + slot * ItemSlotSize + ItemSlotTypeOffset] = c.ItemTypes[slot];
+        {
+            int record = ItemSlotOffset + slot * ItemSlotSize;
+            if (slot < c.ItemAcModifier.Length)
+                WriteBE16(data, record + ItemSlotAcOffset, c.ItemAcModifier[slot]);
+            data[record + ItemSlotTypeOffset] = c.ItemTypes[slot];
+        }
 
         return data;
     }
@@ -123,10 +150,28 @@ public static class CharacterFile
 
     private static int ReadBE16(byte[] d, int o) => (d[o] << 8) | d[o + 1];
 
+    private static int ReadBE16Signed(byte[] d, int o)
+    {
+        int v = ReadBE16(d, o);
+        return v >= 0x8000 ? v - 0x10000 : v;
+    }
+
+    private static int ReadLE16Signed(byte[] d, int o)
+    {
+        int v = d[o] | (d[o + 1] << 8);
+        return v >= 0x8000 ? v - 0x10000 : v;
+    }
+
     private static void WriteBE16(byte[] d, int o, int v)
     {
         d[o] = (byte)(v >> 8);
         d[o + 1] = (byte)v;
+    }
+
+    private static void WriteLE16(byte[] d, int o, int v)
+    {
+        d[o] = (byte)v;
+        d[o + 1] = (byte)(v >> 8);
     }
 
     private static int ParsePaddedInt(byte[] d, int off)

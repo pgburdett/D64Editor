@@ -44,27 +44,44 @@ public sealed class CharacterFileTests
     }
 
     [Fact]
-    public void IdentifiedBits_And_ItemTypes_Use_Save_Buffer_Offsets()
+    public void SaveBufferBits_ArmorClass_And_ItemTypes_Use_Confirmed_Offsets()
     {
         byte[] original = File.ReadAllBytes(RepoData.GameFile("ARAGORN.CHR"));
         var c = CharacterFile.Read(original);
 
         Assert.DoesNotContain(true, c.ItemIdentified);
+        Assert.DoesNotContain(true, c.ItemEquipped);
         Assert.All(c.ItemTypes, t => Assert.Equal((byte)0xff, t));
+        Assert.Equal(10, c.ArmorClass); // signed LE16 at 0x93
 
         c.ItemIdentified[0] = true;   // low byte of the little-endian word
         c.ItemIdentified[9] = true;   // high byte, bit 1
+        c.ItemEquipped[0] = true;
+        c.ItemEquipped[9] = true;
+        c.ArmorClass = 8;
+        c.ItemAcModifier[0] = -2;     // signed BE16 at record +0
         c.ItemTypes[0] = 42;
 
         byte[] bytes = CharacterFile.Write(c);
         Assert.Equal(0x01, bytes[0x89]);
         Assert.Equal(0x02, bytes[0x8a]);
+        Assert.Equal(0x01, bytes[0x8b]);
+        Assert.Equal(0x02, bytes[0x8c]);
+        Assert.Equal(0x08, bytes[0x93]);
+        Assert.Equal(0x00, bytes[0x94]);
+        Assert.Equal(0xff, bytes[0xa3]);
+        Assert.Equal(0xfe, bytes[0xa4]);
         Assert.Equal((byte)42, bytes[0xa3 + 0x20]);
 
         var roundTrip = CharacterFile.Read(bytes);
         Assert.True(roundTrip.ItemIdentified[0]);
         Assert.True(roundTrip.ItemIdentified[9]);
         Assert.False(roundTrip.ItemIdentified[1]);
+        Assert.True(roundTrip.ItemEquipped[0]);
+        Assert.True(roundTrip.ItemEquipped[9]);
+        Assert.False(roundTrip.ItemEquipped[1]);
+        Assert.Equal(8, roundTrip.ArmorClass);
+        Assert.Equal(-2, roundTrip.ItemAcModifier[0]);
         Assert.Equal((byte)42, roundTrip.ItemTypes[0]);
     }
 

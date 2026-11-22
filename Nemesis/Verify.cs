@@ -86,6 +86,17 @@ internal static class Verify
             identifiedSale.Contains("212 gold pieces") &&
             unidentifiedSale.Contains("57 gold pieces") && clearedOnSale);
 
+        var equippedCastle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
+        var equippedChar = new Character { Gold = 100, ArmorClass = 8 };
+        equippedCastle.Bind(equippedChar);
+        equippedChar.ItemTypes[0] = (byte)ItemCatalog.All[axe].Type;
+        equippedChar.ItemIdentified[0] = true;
+        equippedChar.ItemEquipped[0] = true;
+        equippedChar.ItemAcModifier[0] = -2;
+        equippedCastle.Sell("AXE");
+        Check("selling equipped item reverses its AC modifier and clears the bit",
+            equippedChar.ArmorClass == 10 && !equippedChar.ItemEquipped[0]);
+
         var archiveCastle = new CastleEngine(new LfsrRandom(1), new Lcg48Random(1));
         var archiveChar = new Character { Gold = 1000 };
         archiveCastle.Bind(archiveChar);
@@ -114,10 +125,17 @@ internal static class Verify
 
             c.ItemIdentified[0] = true;
             c.ItemIdentified[9] = true;
+            c.ItemEquipped[0] = true;
+            c.ItemEquipped[9] = true;
+            c.ArmorClass = 8;
+            c.ItemAcModifier[0] = -2;
             c.ItemTypes[0] = 42;
             byte[] modified = CharacterFile.Write(c);
-            Check("identified bits at 0x89 and item types at 0xa3+slot*0x25+0x20 persist",
+            Check("identified/equipped bits, AC and item types persist at confirmed .CHR offsets",
                 modified[0x89] == 0x01 && modified[0x8a] == 0x02 &&
+                modified[0x8b] == 0x01 && modified[0x8c] == 0x02 &&
+                modified[0x93] == 0x08 && modified[0x94] == 0x00 &&
+                modified[0xa3] == 0xff && modified[0xa4] == 0xfe &&
                 modified[0xa3 + 0x20] == 42);
         }
         else Check("sample .CHR exists", false, sample);
