@@ -39,6 +39,7 @@ little-endian length/request ID, command byte, body).
 | `verify_vice_boot.py` | Feeds `LOAD"*",8,1` and `RUN`, then MEM_GETs C64 screen RAM `$0400-$07E7` and decodes it, so a protected-disk boot can be confirmed without relying on a desktop screenshot. |
 | `verify_vice_boot_long.py` | Longer-wait variant (35 s after LOAD, 25 s after RUN) for chained multi-stage loaders. |
 | `monitor_load_progress.py` | Samples screen RAM, color RAM `$D800-$DBFF`, and VIC registers `$D020-$D02F` during a long load, for boot loaders that display a color-cycling logo while loading. |
+| `sample_progress_only.py` | Same sampling loop without keyboard feed, for use when keys are sent with `xdotool`. |
 
 Both send command `0x12` (checkpoint set) and `0x72` (keyboard feed), then repeatedly send
 `0xAA` (exit/continue) while collecting responses.
@@ -99,6 +100,8 @@ For a loader that color-cycles a hires logo while loading, sample progress over 
 
 ```bash
 python3 tools/diagnostics/monitor_load_progress.py 180
+# or, when LOAD/RUN are sent with xdotool:
+python3 tools/diagnostics/sample_progress_only.py 180
 ```
 
 To test whether the disk uses wide/fat tracks from a direct `nibread -h` capture:
