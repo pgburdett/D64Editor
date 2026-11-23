@@ -52,6 +52,7 @@ Other analysis helpers:
 | `compare_halftracks.py` | Compares whole/half-track GCR blocks from a `nibread -h` NIB capture, allowing cyclic rotation, to test whether a protected track is duplicated at the adjacent half-track (wide/fat track). |
 | `nib2g64_raw.py` | Converts a NIB capture to G64 while preserving exact raw track lengths and all half-track slots (unlike `nibconv`, it does not normalize long tracks). |
 | `boot-test-g64.sh` | Launches x64sc with a G64 image, retries the GTK3 startup race, runs `verify_vice_boot_long.py`, and prints a screen-RAM summary. |
+| `boot-test-rpm.sh` | Same as `boot-test-g64.sh`, but sets `-drive8rpm` to test motor-speed-sensitive protection. |
 
 ## Monitor command file
 
@@ -118,6 +119,8 @@ boot-test it:
 ```bash
 python3 tools/diagnostics/nib2g64_raw.py disk.nib nibread.log raw-preserve.g64
 tools/diagnostics/boot-test-g64.sh raw-preserve.g64 raw
+# test a different emulated motor speed (30000 = 300 rpm):
+tools/diagnostics/boot-test-rpm.sh raw-preserve.g64 29500 rpm295
 ```
 
 Remember: only one process may own the real XUM1541. Stop VICE before any `cbmctrl` or
