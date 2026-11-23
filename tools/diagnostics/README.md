@@ -33,7 +33,9 @@ little-endian length/request ID, command byte, body).
 |---|---|
 | `binmon_trace.py` | Sets a checkpoint on **stores to `$DD00`** (C64 CIA2 IEC data port), then feeds `LOAD"*",8,1` via the monitor keyboard buffer. Logs the accumulator value on each hit to `/tmp/opencode/binmon-iec.log`. This traces the C64-side bit-banging during a real-drive LOAD. |
 | `binmon_drive.py` | Sets a **stopping** checkpoint on execution in drive-8 RAM `$0300-$07FF`, then feeds the same LOAD command. On each hit it logs `PC/A/X/Y` to `/tmp/opencode/g64-drive-trace.log`. Accurate but ~14,000× slower — the loader only reaches its `$0520-$0525` delay loop. |
-| `binmon_history.py` | **Preferred.** Feeds the LOAD command and then polls VICE's CPU-history API (command `0x86`) for drive 8 **without stopping execution**. Logs instruction bytes to `/tmp/opencode/g64-cpu-history.log`. This is fast enough that the protected Arctic Fox loader completes and the game reaches the "Enemy Review" screen. Includes a PC filter (register ID 3) for `$0300-$07FF`. |
+| `binmon_history.py` | **Preferred.** Feeds the LOAD command and then polls VICE's CPU-history API (command `0x86`) for drive 8 **without stopping execution**. Logs instruction bytes to `/tmp/opencode/g64-cpu-history.log`. This is fast enough that the protected loader completes and the game reaches its playable screen. Includes a PC filter (register ID 3) for `$0300-$07FF`. |
+| `dump_drive_mem.py` | Feeds `LOAD"*",8,1`, waits for the `M-W` upload, then issues a binary-monitor MEM_GET for drive-8 RAM `$0300-$07FF` and writes the 1,280 uploaded bytes. |
+| `launch-x64sc-g64-dump.sh` | Launches x64sc with a G64 image and the binary monitor, retries the flaky GTK3 startup, runs `dump_drive_mem.py`, and stops VICE. Unsets `GTK_MODULES`/`GTK_USE_PORTAL`/`WAYLAND_DISPLAY` and forces `GDK_BACKEND=x11`. |
 
 Both send command `0x12` (checkpoint set) and `0x72` (keyboard feed), then repeatedly send
 `0xAA` (exit/continue) while collecting responses.
@@ -65,6 +67,15 @@ tools/build-patched-vice.sh                 # if /tmp/opencode/vice-patched is m
 tools/diagnostics/launch-x64sc-g64.sh &     # emulated G64, binary monitor on :6502
 python3 tools/diagnostics/binmon_drive.py   # trace drive code, 120 s
 # inspect /tmp/opencode/g64-drive-trace.log
+```
+
+To dump the actually uploaded drive code from a G64 (no real drive needed):
+
+```bash
+tools/diagnostics/launch-x64sc-g64-dump.sh /tmp/opencode/real-disk.g64 \
+    /tmp/opencode/drive-0300.bin
+# or, with an already-running binary-monitor instance:
+python3 tools/diagnostics/dump_drive_mem.py /tmp/opencode/drive-0300.bin
 ```
 
 Remember: only one process may own the real XUM1541. Stop VICE before any `cbmctrl` or
