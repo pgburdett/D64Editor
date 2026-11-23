@@ -383,13 +383,11 @@ public static class C128Cpm
     // entries with 1-byte (.D64/.D71) or 2-byte little-endian (.D81) allocation pointers,
     // and a "CBM" boot signature at track 1 / sector 0.
     //
-    // The real C128 CP/M variants differ in DPB parameters, reserved-track counts, physical
-    // sector skew/interleave, boot/system code and allocation-bitmap location. This code uses
-    // the same *linear, unskewed* logical-sector mapping as the rest of this file (see
-    // BuildBlockMap / CpmImage), so the result is self-consistent for write -> ExtractFiles
-    // round trips but is NOT guaranteed to boot on real hardware or in an emulator, nor to be
-    // byte-compatible with any particular CP/M distribution. Treat it as a best-effort,
-    // spec-derived layout, not verified bootable media.
+    // The real C128 CP/M variants differ in DPB parameters, reserved-track counts, boot/system
+    // code and allocation-bitmap location. This code uses the ctools-derived speed-zone +
+    // interleave-skew mapping in BuildBlockMap/CpmImage, so write -> ExtractFiles round-trips
+    // are byte-exact, but DPB variants, boot code and bitmap placement for from-scratch images
+    // remain unverified against real bootable media.
     // -------------------------------------------------------------------------------------
 
     /// <summary>Loads an embedded CP/M system asset (boot sector or CPM+.SYS) from the Core assembly.</summary>

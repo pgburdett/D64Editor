@@ -4,7 +4,7 @@ namespace D64Editor.App;
 
 /// <summary>
 ///     Minimal command-line interface for the port (headless), à la other disk editors' command-line tools:
-///     <c>--convert &lt;in&gt; &lt;out&gt;</c> (G64/NIB → D64 via the verified GCR decoder),
+///     <c>--convert &lt;in&gt; &lt;out&gt;</c> (G64/NIB/NBZ → D64, or copy a native image),
 ///     <c>--list &lt;image&gt;</c> (print the directory), and <c>--help</c>. Returns true when a
 ///     CLI verb was handled (so the GUI isn't started); otherwise false to launch the GUI.
 /// </summary>
@@ -189,7 +189,7 @@ internal static class Cli
     {
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: D64Editor --convert <in> <out>   (supports .g64/.nib -> .d64)");
+            Console.Error.WriteLine("Usage: D64Editor --convert <in> <out>   (.g64/.nib/.nbz -> .d64, or copy a native image)");
             return true;
         }
 
@@ -691,7 +691,7 @@ internal static class Cli
     {
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: D64Editor --run-script <script.txt>");
+            Console.Error.WriteLine("Usage: D64Editor --run-script <script.txt> [workdir]");
             Console.Error.WriteLine("Headless automation over the Core engine (open/convert/save/import/export/");
             Console.Error.WriteLine("scratch/unscratch/wipe/REL/CP-M/GEOS/archive). Run 'help' inside a script for commands.");
             return true;
@@ -760,7 +760,7 @@ internal static class Cli
     {
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: D64Editor --cpm-import-dir <donor.d64> <srcdir> <out>");
+            Console.Error.WriteLine("Usage: D64Editor --cpm-import-dir <donor|new:d64|new:d71|new:d81> <srcdir> <out>");
             Console.Error.WriteLine("  Imports all files in <srcdir> into a CP/M image. <donor> = a bootable system .d64/.d71/.d81,");
             Console.Error.WriteLine("  or 'new:d64'/'new:d71'/'new:d81' for a fresh data-only (non-bootable) image.");
             Console.Error.WriteLine("  Host filenames are mapped to CP/M 8.3 names; duplicate names get a numeric suffix.");
@@ -1103,7 +1103,7 @@ internal static class Cli
     }
 
     /// <summary>
-    ///     OpenCBM real-hardware operations: --cbm &lt;detect|status|dir|command|format|read|write|verify|vice|boot&gt; ...
+    ///     OpenCBM real-hardware operations: --cbm &lt;detect|status|dir|command|format|read|write|verify|vice|boot|gaps|gcrscan|sector|seek|surface|tailgap&gt; ...
     ///     All image creation/verification is done in-process by C128Cpm; OpenCBM is used
     ///     only for the physical disk I/O against a real 1541/1571.
     /// </summary>
@@ -1397,27 +1397,33 @@ internal static class Cli
     private static void PrintHelp()
     {
         Console.WriteLine("D64 Editor — CLI");
-        Console.WriteLine("  --convert <in> <out>   Convert G64/NIB to D64 (or copy a native image)");
-        Console.WriteLine("  --list <image>         Print an image's directory");
-        Console.WriteLine("  --export <image> <dir> Export files from D64/T64/D71/D81/D80/D82/DNP to a directory");
-        Console.WriteLine("  --info <image>         Show image/format information");
-        Console.WriteLine("  --validate <image>     Validate/report cross-links and basic issues (D64)");
-        Console.WriteLine("  --cpm-extract <img> <dir>  Extract CP/M files (best-effort DPB-aware, .d64/.d71/.d81)");
-        Console.WriteLine("  --cpm-copy <tmpl> <out> [--all|--files A,B]  Create CP/M image from template (keep all or subset)");
-        Console.WriteLine("  --cpm-format <tmpl> <out>  Create empty CP/M image from template (clears directory; template-based)");
+        Console.WriteLine("  --convert/-c <in> <out>  Convert G64/NIB/NBZ to D64 (or copy a native image)");
+        Console.WriteLine("  --list/-l <image>        Print an image's directory");
+        Console.WriteLine("  --export/-e <image> <dir>  Export files from D64/T64/D71/D81/D80/D82/DNP");
+        Console.WriteLine("  --info/-i <image>        Show image/format information");
+        Console.WriteLine("  --validate/-v <image>    Validate/report cross-links and basic issues (D64)");
+        Console.WriteLine("  --cpm-extract <img> <dir> [--strict]  Extract CP/M files (--strict: real directory slots only)");
+        Console.WriteLine("  --cpm-copy <tmpl> <out> [--all|--files A,B]  Create CP/M image from template");
+        Console.WriteLine("  --cpm-format <tmpl> <out>  Create empty CP/M image from template");
         Console.WriteLine("  --extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]  Extract archive contents");
-        Console.WriteLine("  --print-dir <image>    Print directory listing (text, D64)");
-        Console.WriteLine("  --geos-info <d64> <file>  Show GEOS/REL metadata and best-effort VLIR info for a file (D64)");
-        Console.WriteLine("  --run-script <file>    Run a headless automation script (Core ScriptEngine)");
+        Console.WriteLine("  --print-dir <image>      Print directory listing (text, D64)");
+        Console.WriteLine("  --geos-info <d64> <file>  Show GEOS/REL metadata and best-effort VLIR info (D64)");
+        Console.WriteLine("  --run-script <file> [workdir]  Run a headless automation script (Core ScriptEngine)");
         Console.WriteLine("  --to-gcr <d64> <out.g64|out.nib>  Encode a D64 into a G64/NIB image (native GCR write-back)");
-        Console.WriteLine("  --cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]  From-scratch CP/M image (best-effort)");
-        Console.WriteLine("  --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]  Bootable CP/M image from a system-disk donor");
-        Console.WriteLine("  --cpm-import-dir <donor.d64> <srcdir> <out>  Import a whole host directory into a bootable CP/M image");
+        Console.WriteLine("  --test-stitch <image.g64> <track>  Validate the raw-GCR stitcher against a known track");
+        Console.WriteLine("  --raw2g64 <out.g64> <track:file> ...  Wrap captured raw track files into a G64 container");
+        Console.WriteLine("  --gcrread <dev> <track> <outfile> [--nosync] [--whole]  Raw GCR chunk reader");
+        Console.WriteLine("  --writeraw <dev> <track> <hexpattern> <count>  DESTRUCTIVE raw GCR track writer (blank disk only)");
+        Console.WriteLine("  --protect <base.d64> <out.g64>  Build a G64 with reproducible protected tracks");
+        Console.WriteLine("  --cpm-new <d64|d71|d81> <out> [NAME.EXT=hostfile ...]  From-scratch CP/M image (data-only)");
+        Console.WriteLine("  --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]  Bootable CP/M image from a donor");
+        Console.WriteLine("  --cpm-import-dir <donor|new:d64|new:d71|new:d81> <srcdir> <out>  Import a host directory");
         Console.WriteLine("  --cpm-cpmtools <cmd>   cpmtools-backed CP/M ops (format/create/import-dir/list) when available");
         Console.WriteLine("  --ctools <cmd>         ctools-backed CBM CP/M ops (explicit opt-in; in-process is default)");
         Console.WriteLine("  --cbm <cmd>            OpenCBM hardware: detect/status/dir/command/format/read/write/verify/");
-        Console.WriteLine("                         vice <command|start|stop> [options] / boot <image> <dev>");
-        Console.WriteLine("  --help                 Show this help");
+        Console.WriteLine("                         vice <command|start|stop> [options] / boot <image> <dev> / gaps /");
+        Console.WriteLine("                         gcrscan / sector / seek / surface / tailgap  (run --cbm for details)");
+        Console.WriteLine("  --help/-h              Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");
     }

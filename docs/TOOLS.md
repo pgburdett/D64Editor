@@ -42,7 +42,7 @@ implemented in `D64Editor.App/Cli.cs`; helper scripts live in `tools/diagnostics
 |---|---|
 | `--protect <base.d64> <out.g64>` | Synthesize EA PRODOS protected tracks (void T2, T36-40) into a G64. |
 | `--writeraw <dev> <track> <hexpattern> <count>` | **DESTRUCTIVE.** Serial raw GCR track writer via drive-side VIA2 write mode. Blank disk only. Track >35 uses the safe 82-byte stepper from track 35. |
-| `--gcrread <dev> <track> <outfile> [--nosync] [--skip N] [--whole]` | Raw GCR chunk reader. `--whole` window stitching is not a valid single-revolution capture. |
+| `--gcrread <dev> <track> <outfile> [--nosync] [--whole]` | Raw GCR chunk reader; `--whole` window stitching is not a valid single-revolution capture. |
 | `--raw2g64 <out.g64> <track:file> ...` | Wrap captured raw track files into a G64 container. |
 
 ## 2. External utilities
@@ -92,7 +92,7 @@ for f in *.nbz; do dotnet run --project D64Editor.App -- --convert "$f" "${f%.nb
 tools/diagnostics/scan_kj.sh
 ```
 
-See `docs/AGENTS`-linked sections in `AGENTS.md`, `HARDWARE_WORKFLOW.md`,
+See the linked sections in `AGENTS.md`, `HARDWARE_WORKFLOW.md`,
 `docs/drive-assembly/README.md`, and `docs/disk-images/README.md` for the analysis behind each step.
 
 ## 4. Safety

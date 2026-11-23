@@ -57,11 +57,9 @@ public partial class OpenCbmWindow : Window
     {
         var d64copy = Find("d64copy");
         var cbmctrl = Find("cbmctrl");
-        var cbmcopy = Find("cbmcopy");
         DetectLabel.Text =
             "OpenCBM tools on PATH:  d64copy = " + (d64copy ?? "(not found)") +
-            "   cbmctrl = " + (cbmctrl ?? "(not found)") +
-            "   cbmcopy = " + (cbmcopy ?? "(not found)") + "\n" +
+            "   cbmctrl = " + (cbmctrl ?? "(not found)") + "\n" +
             "Writes need a real 1571/1541 + cable (ZoomFloppy/XUM1541). " +
             "Reads are non-destructive; writes overwrite the disk.";
     }

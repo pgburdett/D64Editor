@@ -28,7 +28,7 @@ the existing Core/App split. Product behaviour stays in `D64Editor.Core`; CLI di
 | `D64Image.cs` | Existing D64 engine; `CreateBlank(name,id).GetRawDataCopy()` supplies the base D64 used when building raw G64 containers. |
 
 ## Embedded 6502 assets (`D64Editor.Core/Assets/`)
-All are embedded resources with logical names `D64Editor.Core.Assets.<file>`, declared in `D64Editor.Core.csproj`. Source `.s` files are kept beside them and copied into `docs/drive-assembly/` for reference.
+All are embedded resources with logical names `D64Editor.Core.Assets.<file>`, declared in `D64Editor.Core.csproj`. Source `.s` files are kept beside them, with parallel reference copies in `docs/drive-assembly/`.
 
 | Binary | Source | Purpose |
 |---|---|---|
@@ -37,12 +37,12 @@ All are embedded resources with logical names `D64Editor.Core.Assets.<file>`, de
 | `tailgap.bin` (87 B) | `TailGap.s` | TGREAD port; FDC JUMP-job gap reader. |
 | `rawwriter.bin` (93 B) | `RawWriter.s` | VIA2 write-mode raw GCR writer (BVC/CLV/STA `$1C01`). |
 | `stepper.bin` (82 B) | `Stepper.s` | Two VIA phase changes per track, inward from 35; no homing. |
-| `gcrreader.bin` (79 B) | `GcrReader.s` | Raw GCR chunk reader with skip/count and SYNC wait; motor via `$F97E`. |
+| `gcrreader.bin` (69 B) | `GcrReader.s` | Raw GCR chunk reader with skip/count and SYNC wait; motor via `$F97E`. |
 
 ## App: CLI surface
 `D64Editor.App/Cli.cs` dispatches top-level verbs and `--cbm` subverbs. New hardware verbs added:
 `sector`, `seek`, `surface`, `tailgap`, `gcrscan`, `gaps`; new top-level verbs `--protect`,
-`--writeraw`, `--gcrread`, `--raw2g64`. `--convert` handles `.nbz`. Help text lists every verb.
+`--writeraw`, `--gcrread`, `--raw2g64`. `--convert` handles `.nbz`. Runtime `--help` lists the main verbs; `--cbm` with no arguments lists hardware subverbs.
 
 ## Docs and reference data
 | Path | Contents |

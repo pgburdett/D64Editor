@@ -6,13 +6,12 @@
   - `D64Editor.Core/` — disk/image engine and format logic (library, `net10.0`, `LangVersion 12`, nullable enabled).
   - `D64Editor.App/` — Avalonia desktop UI (Exe, `net10.0`, `LangVersion 12`, nullable enabled, `Avalonia 11.3.4`). Entry point: `D64Editor.App/Program.cs`.
 - `D64Editor.App` references `D64Editor.Core`. Keep format/disk behavior changes in `Core` and UI changes in `App` unless there is a clear reason.
-- The Nemesis C# port, its reverse-engineering docs, and original game fixtures now live in the sibling `../Nemesis` repository.
 
 ## Commands
 - Restore: `dotnet restore`
 - Build: `dotnet build` (or `dotnet build --no-restore` after restore)
 - Run UI: `dotnet run --project D64Editor.App`
-- Test: `dotnet test` / `dotnet test --no-build --verbosity normal` (the D64Editor solution currently has no test projects; Nemesis tests are in `../Nemesis`)
+- Test: `dotnet test` / `dotnet test --no-build --verbosity normal` (the D64Editor solution currently has no test projects)
 
 ## CI / environment notes
 - `.github/workflows/dotnet.yml` runs on `ubuntu-latest` (push/PR to `master`) with .NET SDK `10.0.x`: `dotnet restore`, `dotnet build --no-restore`, `dotnet test --no-build --verbosity normal`.
@@ -24,7 +23,7 @@
 - Prefer the code/config as executable truth over README/CI prose when they disagree (e.g., target framework vs CI SDK version).
 - Workspace may contain local artifacts (`bin/`, `obj/`, `.idea/`, `D64Editor.sln.DotSettings.user`, `d64editor-build-archives/`); avoid treating them as source of truth or modifying them unless requested.
 - PETSCII font wiring is documented in `README.md` and centered around `D64Editor.App/Fonts.cs` and `D64Editor.App/Assets/Fonts/` (font file + internal family name + `PetsciiFontAvailable` flag).
-- Multi-format layer lives in Core (`D71Image`, `D81Image`, `D80D82Image`, `DnpImage`, `G64Image`, `NibImage`, `T64Image`, `CpmDisk`, `C128Cpm`, `DiskContainers`) with shared helpers (`CbmImage`, `Gcr`, `DiskFormats`, `CbmCatalog`, `ImageCatalog`, `CbmScratch`, `CbmImport`). Each reader is verified against a synthetic image of its format. Feature/phase roadmap is tracked in `D64Editor.App/Roadmap.md`.
+- Multi-format layer lives in Core (`D71Image`, `D81Image`, `D80D82Image`, `DnpImage`, `G64Image`, `NibImage`, `T64Image`, `CpmDisk`, `C128Cpm`, `DiskContainers`) with shared helpers (`CbmImage`, `Gcr`, `DiskFormats`, `CbmCatalog`, `ImageCatalog`, `CbmScratch`, `CbmImport`). Readers were manually verified during development with generated/synthetic images; there is no automated test suite in the solution. Feature/phase roadmap is tracked in `D64Editor.App/Roadmap.md`.
 
 ## Architecture notes
 - **Core/App separation:** All disk-format behavior, allocation logic, and file I/O belong in `D64Editor.Core`. UI rendering, window management, and user interaction belong in `D64Editor.App`. The App references Core; Core has no dependency on App.
@@ -88,7 +87,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--cbm gaps <image.g64> [--from N] [--to N] [outfile]` — offline raw GCR sync/gap/sector analysis.
 - `--cbm tailgap <dev> [outfile]` — read 5 tail-gap bytes via FDC JUMP job (Kracker Jax TGREAD port).
 - `--cbm gcrscan <dev> [outfile]` — sample raw GCR on the current track via uploaded 6502 code (never moves the head).
-- `--gcrread <dev> <track> <outfile> [--nosync] [--skip N] [--whole]` — raw GCR chunk reader; `--whole` uses correlation-based stitching (synthetically validated, hardware drift untested). `--test-stitch <image.g64> <track>` validates the stitcher against a known track.
+- `--gcrread <dev> <track> <outfile> [--nosync] [--whole]` — raw GCR chunk reader; `--whole` uses overlap/prefix-match stitching (512-byte half-window probe, reverse search; synthetically validated, hardware drift untested). `--test-stitch <image.g64> <track>` validates the stitcher against a known track.
 - `--raw2g64 <out.g64> <track:file> ...` — wrap captured raw track files into a G64 container.
 - `--protect <base.d64> <out.g64>` — inject reproducible EA PRODOS protected tracks into a G64.
 - `--writeraw <dev> <track> <hexpattern> <count>` — DESTRUCTIVE serial raw GCR track writer (blank test disk only; track >35 uses safe 82-byte stepper).
@@ -111,7 +110,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - **Geometry (critical):** logical CP/M blocks map to physical sectors through 4 speed zones with interleave `sec = (5*nr) % sectrk` (source: ctools `bios.cc`). Disk type is detected from boot sector at T1/S0: `"CBM"` + byte 255 `== 0xFF` = double-sided (D71, 2K blocks, 2 extents/entry); otherwise C128 SS (1K blocks) or C64 (1K blocks). Directory occupies logical blocks 0..1 (8 entries/sector, 32-byte entries). `EX`/`RC` encode total record count: `RC>=0x80 ? 128*(EX+1) : 128*EX + RC`, EX modulo extents-per-entry (ctools `fcb.cc`).
 - **Tools:** All `--cpm-*` CLI verbs and `cpm*` script commands use the in-process `C128Cpm` directly — no external tool is required for CP/M disk access. `ctools` (`https://github.com/mist64/ctools`) and `cpmtools` (`CpmToolsCopier`, needs a valid C128 diskdef + libdsk-enabled build) are optional, reachable only through the explicit `--ctools`/`--cpm-cpmtools` verbs for cross-checking. Full install/how-to guide is in README's "CP/M Support" section.
 - **Verified end-to-end:** `--cpm-new d71` (MBASIC.COM + WUMP.BAS) written on Linux, mounted as drive 9 (`B:`) in x128 with a system disk on drive 8 (`A:`), `MBASIC WUMP.BAS` ran WUMPUS to completion. Byte-exact extraction against ctools on both D71 (19 files) and D64 (10 files).
-- **Terminal compatibility (verified):** line-oriented CP/M programs run fine under x128 CP/M 3.0 — MBASIC/WUMPUS and Infocom **Zork II** (INTERLOGIC `ZORK2.COM`+`ZORK2.DAT`, configured with generic `2DEFAULT`/`CONF2` config program) were staged via `--ctools create d71` and played interactively. Full-screen cursor-positioning programs (SuperSoft **Nemesis**, CP/M 2.2) render garbled menus: the C128 CP/M console BIOS lacks the cursor-addressing escape sequences they emit, and patching `TERM.DEF` does not help. This is a console-BIOS limitation, not file corruption — all games staged through the same verified path and extract byte-exact. Legacy CP/M 2.2 full-screen games remain an environment limitation.
+- **Terminal compatibility (verified):** line-oriented CP/M programs run fine under x128 CP/M 3.0 — MBASIC/WUMPUS and Infocom **Zork II** (INTERLOGIC `ZORK2.COM`+`ZORK2.DAT`, configured with generic `2DEFAULT`/`CONF2` config program) were staged via `--ctools create d71` and played interactively. Full-screen cursor-positioning CP/M 2.2 programs may render garbled under the stock console because the C128 CP/M 3.0 BIOS lacks their cursor-addressing escape sequences. This is a console/terminal limitation, not file corruption — staged files extract byte-exact.
 - Template-based create/copy/format: relies on compatible bootable template. From-scratch images are data-only (no boot code/CCP/BDOS); use `--cpm-bootable` with a donor or the two-drive emulator setup.
 - `.d81` CP/M mapping is in-process only; the optional external `ctools`/`cpmtools` paths cover `.d64`/`.d71`.
 
@@ -138,7 +137,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - EA PRODOS/PirateSlayer uses custom track layouts, gap manipulation, raw GCR reads from `$1C01`, rotation/tail-gap timing checks and killer/unformatted regions. Confirmed on the EA disk: void track 2 (no `$FF` sync, 0 sectors), T36 with hundreds of sync runs/no sectors (weak GCR in nibread), T37-40 unformatted, half-track 35.5 activity.
 - **Faithful capture workflow (verified):** real 1571 on device 8 → `nibread -@xum1541 -D8 -e5 -h -v arcticfox.nib` (nibtools-git from AUR; default mode is SRQ serial, `-P` would force parallel) → `nibconv ... .g64` → VICE x64sc with `-drive8truedrive` → `LOAD"*",8,1` boots Arctic Fox to its "Enemy Review" tank screen. D64→G64 sector conversion does NOT preserve protection.
 - OpenCBM/XUM1541 has no raw-track API (`cbm_*_burst_*` fails with `LIBUSB_ERROR_NO_DEVICE`), but SRQ nibtools works. Motor control for custom drive code must use DOS `$F97E` plus spin-up delay; raw `ORA #$04` is not enough.
-- **Safety:** never run `--writeraw` on an original; use a blank disk. `--cbm seek` uses FDC jobs (no homing). Uploaded stepper code caused head clatter and was abandoned (one phase change = half track; two per track; zone bits in `$1C00` bits 5-6).
+- **Safety:** never run `--writeraw` on an original; use a blank disk. `--cbm seek` uses FDC jobs (no homing). Early uploaded *homing* experiments caused head clatter and were abandoned (one phase change = half track; two per track; zone bits in `$1C00` bits 5-6); the short `Stepper.s` used by `--writeraw` for tracks 36–40 is a separate, non-homing routine.
 
 ## Graphics viewers
 - `GfxViewerWindow` (charset/sprite) and `PictureViewerWindow` (Koala/Art Studio hi-res) support zoom and BMP save/export.
@@ -169,7 +168,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - G64/NIB GCR fidelity tuning remains incremental (per-zone interleave/gaps, copy-protected track re-encoding); write-back round-trips byte-exact.
 - CMD container write-back works for all partition types; richer in-container editing workflows remain incremental.
 - From-scratch CP/M (`--cpm-new`) is data-only (no boot code/CCP/BDOS). File layout is correct (byte-exact extraction verified vs ctools as a cross-check); use `--cpm-bootable` with a system-disk donor or the two-drive x128 setup (system disk on 8, data disk on 9) for running files. `.d81` writing is in-process only.
-- Legacy CP/M 2.2 full-screen games other than Nemesis may still render poorly under CP/M 3.0. Nemesis itself is now verified playable with FastBDOS 3 (`CPMFAST3.D71`) plus an ADM-31 type-6 `TERM.DEF` on a 1581/D81 `B:` disk; the original-game setup notes moved with the port to `../Nemesis/docs/nemesis/README.md`.
+- Legacy CP/M 2.2 full-screen programs may still render poorly under the stock CP/M 3.0 console; alternate BDOS/BIOS builds and terminal definitions may be required.
 - Broader inter-tab/window disk-to-disk drag-and-drop not fully implemented.
 - Undo/redo coverage not comprehensive across all edit paths.
 - Native OS print dialog and built-in updater/installer not implemented (platform-dependent).

@@ -565,13 +565,13 @@ details were required:
   and the drive does not spin reliably);
 - a spin-up delay is needed before sampling.
 
-With that, 256-byte raw chunks capture successfully (`--gcrread 8 1 file --nosync`) and produce
-non-zero GCR data. `--gcrread ... --whole` attempts a 30-window full-track capture by re-locking
-to SYNC and skipping successive byte counts, but the result is **not a valid single-revolution
-stream**: a captured track 1 yielded only 19 sync runs and 0 decodable sectors. Stitching
-windows this way does not work.
+Historical first attempt: 256-byte raw chunks captured non-zero GCR data, but a 30-window
+`--whole` capture re-locked to SYNC and skipped successive byte counts; that produced **19 sync
+runs and 0 decodable sectors on track 1**, so it was not a valid single-revolution stream.
 
-A faithful full-track raw capture needs a continuous stream during one revolution — either a
+The current reader uses 1 KB chunks with 512-byte overlap and reverse-searched prefix matching
+(described below). A faithful full-track raw capture still needs a continuous stream during one
+revolution — either a
 drive-side fast-transfer routine that feeds bytes to the host while the disk spins, or SRQ
 nibtools. `--raw2g64` can wrap already-captured raw track files into a G64 container.
 

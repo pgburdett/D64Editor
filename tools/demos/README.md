@@ -30,9 +30,9 @@ dotnet run --project D64Editor.App -- --ctools create d71 /tmp/vdc.d71 tools/dem
 
 This is the *native* C128 CP/M way to do full-screen graphics — **not** ANSI/VT
 escape sequences. That distinction explains why line-oriented CP/M programs
-(Infocom Zork, MBASIC) work under x128 while full-screen CP/M 2.2 games such as
-Nemesis (which emit VT/ANSI escapes) render garbled: the C128 console does not
-interpret those escape sequences.
+(Infocom Zork, MBASIC) work under x128 while full-screen CP/M 2.2 programs that
+emit VT/ANSI escapes can render garbled: the stock C128 console does not interpret
+those escape sequences.
 
 **Status.** The demo builds, stages, boots and its banner prints correctly via
 BDOS CONOUT. The cursor-position subfunction call (the `USERFN` routine) is a

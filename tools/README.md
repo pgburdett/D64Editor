@@ -32,12 +32,11 @@ python3 tools/z80dis.py path/to/PERSON.COM --find-hex "0e 01 cd 05 00"
 ### Worked example: finding PERSON.COM's exit
 
 ```bash
-# Extract PERSON.COM from the Nemesis archive, then:
 python3 tools/z80dis.py PERSON.COM --find-hex "0e 01 cd 05 00"
 # The CONIN helpers each check for Ctrl-C (CP 3) and JP 0x0000 on match:
 #   ... CALL 5 ; CP 3 ; JP z,0x0000   -> Ctrl-C exits to A>
 ```
 
-Ctrl-C (`0x03`) is the universal CP/M program-abort key — `PERSON.COM` checks it
-after every CONIN and jumps to `0x0000` (warm boot) when seen. This is the
-reliable way to leave a misbehaving full-screen CP/M program.
+Ctrl-C (`0x03`) is the universal CP/M program-abort key — many interactive CP/M
+programs check it after every CONIN and jump to `0x0000` (warm boot) when seen.
+This is the reliable way to leave a misbehaving full-screen CP/M program.

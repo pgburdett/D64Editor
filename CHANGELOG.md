@@ -105,17 +105,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ### Docs
 - README, AGENTS and Roadmap updated to describe the in-process default and the opt-in role of the external tools.
 
-## [Unreleased] — CP/M D71 Mapping Fix & Strict Extraction (found via Nemesis/Zork import testing)
+## [Unreleased] — CP/M D71 Mapping Fix & Strict Extraction
 
 ### Fixed
-- `C128Cpm.TsOffset1541`: D71 tracks 36–70 now use the correct speed-zone sector counts when computing byte offsets (previously all treated as 17 sectors, corrupting files allocated past block ~88). Verified: 36-file Nemesis import now extracts byte-exact (was broken for high blocks).
+- `C128Cpm.TsOffset1541`: D71 tracks 36–70 now use the correct speed-zone sector counts when computing byte offsets (previously all treated as 17 sectors, corrupting files allocated past block ~88). Verified with a 36-file CP/M import that now extracts byte-exact (was broken for high blocks).
 - `C128Cpm.WriteFiles`: donor imports (`ScanAllForFreeSlots`) now identify directory sectors by the "all 8 slots are unused-or-plausible-entry" heuristic for BOTH free-slot finding and used-block collection, preventing file-data sectors containing 0xE5 bytes from being mistaken for directory slots.
 
 ### Added
 - `C128Cpm.ExtractFilesStrict`: scans only known directory slots (real interleaved D64 sectors / block-based D71/D81 from `FormatBlank`), avoiding false-positive "files" from data sectors. CLI `--cpm-extract ... --strict` and script `cpmextract ... --strict`.
 
 ### Verification notes (emulator / x128)
-- Authentic CP/M disk images from the local collection were used as boot donors. Nemesis/Zork game files import byte-exact and the resulting D71 image boots to CP/M 3.0 `A>`.
+- Authentic CP/M disk images from the local collection were used as boot donors. Imported game files extract byte-exact and the resulting D71 image boots to CP/M 3.0 `A>`.
 - The original 1981–82 CP/M 2.2 games themselves hang under the available CP/M 3.0 (BDOS 3.0/FastBIOS) donor with mismatched terminal/two-drive requirements — an environment compatibility issue, not file corruption. Documented as a limitation.
 
 ## [Unreleased] — Whole-Host-Directory Import to CP/M
@@ -262,9 +262,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Known Limitations (Current)
 
-- **G64/NIB native GCR-level edit/save** back to `.g64/.nib` not implemented (requires GCR re-encoding).
-- **CMD container-level write-back for emulated partitions** (D64/D71/D81) still limited.
-- **C128 CP/M full from-scratch formatting/writing** for all variants and validated `.d71/.d81` DPB/boot-system layouts (template-based extract/copy/format exists; needs format-specific boot images/templates + real-image verification).
+- **G64/NIB fidelity tuning** (per-zone gaps/interleave, copy-protected track re-encoding, half-track editing); GCR write-back exists via `--to-gcr` and cannot reconstruct protection from a D64 intermediate.
+- **Richer CMD in-container editing**; write-back works for all partition types (D64/D71/D81/DNP).
+- **C128 CP/M full from-scratch bootable media** for all variants and validated `.d81` DPB/boot-system layouts (template-based and donor-based bootable paths exist; D71 is verified byte-exact and in the real-media flow).
 - **Broader inter-tab/window disk-to-disk drag-and-drop** (OS drag in/out works).
 - **More comprehensive undo/redo** coverage across all edit paths (basic for common D64 ops).
 - **Deeper GEOS disk/application-data/VLIR workflows** beyond best-effort index/chain inspection and metadata editing.
@@ -273,9 +273,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Verification Status
 
-- All format readers verified against synthetic images (D64, D71, D81, D80, D82, DNP, D2M/D4M/DHD, G64, NIB, T64, CP/M 2.2, C128 CP/M D64).
-- REL create/resize verified against synthetic D64 images.
+- Format readers were manually verified during development with generated/synthetic images (no automated test suite in the solution): D64, D71, D81, D80, D82, DNP, D2M/D4M/DHD, G64, NIB, T64, CP/M 2.2, C128 CP/M D64.
+- REL create/resize was manually verified against synthetic D64 images.
 - CP/M extraction verified against `c128-cpm.system.6228129311-9283de.d64` (9 files extracted).
-- Emulator/OpenCBM/real-drive flows remain unverified without external tools/hardware.
-- CP/M `.d71/.d81` mappings need validation against real images/templates.
+- The documented CP/M D64/D71 emulator/OpenCBM/real-drive flow is verified; CP/M `.d81` mapping against real 1581 media and raw-GCR hardware stitching remain unverified.
 - No automated test suite; CI runs `dotnet test` for completeness (no test projects).

@@ -1,10 +1,8 @@
 namespace D64Editor.Core;
 
 /// <summary>
-///     Minimal format-agnostic disk-image contract (disk editors often support many image
-///     types; this port currently only fully implements the D64 engine, but this
-///     abstraction is the seam the other formats slot into). <see cref="D64Image"/>
-///     implements it today.
+///     Minimal format-agnostic disk-image contract. <see cref="D64Image"/> is the only full
+///     implementation today; other formats use dedicated readers/writers in Core.
 /// </summary>
 public interface IDiskImage
 {

@@ -1,6 +1,6 @@
 namespace D64Editor.Core;
 
-/// <summary>Disk-image formats supported by this port; this port currently fully implements only D64.</summary>
+/// <summary>Disk-image formats recognized by this port. D64 is the only format with the full <see cref="IDiskImage"/> editing implementation; the others have dedicated readers/editors.</summary>
 public enum DiskFormat
 {
     Unknown = 0,
@@ -39,7 +39,7 @@ public static class DiskFormats
             ".d82" => DiskFormat.D82,
             ".t64" => DiskFormat.T64,
             ".g64" => DiskFormat.G64,
-            ".nib" or ".nib" => DiskFormat.Nib,
+            ".nib" => DiskFormat.Nib,
             ".dnp" => DiskFormat.Dnp,
             ".dhd" => DiskFormat.Dhd,
             ".d2m" => DiskFormat.D2m,
@@ -50,13 +50,6 @@ public static class DiskFormats
             _ => DiskFormat.Unknown,
         };
     }
-
-    /// <summary>True when this build can actually open/parse the format (D64 only, for now).</summary>
-    public static bool IsSupportedInThisBuild(DiskFormat format) => format switch
-    {
-        DiskFormat.D64 => true,
-        _ => false,
-    };
 
     /// <summary>D64 sizes: 174848/175531 (35-track) and 196608/197376 (40-track).</summary>
     public static bool IsD64Size(long length) => length is

@@ -205,7 +205,7 @@ public static class ScriptEngine
         sb.AppendLine("  relnew <name> <reclen>       Create a REL file (D64)");
         sb.AppendLine("  relresize <name> <count>     Grow/shrink a REL file (D64)");
         sb.AppendLine("  relwrite <name> <rec#> <hex> Rewrite a REL record (hex bytes; D64)");
-        sb.AppendLine("  cpmextract <img> <dir>       Extract CP/M files (best-effort DPB-aware)");
+        sb.AppendLine("  cpmextract <img> <dir> [--strict]  Extract CP/M files (--strict: real directory slots only)");
         sb.AppendLine("  cpmcopy <tmpl> <out> [--all|--files A,B]  Create CP/M image from template");
         sb.AppendLine("  cpmformat <tmpl> <out>       Create empty CP/M image from template");
         sb.AppendLine("  archive <zip|tar|tgz> <dir>  Extract archive contents");
@@ -213,7 +213,7 @@ public static class ScriptEngine
         sb.AppendLine("  togcr <d64> <out.g64|nib>    Encode a D64 into a G64/NIB container (GCR write-back)");
         sb.AppendLine("  cpmnew <d64|d71|d81> <out> [NAME.EXT=host ...]  From-scratch CP/M image (best-effort)");
         sb.AppendLine("  cpmbootable <donor.d64> <out> [NAME.EXT=host ...]  Bootable CP/M image from a system-disk donor");
-        sb.AppendLine("  cpmimportdir <donor.d64> <srcdir> <out>  Import a host directory into a bootable CP/M image");
+        sb.AppendLine("  cpmimportdir <donor|new:d64|new:d71|new:d81> <srcdir> <out>  Import a host directory into a CP/M image");
         sb.AppendLine("  echo <text...>               Print text");
         sb.AppendLine("  exit [code]                  Stop with exit code");
         Log(c, sb.ToString().TrimEnd(), r);

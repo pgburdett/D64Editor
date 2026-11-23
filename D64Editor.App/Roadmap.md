@@ -24,7 +24,7 @@ disk editors, implemented incrementally.
 - [x] G64 — structural parse + GCR bitstream decode → D64 conversion (byte-exact on synthetic .g64); opening auto-converts for editing, with structural-viewer fallback on decode failure
 - [x] NIB — structural parse + decode → D64 conversion (byte-exact on synthetic .nib); opening auto-converts for editing, with structural-viewer fallback on decode failure
 - [x] CP/M 2.2 images + .LBR catalogs — best-effort directory reader + viewer
-- [x] C128 CP/M (.d64/.d71/.d81) — DPB-aware extraction and template-based create/copy (all/subset) via CLI (best-effort; `.d71/.d81` mappings need validation against real images)
+- [x] C128 CP/M (.d64/.d71/.d81) — DPB-aware extraction and template-based create/copy (all/subset) via CLI (D71 verified byte-exact and used in the verified real-media flow; `.d81` against real 1581 CP/M media still needs validation)
 - [x] Export-to-PRG for read-only CBM-layout views (D71/D81/D80/D82/T64)
 - [x] Scratch with block-freeing (CBM layouts): D71/D81/D80/D82/DNP (chain-walk → BAM update, single flush)
 - [x] Unscratch/re-allocate (CBM layouts): D71/D81/D80/D82/DNP via `ICbmWritable`/`CbmScratch`
@@ -79,7 +79,7 @@ disk editors, implemented incrementally.
 
 ## Phase 8 — Platform Integration
 - [x] Emulator launch (template `{disk}`/`{image}`, drive-8 mount, selection/`*` or `disk:NAME`, `$0801` → `-autostartprgmode 1`, safe quoting)
-- [x] OpenCBM transfer (detects tools on PATH; `{device}/{disk}/{out}` template)
+- [x] OpenCBM transfer via structured `d64copy` dialog (`OpenCbmWindow`): D64/D71 selection, device, transfer mode, command preview, arguments via `ArgumentList` (no shell)
 - [x] VICE real-device launch builder: `--cbm vice <command|start|stop>` prints/launches/stops `-devicebackend8 2 -busdevice8` x128 commands (options `--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); verified CP/M boot from a real 1571 via ZoomFloppy for both D64 and D71 (`-2`) images written with warp and no `-t`
 - [x] File associations (Linux .desktop + MIME, Windows .reg)
 - [x] "Check for Updates" reads a version-feed URL and opens the releases page in the default browser (best-effort)

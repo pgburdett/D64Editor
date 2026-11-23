@@ -21,9 +21,10 @@ build in `D64Editor.App`).
   (first file); one selected file → autostart `disk:NAME` (normalized); a
   **$0801 BASIC** program adds `-autostartprgmode 1` (LOAD ,8,1 style) when
   absent. Paths are shell-quoted safely.
-- **CBM → OpenCBM Transfer…** detects `cbmcopy`/`cbmctrl` on `PATH` (say "not
-  found" otherwise) and runs your command with `{device}/{disk}/{out}` substituted.
-  These need the emulator or OpenCBM installed and a real drive to do anything.
+- **CBM → OpenCBM Transfer…** opens the structured `d64copy` dialog
+  (`OpenCbmWindow`): D64/D71 selection, device number, transfer mode and a live
+  command preview. Arguments are passed via `ProcessStartInfo.ArgumentList`
+  (no shell). This needs OpenCBM installed and a real drive to do anything.
 
 ## Not included
 

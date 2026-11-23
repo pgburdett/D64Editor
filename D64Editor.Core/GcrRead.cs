@@ -3,7 +3,7 @@ namespace D64Editor.Core;
 /// <summary>
 ///     Raw GCR capture. A drive-side routine fills the whole drive RAM buffer $0400-$07FF
 ///     (1,024 bytes) from VIA2 port A while the disk spins, using DOS motor-on ($F97E), then
-///     the host downloads it. Overlapping windows are aligned by correlation into a full track.
+///     the host downloads it. Overlapping windows are aligned by reverse-searched prefix/overlap matching into a full track.
 ///     This is a software capture path; SRQ nibtools remains the authoritative raw imager.
 /// </summary>
 public static class GcrRead

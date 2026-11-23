@@ -126,7 +126,7 @@ D64Editor/
 │   ├── Fonts.cs             # PETSCII font wiring
 │   ├── *.axaml(.cs)         # Various viewer/editor windows
 │   ├── Roadmap.md           # Feature roadmap & status
-│   └── Assets/              # Fonts, icons, chargen.bin
+│   └── Assets/              # Fonts, chargen.bin
 ├── src/                     # Original VB6 source (reference)
 ├── packaging/               # OS integration helpers
 ├── AGENTS.md                # Agent/developer guidance
@@ -202,7 +202,7 @@ To use a different PETSCII font, drop it in `Assets/Fonts/`, update `FileName` a
 
 `ErrorNumbersWindow` + `CrossLinksWindow` port `frmErrorNumbers` and `frmCrossLinks`. Error Numbers opens from the BAM editor's new third mode ("SET ERROR CODE" — the original triggered this via a caption-check hack on the same BAM editor form; here it's just an honest third mode) and only applies to 175531-byte images with an error-info section. Cross-Links opens automatically after loading a disk if any cross-linked blocks are found, same as the original's automatic popup, unless disabled in Config.
 
-`FilenameBuilderWindow` ports `frmFilenameBuilder` — the last of the fourteen original forms. It's not just a character-art tool: it's a reusable library of "separator" snippets that can be copied straight into a disk's directory as zero-block DEL entries, which is how art like "USE 38 TRACKS COPY" (or that Krestology disk) actually gets built — a handful of saved lines, recombined per disk. Two entry points, matching the original's dual purpose: standalone from the main Edit menu (build art, copy separators into the open disk), or from File Properties' "Filename Builder..." button (builds a name and feeds it back into that filename field instead). The PETSCII character grid shows decimal byte codes rather than glyphs until a real font's wired up via `Fonts.cs` — same limitation as the Block Editor's ASCII column, for the same reason. Separators persist to a file under the user's app-data folder now instead of the original's hard-coded Windows install directory.
+`FilenameBuilderWindow` ports `frmFilenameBuilder` — the last of the fourteen original forms. It's not just a character-art tool: it's a reusable library of "separator" snippets that can be copied straight into a disk's directory as zero-block DEL entries, which is how art like "USE 38 TRACKS COPY" (or that Krestology disk) actually gets built — a handful of saved lines, recombined per disk. Two entry points, matching the original's dual purpose: standalone from the main Edit menu (build art, copy separators into the open disk), or from File Properties' "Filename Builder..." button (builds a name and feeds it back into that filename field instead). The PETSCII grid and Block Editor ASCII column render with C64 Pro Mono/PETSCII glyph mapping via `Fonts.cs`/`Petscii.cs` and follow the centralized charset toggle. Separators persist to a file under the user's app-data folder now instead of the original's hard-coded Windows install directory.
 
 Together these show the pattern (event handler → calls into `D64Image` → updates controls) that all fourteen forms follow.
 
@@ -216,7 +216,7 @@ Beyond the VB6 D64 port, this build carries a format-agnostic layer and a growin
 
 - **D64** — full editor (load/save, BAM, scratch/unscratch/wipe, import, properties, viewers, multi-window).
 - **D71 / D81 / D80 / D82 / DNP** — directory viewer + Hex/BASIC viewers + Export-PRG. Directory-entry editing (rename, file type, start t/s, size) is supported for all of these. Scratch with block-freeing plus file import are implemented for D71/D81/D80/D82/DNP via `ICbmWritable`/`CbmScratch`/`CbmImport`.
-- **G64 / NIB** — raw-GCR images; on open they are **decoded to a D64** (nibtools/VICE GCR pipeline: bit-level sync detection, 5-to-4 decode, `0x08` header + `0x07` data blocks) and then open fully editable in the editor. Verified byte-exact. Structural viewers (`G64InfoWindow`, `NibInfoWindow`) and fallback on decode failure are provided. Native GCR-level re-encoding back to `.g64/.nib` is not yet implemented.
+- **G64 / NIB** — raw-GCR images; on open they are **decoded to a D64** (nibtools/VICE GCR pipeline: bit-level sync detection, 5-to-4 decode, `0x08` header + `0x07` data blocks) and then open fully editable in the editor. Verified byte-exact. Structural viewers (`G64InfoWindow`, `NibInfoWindow`) and fallback on decode failure are provided. Native GCR write-back via `--to-gcr`/`togcr` is implemented and byte-exact for D64→G64/NIB→D64; per-zone fidelity tuning and copy-protected re-encoding remain incremental.
 - **T64** — tape-archive reader + viewer + mutable rebuild/save support (basic native read/write). Verified on a synthetic `.t64`.
 - **D2M / D4M / DHD** — CMD container partition tables; the Parts view lists partitions and opens the selected one (emulated 1541/1571/1581 land in the editor, native DNP opens in its viewer with container write-back).
 - **CP/M 2.2 images + `.LBR`** — best-effort directory catalog (CP/M is DPB-parameterized, so it lists/labels entries and never assumes byte counts).
@@ -355,7 +355,7 @@ D64Editor --cpm-bootable <donor.d64> <out> [NAME.EXT=hostfile ...]
 D64Editor --cpm-import-dir <donor|new:d64|new:d71|new:d81> <srcdir> <out>
 D64Editor --ctools <format|create|import|list|extract> ...
 D64Editor --cpm-cpmtools <format|create|import-dir|list> ...
-D64Editor --cbm <detect|status|dir|command|format|read|write|verify|vice|boot|gcrscan|sector|seek|surface|tailgap> ...
+D64Editor --cbm <detect|status|dir|command|format|read|write|verify|vice|boot|gaps|gcrscan|sector|seek|surface|tailgap> ...
 D64Editor --cbm vice <command|start|stop> [--dev N] [--data IMG] [--softgl] [--dry-run]
 D64Editor <image>          (opens in GUI)
 D64Editor                  (no args: starts GUI)
@@ -391,8 +391,8 @@ D64Editor                  (no args: starts GUI)
 | `--cbm tailgap <dev> [outfile]` | Read five tail-gap bytes via an FDC JUMP job (Kracker Jax TGREAD port) |
 | `--cbm gaps <image.g64> [--from N] [--to N] [outfile]` | Offline raw-GCR sync/gap/sector analysis of a G64 image |
 | `--protect <base.d64> <out.g64>` | Build a G64 with reproducible protected tracks (void track 2, extended tracks 36-40) |
-| `--writeraw <dev> <track> <hexpattern> <count>` | DESTRUCTIVE: serial-cable raw GCR track writer (blank disk only; code complete, not hardware-tested) |
-| `--gcrread <dev> <track> <outfile> [--nosync] [--skip N] [--whole]` | Raw GCR chunk reader (full-track stitching still incomplete) |
+| `--writeraw <dev> <track> <hexpattern> <count>` | DESTRUCTIVE: serial-cable raw GCR track writer (blank disk only; hardware-verified on void track 2; tracks 36–40 stepper path untested) |
+| `--gcrread <dev> <track> <outfile> [--nosync] [--whole]` | Raw GCR chunk reader; `--whole` uses 1 KB overlap/prefix-match stitching, synthetically validated on known G64 tracks, but real-hardware drift remains untested; SRQ nibtools is authoritative |
 | `--raw2g64 <out.g64> <track:file> ...` | Wrap captured raw track files into a G64 container |
 | `--cbm vice <command\|start\|stop> [options]` | Build/print, launch or stop the VICE OpenCBM-passthrough command (`--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`) |
 
@@ -573,16 +573,12 @@ The practical consequence, verified with several real games:
 |---------|-----------|--------------------------|
 | **MBASIC / BASIC programs** (e.g. WUMPUS) | line-oriented | ✅ runs to completion |
 | **Infocom Zork I/II/III** (CP/M INTERLOGIC) | line-oriented | ✅ runs, fully interactive |
-| **Nemesis** (SuperSoft, CP/M 2.2) | full-screen cursor positioning | ✅ readable and playable with FastBDOS 3 + ADM-31 `TERM.DEF` |
 
-The earlier garbling was caused by the stock CP/M 3 console BIOS plus a mismatched terminal
-definition, not by corrupt files. Nemesis is now verified with **CPMFAST3.D71** (FastBIOS 3.0)
-on `A:` and a rebuilt 1581/D81 game disk on `B:`, using an ADM-31 / type-6 `TERM.DEF` in the
-game directory; launch with `B:NEMESIS ARAGORN`. The title, menus, dungeon maps and combat
-screens all render and the game plays through to death/level transitions. See
-[the Nemesis repository setup notes](../Nemesis/docs/nemesis/README.md) for the exact setup;
-the game files are byte-exact when extracted. Pure line-oriented programs (MBASIC, Infocom
-Zork) run under the stock CP/M 3 BIOS too.
+Full-screen CP/M 2.2 programs that rely on cursor-addressing escape sequences can be garbled
+under the stock console. That is a terminal/BIOS limitation, not file corruption: imported
+files extract byte-exact. Alternate BDOS/BIOS builds and terminal definitions may be needed
+for those programs. Pure line-oriented programs (MBASIC, Infocom Zork) run under the stock
+CP/M 3 BIOS.
 
 **Verified example — Zork II (Infocom INTERLOGIC version):**
 
@@ -791,14 +787,6 @@ the bus at a time — close `cbmctrl`/`d64copy` before launching VICE, and stop 
 
 ---
 
-## Drag-and-Drop & Container Import
-
-- Drop a `.d64` onto the main window to open it, or drop any other file (including `.t64`/`.p00`/`.s00`/`.u00`/`.r00`, and multiple files at once) to import it into whatever disk's currently open.
-- The same container detection applies to the regular "Import File..." button and to "Add File..." in the Memory window.
-- Inter-tab/window disk-to-disk drag remains limited.
-
----
-
 ## File Chain & Directory Display
 
 ### File Chain Viewer
@@ -869,7 +857,7 @@ log every command and its result, stop on the first error, and propagate an exit
 | `relnew <name> <reclen>` | Create a REL file (D64) |
 | `relresize <name> <count>` | Grow/shrink a REL file's record count (D64) |
 | `relwrite <name> <rec#> <hex...>` | Rewrite a REL record from hex bytes (D64) |
-| `cpmextract <img> <dir>` | Extract CP/M files (best-effort DPB-aware) |
+| `cpmextract <img> <dir> [--strict]` | Extract CP/M files (`--strict` limits scanning to real directory slots) |
 | `cpmcopy <tmpl> <out> [--all\|--files A,B]` | Create CP/M image from a template |
 | `cpmformat <tmpl> <out>` | Create an empty CP/M image from a template |
 | `archive <zip\|tar\|tgz> <dir> [--images-only]` | Extract archive contents |
@@ -905,23 +893,23 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 
 ## Verification & Testing
 
-- All new format readers were verified by generating synthetic images of each format (with a matching GCR encoder for G64/NIB) and byte-comparing the parsed results.
-- Synthetic verification covers: D64, D71, D81, D80, D82, DNP, D2M/D4M/DHD, G64, NIB, T64, CP/M 2.2, C128 CP/M (D64).
-- REL create/resize verified against synthetic D64 images.
+- Format readers were manually verified during development with generated/synthetic images (no automated test suite in the solution), byte-comparing parsed results.
+- Synthetic verification covered: D64, D71, D81, D80, D82, DNP, D2M/D4M/DHD, G64, NIB, T64, CP/M 2.2, C128 CP/M (D64).
+- REL create/resize was manually verified against synthetic D64 images.
 - CP/M extraction verified byte-for-byte against `ctools`: all 19 files on `MBASIC.d71` and all 10 files on the D64 system disk match exactly (non-strict and strict modes).
 - **End-to-end CP/M verified:** files written from Linux via `--cpm-new d71` (MBASIC.COM + WUMP.BAS), mounted as drive 9 (`B:`) in x128 with a CP/M system disk on drive 8 (`A:`), and run — MBASIC loaded and the WUMPUS game played to completion. See [CP/M Support](#cpm-support-c128-cpm).
 - **Line-oriented CP/M games verified:** Infocom **Zork II** (INTERLOGIC CP/M release: `ZORK2.COM` + `ZORK2.DAT`, configured with the generic `2DEFAULT`/`CONF2` terminal program) staged via `--ctools create d71`, mounted as `B:`, and played interactively in x128 — game banner, room descriptions, and `> look` all worked. See [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
-- **Full-screen CP/M game verified:** SuperSoft **Nemesis** with FastBDOS 3 on `A:` and a 1581/D81 game disk on `B:`; an ADM-31 `TERM.DEF` fixes the previously garbled menus, and the game was played through title, castle, dungeon and combat screens. See [the Nemesis repository setup notes](../Nemesis/docs/nemesis/README.md).
-- **Nemesis port verification moved:** the 64 xUnit tests and 33 built-in checks for the separate C# port now live in `../Nemesis`; the D64Editor solution currently has no test projects.
-- Many behaviors (emulator/OpenCBM/real-drive flows, CP/M `.d81` mapping) remain unverified without external tools/hardware or real images.
+- The D64Editor solution currently has no test projects; verification is performed with the CLI and synthetic-image checks documented above.
+- The documented CP/M D64/D71 real-media flow is verified; CP/M `.d81` mapping against real 1581 media and raw-GCR hardware stitching remain unverified.
 
 ---
 
 ## Known Limitations & Out-of-Scope Items
 
 ### Not Yet Implemented
-- **G64/NIB native GCR-level editing/save** back to original `.g64/.nib` format (requires GCR re-encoding with correct sync/timing/track rebuilding).
-- **T64/DNP/CMD deeper native read/write:** T64 has basic mutable save/rebuild; DNP supports in-image edits/save and native DNP container write-back. CMD container-level write-back for emulated partitions (D64/D71/D81) still limited.
+- **T64/DNP deeper native read/write:** T64 has basic mutable save/rebuild; DNP supports in-image edits/save and native DNP container write-back.
+- **G64/NIB fidelity tuning:** per-zone gaps/interleave, copy-protected track re-encoding and half-track editing remain incremental; `--to-gcr` exists but cannot reconstruct protection from a D64 intermediate.
+- **Richer CMD in-container editing:** write-back works for all partition types; deeper in-container workflows remain incremental.
 - **Bootable CP/M media** — from-scratch `--cpm-new` images are data-only (no CP/M boot code/CCP/BDOS). Use `--cpm-bootable` with a known-good system-disk donor, or mount a system disk in drive 8 (`A:`) and your data disk in drive 9 (`B:`). The from-scratch file *layout* is correct (byte-exact extraction verified), but it does not contain bootable system tracks.
 - **Broader inter-tab/window disk-to-disk drag-and-drop** (OS drag in/out works; inter-tab drag remains limited).
 - **More comprehensive undo/redo** coverage across all edit paths (basic for common D64 ops now).
@@ -935,7 +923,7 @@ A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core he
 - OpenCBM transfer requires OpenCBM installed and a real drive.
 - Real CP/M disk verification requires real C128 CP/M images/templates and hardware. For emulator smoke-testing, VICE `x128` is used with two drives (system disk on 8, data disk on 9); see [CP/M Support](#cpm-support-c128-cpm).
 - ctools and libdsk-enabled cpmtools are optional external tools you install yourself; they are used only by the explicit `--ctools`/`--cpm-cpmtools` verbs. All default `--cpm-*` commands and `cpm*` script commands run in-process and need no external tools.
-- **Other CP/M 2.2 full-screen programs** may still render poorly under the stock C128 CP/M 3.0 BIOS. Nemesis is the verified exception: FastBDOS 3 plus an ADM-31 `TERM.DEF` makes it fully readable and playable. Line-oriented programs (MBASIC, Infocom Zork) and plain BASIC work under the stock BIOS — see [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
+- **CP/M 2.2 full-screen programs** may still render poorly under the stock C128 CP/M 3.0 BIOS because cursor-addressing escapes are not interpreted. Line-oriented programs (MBASIC, Infocom Zork) and plain BASIC work under the stock BIOS — see [Terminal compatibility](#terminal-compatibility-what-runs-and-what-doesnt).
 - Graphics viewer enhancements (zoom/pan, richer format/export controls) beyond current zoom + BMP save.
 
 ---
@@ -953,7 +941,7 @@ Where the VB6 code did something because VB6 forced it to (module-level globals 
 - Prefer code/config as executable truth over README/CI prose when they disagree.
 - Avoid modifying local artifacts (`bin/`, `obj/`, `.idea/`, `*.user`, `d64editor-build-archives/`, untracked `*.d64`/`*.crt`).
 - PETSCII font wiring centered around `D64Editor.App/Fonts.cs` and `D64Editor.App/Assets/Fonts/`.
-- Multi-format layer in Core with shared helpers; each reader verified against synthetic images.
+- Multi-format layer in Core with shared helpers; readers were manually verified during development with generated/synthetic images (no automated test suite in the solution).
 - Feature/phase roadmap tracked in `D64Editor.App/Roadmap.md`.
 - Commit with detailed messages (including docs) and push when requested.
 - Keep untracked local/test artifacts out of commits unless intended.

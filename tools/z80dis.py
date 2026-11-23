@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Z80 disassembler for analyzing CP/M .COM programs (e.g. Nemesis PERSON.COM).
+"""Z80 disassembler for analyzing CP/M .COM programs.
 
 Vendors the MIT-licensed z80dis decoder (https://pypi.org/project/z80dis/) in
 z80_decoder.py so CP/M program analysis works offline with only Python 3 stdlib.

@@ -36,7 +36,7 @@ public static class AppSettings
     public static string LastDirectoryPath { get; set; } = "";
     /// <summary>Emulator command template; "{disk}" is replaced with the autostart target and "{image}" with the disk path. Extra args (e.g. cartridges) persist.</summary>
     public static string EmulatorCommand { get; set; } = "x64sc -8 \"{image}\" -autostart \"{disk}\"";
-    /// <summary>OpenCBM copy tool path (cbmcopy / cbmctrl); auto-detected if blank.</summary>
+    /// <summary>Legacy setting from the old OpenCBM command-template dialog; the current OpenCbmWindow detects d64copy/cbmctrl on PATH.</summary>
     public static string OpenCbmTool { get; set; } = "";
     /// <summary>URL for the "Check for Updates" version feed.</summary>
     public static string UpdateFeedUrl { get; set; } = "https://api.github.com/repos/pgburdett/D64Editor/releases/latest";

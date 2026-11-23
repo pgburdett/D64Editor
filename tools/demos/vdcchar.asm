@@ -4,7 +4,7 @@
 ; Demonstrates that CP/M on the C128 CAN draw full-screen graphics on the
 ; 80-column VDC via the documented CP/M-Plus "User Function 4" (8502 BIOS)
 ; subfunction 4 (cursor$pos), instead of ANSI/VT escape sequences (which the
-; C128 console does not interpret -- the reason Nemesis renders garbled).
+; stock C128 CP/M 3.0 console does not interpret).
 ;
 ;   User Function 4 subfunction 4 (cursor$pos): D = row (0-24), E = col (0-79)
 ;
