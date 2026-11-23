@@ -38,6 +38,7 @@ little-endian length/request ID, command byte, body).
 | `launch-x64sc-g64-dump.sh` | Launches x64sc with a G64 image and the binary monitor, retries the flaky GTK3 startup, runs `dump_drive_mem.py`, and stops VICE. Unsets `GTK_MODULES`/`GTK_USE_PORTAL`/`WAYLAND_DISPLAY` and forces `GDK_BACKEND=x11`. |
 | `verify_vice_boot.py` | Feeds `LOAD"*",8,1` and `RUN`, then MEM_GETs C64 screen RAM `$0400-$07E7` and decodes it, so a protected-disk boot can be confirmed without relying on a desktop screenshot. |
 | `verify_vice_boot_long.py` | Longer-wait variant (35 s after LOAD, 25 s after RUN) for chained multi-stage loaders. |
+| `monitor_load_progress.py` | Samples screen RAM, color RAM `$D800-$DBFF`, and VIC registers `$D020-$D02F` during a long load, for boot loaders that display a color-cycling logo while loading. |
 
 Both send command `0x12` (checkpoint set) and `0x72` (keyboard feed), then repeatedly send
 `0xAA` (exit/continue) while collecting responses.
@@ -92,6 +93,12 @@ To verify that a G64 actually boots in VICE (with a binary-monitor instance runn
 
 ```bash
 python3 tools/diagnostics/verify_vice_boot.py /tmp/opencode/vice-screen.bin
+```
+
+For a loader that color-cycles a hires logo while loading, sample progress over time:
+
+```bash
+python3 tools/diagnostics/monitor_load_progress.py 180
 ```
 
 To test whether the disk uses wide/fat tracks from a direct `nibread -h` capture:
