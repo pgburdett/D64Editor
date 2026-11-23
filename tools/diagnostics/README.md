@@ -36,9 +36,16 @@ little-endian length/request ID, command byte, body).
 | `binmon_history.py` | **Preferred.** Feeds the LOAD command and then polls VICE's CPU-history API (command `0x86`) for drive 8 **without stopping execution**. Logs instruction bytes to `/tmp/opencode/g64-cpu-history.log`. This is fast enough that the protected loader completes and the game reaches its playable screen. Includes a PC filter (register ID 3) for `$0300-$07FF`. |
 | `dump_drive_mem.py` | Feeds `LOAD"*",8,1`, waits for the `M-W` upload, then issues a binary-monitor MEM_GET for drive-8 RAM `$0300-$07FF` and writes the 1,280 uploaded bytes. |
 | `launch-x64sc-g64-dump.sh` | Launches x64sc with a G64 image and the binary monitor, retries the flaky GTK3 startup, runs `dump_drive_mem.py`, and stops VICE. Unsets `GTK_MODULES`/`GTK_USE_PORTAL`/`WAYLAND_DISPLAY` and forces `GDK_BACKEND=x11`. |
+| `verify_vice_boot.py` | Feeds `LOAD"*",8,1` and `RUN`, then MEM_GETs C64 screen RAM `$0400-$07E7` and decodes it, so a protected-disk boot can be confirmed without relying on a desktop screenshot. |
 
 Both send command `0x12` (checkpoint set) and `0x72` (keyboard feed), then repeatedly send
 `0xAA` (exit/continue) while collecting responses.
+
+Other analysis helpers:
+
+| Script | Purpose |
+|---|---|
+| `compare_halftracks.py` | Compares whole/half-track GCR blocks from a `nibread -h` NIB capture, allowing cyclic rotation, to test whether a protected track is duplicated at the adjacent half-track (wide/fat track). |
 
 ## Monitor command file
 
@@ -76,6 +83,19 @@ tools/diagnostics/launch-x64sc-g64-dump.sh /tmp/opencode/real-disk.g64 \
     /tmp/opencode/drive-0300.bin
 # or, with an already-running binary-monitor instance:
 python3 tools/diagnostics/dump_drive_mem.py /tmp/opencode/drive-0300.bin
+```
+
+To verify that a G64 actually boots in VICE (with a binary-monitor instance running):
+
+```bash
+python3 tools/diagnostics/verify_vice_boot.py /tmp/opencode/vice-screen.bin
+```
+
+To test whether the disk uses wide/fat tracks from a direct `nibread -h` capture:
+
+```bash
+python3 tools/diagnostics/compare_halftracks.py \
+    /tmp/opencode/real-disk.nib /tmp/opencode/nibread-real2.log
 ```
 
 Remember: only one process may own the real XUM1541. Stop VICE before any `cbmctrl` or
