@@ -38,6 +38,7 @@ little-endian length/request ID, command byte, body).
 | `launch-x64sc-g64-dump.sh` | Launches x64sc with a G64 image and the binary monitor, retries the flaky GTK3 startup, runs `dump_drive_mem.py`, and stops VICE. Unsets `GTK_MODULES`/`GTK_USE_PORTAL`/`WAYLAND_DISPLAY` and forces `GDK_BACKEND=x11`. |
 | `verify_vice_boot.py` | Feeds `LOAD"*",8,1` and `RUN`, then MEM_GETs C64 screen RAM `$0400-$07E7` and decodes it, so a protected-disk boot can be confirmed without relying on a desktop screenshot. |
 | `verify_vice_boot_long.py` | Longer-wait variant (35 s after LOAD, 25 s after RUN) for chained multi-stage loaders. |
+| `verify_vice_boot_very_long.py` | Very-long-wait variant (120 s after LOAD, 120 s after RUN) for loaders that color-cycle a logo for several minutes. |
 | `monitor_load_progress.py` | Samples screen RAM, color RAM `$D800-$DBFF`, and VIC registers `$D020-$D02F` during a long load, for boot loaders that display a color-cycling logo while loading. |
 | `sample_progress_only.py` | Same sampling loop without keyboard feed, for use when keys are sent with `xdotool`. |
 
