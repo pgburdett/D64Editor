@@ -37,6 +37,7 @@ little-endian length/request ID, command byte, body).
 | `dump_drive_mem.py` | Feeds `LOAD"*",8,1`, waits for the `M-W` upload, then issues a binary-monitor MEM_GET for drive-8 RAM `$0300-$07FF` and writes the 1,280 uploaded bytes. |
 | `launch-x64sc-g64-dump.sh` | Launches x64sc with a G64 image and the binary monitor, retries the flaky GTK3 startup, runs `dump_drive_mem.py`, and stops VICE. Unsets `GTK_MODULES`/`GTK_USE_PORTAL`/`WAYLAND_DISPLAY` and forces `GDK_BACKEND=x11`. |
 | `verify_vice_boot.py` | Feeds `LOAD"*",8,1` and `RUN`, then MEM_GETs C64 screen RAM `$0400-$07E7` and decodes it, so a protected-disk boot can be confirmed without relying on a desktop screenshot. |
+| `verify_vice_boot_long.py` | Longer-wait variant (35 s after LOAD, 25 s after RUN) for chained multi-stage loaders. |
 
 Both send command `0x12` (checkpoint set) and `0x72` (keyboard feed), then repeatedly send
 `0xAA` (exit/continue) while collecting responses.
@@ -46,6 +47,8 @@ Other analysis helpers:
 | Script | Purpose |
 |---|---|
 | `compare_halftracks.py` | Compares whole/half-track GCR blocks from a `nibread -h` NIB capture, allowing cyclic rotation, to test whether a protected track is duplicated at the adjacent half-track (wide/fat track). |
+| `nib2g64_raw.py` | Converts a NIB capture to G64 while preserving exact raw track lengths and all half-track slots (unlike `nibconv`, it does not normalize long tracks). |
+| `boot-test-g64.sh` | Launches x64sc with a G64 image, retries the GTK3 startup race, runs `verify_vice_boot_long.py`, and prints a screen-RAM summary. |
 
 ## Monitor command file
 
@@ -96,6 +99,14 @@ To test whether the disk uses wide/fat tracks from a direct `nibread -h` capture
 ```bash
 python3 tools/diagnostics/compare_halftracks.py \
     /tmp/opencode/real-disk.nib /tmp/opencode/nibread-real2.log
+```
+
+To build a G64 from a NIB capture without normalizing long protected tracks, then
+boot-test it:
+
+```bash
+python3 tools/diagnostics/nib2g64_raw.py disk.nib nibread.log raw-preserve.g64
+tools/diagnostics/boot-test-g64.sh raw-preserve.g64 raw
 ```
 
 Remember: only one process may own the real XUM1541. Stop VICE before any `cbmctrl` or
