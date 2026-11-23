@@ -3,10 +3,40 @@
 | File | How it was made |
 |---|---|
 | `protected-repro.g64` | `--protect docs/disk-images/af-g64.d64 protected-repro.g64` — a G64 with synthesized protected tracks: void track 2 and generated tracks 36-40. `--cbm gaps` on it reports the same anomaly signature as the original Arctic Fox preservation image. |
+| `ea-disk-in-drive.g64` | Fresh SRQ raw-GCR capture from the EA disk in drive 8, converted with `nibconv`. This is a different mastering/revision from the archived Arctic Fox image; see the section below. |
 
 | `physical-read.d64` | `d64copy --no-progress 8 physical-read.d64` from the blank test disk with the reproduced no-sync track 2. d64copy reports `read error: 02/00: 3` and gives up on track 2. |
 | `physical-read.g64` | `--to-gcr physical-read.d64 physical-read.g64` — plain D64→G64; regenerates standard GCR, so track 2 is **not** preserved (21/21 sectors). |
 | `physical-repro.g64` | `--protect physical-read.d64 physical-repro.g64` — injects the reproduced void track 2 (and extended tracks 36-40) back into the G64; `--cbm gaps` shows T2 with 0 sync/0 sectors, matching the physical disk. |
+
+## EA disk in drive 8 (distinct from the Arctic Fox preservation image)
+
+| File | How it was made / result |
+|---|---|
+| `ea-disk-in-drive.g64` | `nibread -@xum1541 -D8 -e5 -h -v /tmp/opencode/disk-in-drive.nib` from the physical disk in drive 8, then `nibconv /tmp/opencode/disk-in-drive.nib /tmp/opencode/disk-in-drive.g64`. SHA-256 `b50be3d482be5494434d6f3eae4cb81d95ce6548e2d15de9b9152ccef1890105`. |
+
+The inserted disk identifies itself as `"electronic arts"` and contains `ea`, `loader`, `bldr`,
+`game`, `data`, `info`, and `l00t`–`l39t`. It is **not** the same mastering as the archived
+Arctic Fox image: track 2 is normal (7,787 bytes, 42 sync runs, 21/21 sectors) instead of void.
+The protection is in the extended region:
+
+```text
+T35: 12/17 sectors, 2151-byte non-sync run
+T36: 0 sync runs, 0 sectors
+T37: 0 sync runs, 0 sectors
+T38: 125 sync runs, 0 sectors
+T39: 24 sync runs, 0 sectors
+T40: 118 sync runs, 0 sectors
+T41: 32 sync runs, 0 sectors
+```
+
+A direct FDC surface scan reported 785 sectors: 489 clean, 122 FDC errors, 174 suspicious.
+`d64copy` fails with data-checksum/no-sync errors on scattered sectors (`01/05`, `23/00`,
+`23/01`), confirming weak/marginal sectors on otherwise readable tracks.
+
+**Boot test:** attached with `x64sc -drive8truedrive -8 ea-disk-in-drive.g64`, `LOAD"*",8,1`
+and `RUN` upload the 1,280-byte drive program (`M-W` through `$06E0`, `M-E $0300`) and populate
+screen RAM with a non-BASIC screen. This image works in VICE with true drive emulation.
 
 ## G64 captures from the real Arctic Fox disk
 
