@@ -87,7 +87,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--ctools <format|create|import|list|extract> ...` — Optional external ctools-backed CP/M operations (explicit opt-in; kept for cross-checking).
 - `--cpm-cpmtools <format|create|import-dir|list> ...` — cpmtools-backed CP/M operations.
 - `--cbm <detect|status|dir|command|format|read|write|verify|vice|boot> ...` — OpenCBM real-hardware operations. `vice <command|start|stop>` builds/prints, launches or stops the VICE passthrough command (`--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); PID saved in `/tmp/d64editor-vice.pid`.
-- `--cbm sector <dev> <track> <sector>` / `seek <dev> <track>` — FDC job-queue sector read / integer-track head move (drive firmware does the work).
+- `--cbm sector <dev> <track> <sector>` / `seek <dev> <track>` — FDC job-queue sector read / integer-track head move (drive firmware does the work). `--cbm u1 <dev> <track> <sector> [channel]` performs a raw DOS U1 read on a direct channel (with timeout and guaranteed channel close); used for protection checks like RUSSIA's T18/S18.
 - `--cbm surface <dev> [--from N] [--to N] [--out FILE] [--data-checks] [--fast]` — full track/sector surface scan via FDC READ jobs; reports sync/header/checksum errors and optionally uses fast stepping.
 - `--cbm gaps <image.g64> [--from N] [--to N] [outfile]` — offline raw GCR sync/gap/sector analysis.
 - `--cbm mode <dev> 1541|1571` — switch drive mode (`U0>M0` / `U0>M1`); 1541 mode only addresses side 0.
@@ -169,7 +169,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - CLI entry point: `D64Editor.App/Cli.cs` `--run-script`. `Environment.ExitCode` propagates the script exit code.
 - `D64Editor.Core/ArchiveExtract.cs` — zip/tar/tar.gz/tgz/LHA/LZH/ARJ extraction used by the `archive` script command (and the CLI `--extract-archive`).
 - `D64Editor.Core/LegacyArchives.cs` — LHA/LZH/SFX and ARJ list/create/extract; LHA creation writes LH0/stored archives, C64 SFX PRGs are carved by LHA header checksum, ARJ delegates to external `arj`.
-- Script commands cover: image lifecycle (open/close/save/new/convert), directory/file ops (list/info/validate/import/export/exportdir/rename/renamedisk/scratch/unscratch/wipe/move), REL (relnew/relresize/relwrite), CP/M (cpmextract/cpmcopy/cpmformat), archive (including LHA/LZH/ARJ/C64 SFX), lhaextract/lhacreate/lhasfx/arjextract/arjcreate, geosinfo, echo/help/exit, and real hardware (cbmdetect/cbmstatus/cbmdir/cbmmode/cbmsurface/cbmpreserve/cbmgaps).
+- Script commands cover: image lifecycle (open/close/save/new/convert), directory/file ops (list/info/validate/import/export/exportdir/rename/renamedisk/scratch/unscratch/wipe/move), REL (relnew/relresize/relwrite), CP/M (cpmextract/cpmcopy/cpmformat), archive (including LHA/LZH/ARJ/C64 SFX), lhaextract/lhacreate/lhasfx/arjextract/arjcreate, geosinfo, echo/help/exit, and real hardware (cbmdetect/cbmstatus/cbmdir/cbmmode/cbmsurface/cbmpreserve/cbmgaps/cbmu1/cbmfastseek).
 - Sample scripts live in `scripts/`. When adding Core automation, expose it through ScriptEngine and document it in README's Scripting section.
 - `D64Image.RenameDisk(name,id)` was added for headless disk-header renaming.
 

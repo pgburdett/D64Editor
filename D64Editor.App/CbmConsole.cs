@@ -56,6 +56,7 @@ internal static class CbmConsole
         Console.WriteLine("  g64 <in.nib> <out.g64>      Convert a NIB capture to a playable G64 derivative");
         Console.WriteLine("  gaps <img.g64> [--from N] [--to N]  Offline GCR gap/sync analysis");
         Console.WriteLine("  sector <track> <sector>     Read one sector via the FDC job queue");
+        Console.WriteLine("  u1 <track> <sector> [channel]  Raw DOS U1 read; prints drive status");
         Console.WriteLine("  seek <track> [--fast]       FDC SEEK (--fast temporarily enables ROM accelerated stepping)");
         Console.WriteLine("  fastseek on|off|status [dev]  Persistent fast-step threshold toggle (reset restores default)");
         Console.WriteLine("  history                     Show command history");
@@ -188,6 +189,17 @@ internal static class CbmConsole
                 { Console.Error.WriteLine("usage: sector <track> <sector>"); break; }
                 var r = SectorRead.Read(_device, tr, se);
                 Console.WriteLine(r.Ok ? $"SECTOR OK: {r.Detail} ({r.Data.Length} bytes)" : "SECTOR FAILED: " + r.Detail);
+                break;
+            }
+            case "u1":
+            {
+                if (t.Count < 3 || !int.TryParse(t[1], out var tr) || !int.TryParse(t[2], out var se))
+                { Console.Error.WriteLine("usage: u1 <track> <sector> [channel]"); break; }
+                var channel = t.Count > 3 && int.TryParse(t[3], out var ch) ? ch : 5;
+                var r = OpenCbm.ReadSectorDirect(_device, tr, se, channel);
+                Console.WriteLine(r.Ok
+                    ? $"U1 T{tr}/S{se} channel {channel}: {r.Status}"
+                    : "U1 failed: " + r.Detail);
                 break;
             }
             case "seek":

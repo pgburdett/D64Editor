@@ -422,6 +422,7 @@ D64Editor --cbm capture <dev> <out.nib> [--retries N] [--no-halftracks] [--adapt
 D64Editor --cbm preserve <dev> <out.nib> [--mode 1541|1571|keep] [--report FILE] [--g64 FILE] [options]
 D64Editor --cbm g64 <in.nib> <out.g64>
 D64Editor --cbm-console [dev]       Interactive hardware console (readline history, quit to exit)
+D64Editor --cbm u1 <dev> <track> <sector> [channel]  Raw DOS U1 read; prints drive status
 D64Editor --cbm seek <dev> <track> [--fast]        --fast temporarily enables ROM accelerated stepping
 D64Editor --cbm benchseek <dev> <trackA> <trackB> [count] [--fast]  Time repeated seeks
 D64Editor --cbm fastseek <dev> on|off|status       Persistent fast-step threshold toggle (reset restores default)
@@ -453,9 +454,9 @@ investigated and captured without leaving D64Editor:
    `--cbm mode`, `--cbm g64`) for individual steps.
 2. **Interactive** — `--cbm-console [dev]` opens a prompt with readline-style up/down history.
    Commands: `detect`, `status`, `dir`, `mode 1541|1571`, `surface`, `capture`, `preserve`,
-   `g64`, `gaps`, `sector`, `seek [--fast]`, `fastseek`, `use <dev>`, `history`, `quit`. It works with piped input too.
+   `g64`, `gaps`, `sector`, `u1`, `seek [--fast]`, `fastseek`, `use <dev>`, `history`, `quit`. It works with piped input too.
 3. **Scripts** — `cbmdetect`, `cbmstatus`, `cbmdir`, `cbmmode`, `cbmsurface`, `cbmpreserve`,
-   `cbmgaps`, `cbmfastseek` are available to `--run-script`.
+   `cbmgaps`, `cbmu1`, `cbmfastseek` are available to `--run-script`.
 
 ### Faster head seeks
 
@@ -514,7 +515,7 @@ Commands:
 | REL | `relnew`, `relresize`, `relwrite` |
 | CP/M | `cpmextract`, `cpmcopy`, `cpmformat`, `cpmnew`, `cpmbootable`, `cpmimportdir` |
 | Archives | `archive`, `lhaextract`, `lhacreate`, `lhasfx`, `arjextract`, `arjcreate` |
-| Hardware | `cbmdetect`, `cbmstatus`, `cbmdir`, `cbmmode`, `cbmsurface`, `cbmpreserve`, `cbmgaps`, `cbmfastseek` |
+| Hardware | `cbmdetect`, `cbmstatus`, `cbmdir`, `cbmmode`, `cbmsurface`, `cbmpreserve`, `cbmgaps`, `cbmu1`, `cbmfastseek` |
 | Other | `geosinfo`, `echo`, `help`, `exit` |
 
 Example:

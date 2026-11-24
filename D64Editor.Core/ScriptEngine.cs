@@ -183,6 +183,7 @@ public static class ScriptEngine
             case "cbmsurface": CbmSurface(c, a, r); break;
             case "cbmpreserve": CbmPreserveCmd(c, a, r); break;
             case "cbmgaps": CbmGaps(c, a, r); break;
+            case "cbmu1": CbmDirectRead(c, a, r); break;
             case "cbmfastseek": CbmFastSeek(c, a, r); break;
 
             default: throw new ScriptException($"Unknown command '{cmd}' (run 'help' for the command list).");
@@ -242,6 +243,7 @@ public static class ScriptEngine
         sb.AppendLine("    options: --mode 1541|1571|keep --report FILE --g64 FILE --retries N --no-halftracks");
         sb.AppendLine("             --skip-surface --data-checks --adapter NAME --fast");
         sb.AppendLine("  cbmgaps <img.g64> [--from N] [--to N]  Offline GCR gap/sync analysis");
+        sb.AppendLine("  cbmu1 <dev> <track> <sector> [channel]  Raw U1 read; prints drive status");
         sb.AppendLine("  cbmfastseek <dev> on|off|status       Toggle ROM fast-step threshold (MINSTP $0064)");
         sb.AppendLine("  echo <text...>               Print text");
         sb.AppendLine("  exit [code]                  Stop with exit code");
@@ -961,6 +963,20 @@ public static class ScriptEngine
         }
         Log(c, CbmPreserve.Run(new CbmPreserve.Options(
             dev, outPath, mode, adapter, retries, half, reportPath, g64, skip, data, FastSeek: fast)).Text, r);
+    }
+
+    private static void CbmDirectRead(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 3) throw new ScriptException("Usage: cbmu1 <dev> <track> <sector> [channel]");
+        if (!OpenCbm.IsAvailable()) throw new ScriptException("OpenCBM not found on PATH.");
+        var dev = int.Parse(a[0]);
+        var track = int.Parse(a[1]);
+        var sector = int.Parse(a[2]);
+        var channel = a.Length > 3 ? int.Parse(a[3]) : 5;
+        var res = OpenCbm.ReadSectorDirect(dev, track, sector, channel);
+        Log(c, res.Ok
+            ? $"U1 T{track}/S{sector} channel {channel}: {res.Status}"
+            : $"U1 failed: {res.Detail}", r);
     }
 
     private static void CbmFastSeek(Context c, string[] a, ScriptResult r)

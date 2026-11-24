@@ -1274,6 +1274,7 @@ internal static class Cli
             Console.Error.WriteLine("  verify <image> <dev> [--d71] Write image, read back, byte-compare");
             Console.Error.WriteLine("  gcrscan <dev> [outfile] Sample raw GCR on the CURRENT track (never moves the head)");
             Console.Error.WriteLine("  sector <dev> <track> <sector> [outfile] Read a sector via the drive FDC job queue (safe seek/read)");
+            Console.Error.WriteLine("  u1 <dev> <track> <sector> [channel]  Raw DOS U1 read on a direct channel; prints drive status");
             Console.Error.WriteLine("  seek <dev> <track> [--fast]  FDC SEEK; --fast temporarily lowers MINSTP ($0064) for accelerated stepping");
             Console.Error.WriteLine("  fastseek <dev> on|off|status  Persistent toggle of the ROM fast-step threshold (reset restores default)");
             Console.Error.WriteLine("  benchseek <dev> <trackA> <trackB> [count] [--fast]  Time repeated seeks (diagnostic)");
@@ -1475,6 +1476,22 @@ internal static class Cli
                     var r = SectorRead.Read(dev, track, sector);
                     Console.WriteLine((r.Ok ? "SECTOR READ OK: " : "SECTOR READ FAILED: ") + r.Detail);
                     if (r.Ok) File.WriteAllBytes(outPath, r.Data);
+                    break;
+                }
+                case "u1":
+                {
+                    if (args.Length < 5 || !int.TryParse(args[3], out var track) ||
+                        !int.TryParse(args[4], out var sector))
+                    {
+                        Console.Error.WriteLine("Usage: --cbm u1 <dev> <track 1..42> <sector 0..40> [channel]");
+                        return true;
+                    }
+                    var dev = ArgDev(2);
+                    var channel = args.Length > 5 && int.TryParse(args[5], out var ch) ? ch : 5;
+                    var r = OpenCbm.ReadSectorDirect(dev, track, sector, channel);
+                    Console.WriteLine(r.Ok
+                        ? $"U1 T{track}/S{sector} channel {channel}: {r.Status}"
+                        : "U1 failed: " + r.Detail);
                     break;
                 }
                 case "surface":

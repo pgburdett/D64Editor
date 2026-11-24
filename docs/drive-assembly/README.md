@@ -512,7 +512,9 @@ cbmctrl close 8 5
 
 Adjacent sectors read fine, and `--cbm sector 8 18 18` reports FDC code `$05`
 (data checksum error). `Core/OpenCbm.ReadSectorDirect()` performs this sequence with the channel
-close in a `finally`, so a wedged read cannot leave the IEC channel open.
+close in a `finally`, so a wedged read cannot leave the IEC channel open. It is exposed as
+`--cbm u1 8 18 18` (CLI), `u1 18 18` (console) and `cbmu1 8 18 18` (script); all print the drive
+status, which should be `23,read error,18,18` on a healthy copy of this disk.
 
 Manual `M-W` details that bit us here:
 
