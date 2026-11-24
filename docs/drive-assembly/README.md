@@ -551,6 +551,13 @@ REVCNT/head-bump behaviour are other likely differences. Treat the NIB as the au
 master; for this disk the G64 is only a best-effort playable derivative, not a faithful
 preservation copy. Real-drive passthrough remains the verified way to play it.
 
+Wrapping the NIB's raw 8192-byte track blocks directly with `--raw2g64` (no `nibconv`) is **not** a
+shortcut: with the blank-image speed-zone table VICE reports `FILE NOT FOUND` (wrong zones), and
+with correct zones but full-length tracks it still cannot read the directory. Aligning the raw
+bytes to `nibconv`'s track lengths preserves more raw data but introduces invalid GCR symbols
+(94 undecoded sectors vs 21 from `nibconv`). `nibconv`'s gap/sync normalisation is required for a
+playable G64, and that normalisation is also what breaks this disk's protection.
+
 ---
 
 ## 14. ROM fast stepping (MINSTP) and bulk scans
