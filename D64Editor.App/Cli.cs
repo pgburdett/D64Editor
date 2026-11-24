@@ -695,15 +695,19 @@ internal static class Cli
 
     private static bool LhaSfx(string[] args)
     {
-        if (args.Length < 4)
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: D64Editor --lha-sfx <archive.lha> <stub.prg> <out.prg>");
+            Console.Error.WriteLine("Usage: D64Editor --lha-sfx <archive.lha> [stub.prg] <out.prg>");
+            Console.Error.WriteLine("  Omit stub.prg to use the embedded stub from the licensed original disk.");
             return true;
         }
+        var archive = args[1];
+        string? stub = args.Length >= 4 ? args[2] : null;
+        var output = args.Length >= 4 ? args[3] : args[2];
         try
         {
-            LegacyArchives.MakeLhaSfx(args[1], args[2], args[3]);
-            Console.WriteLine($"Created C64 LHA SFX PRG {args[3]}.");
+            LegacyArchives.MakeLhaSfx(archive, stub, output);
+            Console.WriteLine($"Created C64 LHA SFX PRG {output}.");
         }
         catch (Exception ex) { Console.Error.WriteLine($"LHA SFX creation failed: {ex.Message}"); }
         return true;
@@ -1513,7 +1517,7 @@ internal static class Cli
         Console.WriteLine("  --lha-list <archive.lha|.lzh|sfx.prg>  List LHA/LZH archive or C64 SFX PRG");
         Console.WriteLine("  --lha-extract <archive|sfx.prg> <dir>  Extract LHA/LZH (alias --lha-decompress)");
         Console.WriteLine("  --lha-create <srcdir> <out.lha> [files]  Create LH0/stored LHA archive (alias --lha-compress)");
-        Console.WriteLine("  --lha-sfx <archive.lha> <stub.prg> <out.prg>  Wrap LHA with a user-supplied C64 SFX stub");
+        Console.WriteLine("  --lha-sfx <archive.lha> [stub.prg] <out.prg>  Wrap LHA with embedded or supplied C64 SFX stub");
         Console.WriteLine("  --arj-list <archive.arj>  List ARJ archive");
         Console.WriteLine("  --arj-extract <archive.arj> <dir>  Extract ARJ (alias --arj-decompress)");
         Console.WriteLine("  --arj-create <srcdir> <out.arj> [files]  Create ARJ (alias --arj-compress)");

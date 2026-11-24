@@ -16,6 +16,7 @@
         <EmbeddedResource Include="Assets\rawwriter.bin" LogicalName="D64Editor.Core.Assets.rawwriter.bin" />
         <EmbeddedResource Include="Assets\stepper.bin" LogicalName="D64Editor.Core.Assets.stepper.bin" />
         <EmbeddedResource Include="Assets\gcrreader.bin" LogicalName="D64Editor.Core.Assets.gcrreader.bin" />
+        <EmbeddedResource Include="Assets\C64LhaSfxStub.prg" LogicalName="D64Editor.Core.Assets.C64LhaSfxStub.prg" />
     </ItemGroup>
 
 </Project>

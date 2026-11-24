@@ -40,6 +40,7 @@ All are embedded resources with logical names `D64Editor.Core.Assets.<file>`, de
 | `rawwriter.bin` (93 B) | `RawWriter.s` | VIA2 write-mode raw GCR writer (BVC/CLV/STA `$1C01`). |
 | `stepper.bin` (82 B) | `Stepper.s` | Two VIA phase changes per track, inward from 35; no homing. |
 | `gcrreader.bin` (69 B) | `GcrReader.s` | Raw GCR chunk reader with skip/count and SYNC wait; motor via `$F97E`. |
+| `C64LhaSfxStub.prg` (3,721 B) | Recovered from a user-owned original disk | Default C64 PRG stub for `--lha-sfx`/`lhasfx`; included with the user's stated license to use it. |
 
 ## App: CLI surface
 `D64Editor.App/Cli.cs` dispatches top-level verbs and `--cbm` subverbs. New hardware verbs added:

@@ -8,7 +8,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 - LHA/LZH and ARJ list/create/extract support in `D64Editor.Core/LegacyArchives.cs`, exposed through CLI (`--lha-*`, `--arj-*`) and scripts (`lhaextract`, `lhacreate`, `lhasfx`, `arjextract`, `arjcreate`).
 - `--extract-archive` and the `archive` script command now accept `.lha`, `.lzh`, `.arj`, and C64 SFX PRGs; SFX PRGs are detected by embedded LHA header checksum and carved automatically.
-- LHA creation writes standard LH0/stored archives directly (no external writer required); LHA listing/extraction uses external `lha` or `7z`, ARJ uses external `arj`, and SFX creation wraps an LHA with a user-supplied C64 PRG stub.
+- LHA creation writes standard LH0/stored archives directly (no external writer required); LHA listing/extraction uses external `lha` or `7z`, ARJ uses external `arj`.
+- SFX creation now defaults to the embedded `Assets/C64LhaSfxStub.prg` recovered from a user-owned original disk and supplied with the user's stated license to use it; a different stub can still be passed explicitly.
 
 ## [Unreleased] — 1 KB streaming GCR capture
 

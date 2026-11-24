@@ -349,7 +349,7 @@ D64Editor --extract-archive <zip|tar|tar.gz|tgz|lha|lzh|arj|sfx.prg> <dir> [--im
 D64Editor --lha-list <archive.lha|.lzh|sfx.prg>
 D64Editor --lha-extract <archive|sfx.prg> <dir>
 D64Editor --lha-create <srcdir> <out.lha> [file ...]
-D64Editor --lha-sfx <archive.lha> <stub.prg> <out.prg>
+D64Editor --lha-sfx <archive.lha> [stub.prg] <out.prg>
 D64Editor --arj-list <archive.arj>
 D64Editor --arj-extract <archive.arj> <dir>
 D64Editor --arj-create <srcdir> <out.arj> [file ...]
@@ -385,7 +385,7 @@ D64Editor                  (no args: starts GUI)
 | `--lha-list <archive\|sfx.prg>` / `--arj-list <archive.arj>` | List legacy archive contents |
 | `--lha-extract <archive\|sfx.prg> <dir>` / `--arj-extract <archive.arj> <dir>` | Extract legacy archives (`--lha-decompress`/`--arj-decompress` aliases) |
 | `--lha-create <srcdir> <out.lha>` / `--arj-create <srcdir> <out.arj>` | Create LH0-stored LHA or compressed ARJ archives (`--*-compress` aliases) |
-| `--lha-sfx <archive.lha> <stub.prg> <out.prg>` | Wrap an LHA archive with a user-supplied C64 SFX stub |
+| `--lha-sfx <archive.lha> [stub.prg] <out.prg>` | Wrap an LHA archive with the embedded licensed C64 SFX stub or a supplied stub |
 | `--print-dir <image>` | Print directory listing (text, D64) |
 | `--geos-info <d64> <file>` | Show GEOS/REL metadata and best-effort VLIR info for a file (D64) |
 | `--run-script <script.txt> [workdir]` | Run a headless automation script over the Core engine (see Scripting section) |
@@ -874,7 +874,7 @@ log every command and its result, stop on the first error, and propagate an exit
 | `archive <zip\|tar\|tgz\|lha\|lzh\|arj\|sfx.prg> <dir> [--images-only]` | Extract archive contents |
 | `lhaextract <archive\|sfx.prg> <dir>` | Extract LHA/LZH or C64 SFX PRG |
 | `lhacreate <srcdir> <out.lha>` | Create LH0/stored LHA archive |
-| `lhasfx <archive.lha> <stub.prg> <out.prg>` | Wrap LHA with a user-supplied C64 SFX stub |
+| `lhasfx <archive.lha> [stub.prg] <out.prg>` | Wrap LHA with embedded or supplied C64 SFX stub |
 | `arjextract <archive.arj> <dir>` | Extract ARJ archive |
 | `arjcreate <srcdir> <out.arj>` | Create ARJ archive |
 | `geosinfo <name>` | Show GEOS/REL metadata for a file |

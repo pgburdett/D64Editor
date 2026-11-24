@@ -93,7 +93,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--writeraw <dev> <track> <hexpattern> <count>` — DESTRUCTIVE serial raw GCR track writer (blank test disk only; track >35 uses safe 82-byte stepper).
 - `--convert` also accepts `.nbz`: LZ77-decompress to MNIB NIB, then NIB→D64 decode.
 - `--extract-archive <zip|tar|tar.gz|tgz|lha|lzh|arj|sfx.prg> <dir> [--images-only]` — Extract archive contents; C64 LHA SFX PRGs are detected by content.
-- `--lha-list/--lha-extract/--lha-create/--lha-sfx` and `--arj-list/--arj-extract/--arj-create` — Legacy LHA/LZH/SFX and ARJ archive operations. LHA creation is built-in LH0/stored; listing/extraction uses external `lha` or `7z`; ARJ uses external `arj`; SFX creation needs a user-supplied PRG stub.
+- `--lha-list/--lha-extract/--lha-create/--lha-sfx` and `--arj-list/--arj-extract/--arj-create` — Legacy LHA/LZH/SFX and ARJ archive operations. LHA creation is built-in LH0/stored; listing/extraction uses external `lha` or `7z`; ARJ uses external `arj`. SFX creation defaults to the embedded `Assets/C64LhaSfxStub.prg` from a licensed original disk, or accepts a user-supplied stub.
 - `--print-dir <image>` — Print directory listing (text, D64).
 - `--geos-info <d64> <file>` — Show GEOS/REL metadata and best-effort VLIR info for a file (D64).
 - `<image>` (no verb) — Open the image in the GUI.
@@ -179,7 +179,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--writeraw` is DESTRUCTIVE and only hardware-verified for the void track 2; the track 36-40 stepper path is code-complete but untested.
 
 ## Local artifacts
-- **Committed fixtures:** `128cpm/` (CP/M reference images + docs used for verification), `D64Editor.Core/Assets/` (CPM.SYS, BOOT.D71.bin and the 6502 `.bin` assets — required embedded resources), and `Epyx_FastLoad_1984_v2-b11b3b.crt` (test cartridge) are tracked in the repo. Treat them as test/reference data, not source of truth for format behavior.
+- **Committed fixtures:** `128cpm/` (CP/M reference images + docs used for verification), `D64Editor.Core/Assets/` (CPM.SYS, BOOT.D71.bin, the 6502 `.bin` assets, and `C64LhaSfxStub.prg` — required embedded resources), and `Epyx_FastLoad_1984_v2-b11b3b.crt` (test cartridge) are tracked in the repo. `C64LhaSfxStub.prg` was recovered from a user-owned original disk and is included with the user's stated license to use it. Treat fixtures as test/reference data, not source of truth for format behavior.
 - **Investigation docs/fixtures:** `docs/drive-assembly/` (6502 sources, disassembly, captured samples), `docs/disk-images/` (reference and generated NIB/G64/D64 images), `tools/diagnostics/` (VICE launchers and trace clients), `patches/` (VICE OpenCBM fix + build script). These are reference material for the copy-protection work, not product code.
 - **External tooling:** nibtools (`nibread`, `nibconv`, `nibsrqtest`) installed from AUR `nibtools-git`; OpenCBM + XUM1541 firmware on device 8. `nibread` defaults to SRQ serial mode; `-P` forces parallel.
 - **Ignored build artifacts (do not commit):** `bin/`, `obj/`, `.idea/`, `*.user`, `d64editor-build-archives/`.

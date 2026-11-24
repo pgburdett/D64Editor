@@ -69,14 +69,19 @@ public static class LegacyArchives
         return outLhaPath;
     }
 
+    /// <summary>Logical name of the embedded C64 LHA SFX stub asset.</summary>
+    public const string DefaultSfxStubResource = "D64Editor.Core.Assets.C64LhaSfxStub.prg";
+
     /// <summary>
-    ///     Creates a C64 SFX PRG by prepending a caller-supplied PRG stub to a standard
-    ///     LHA archive. The stub is not embedded by this library (third-party stubs may
-    ///     be copyrighted); supply a stub you are licensed to use.
+    ///     Creates a C64 SFX PRG by prepending a PRG stub to a standard LHA archive.
+    ///     A null/empty <paramref name="stubPrgPath"/> uses the embedded stub recovered
+    ///     from a licensed original disk; otherwise the supplied stub is used.
     /// </summary>
-    public static void MakeLhaSfx(string lhaPath, string stubPrgPath, string outPrgPath)
+    public static void MakeLhaSfx(string lhaPath, string? stubPrgPath, string outPrgPath)
     {
-        var stub = File.ReadAllBytes(stubPrgPath);
+        var stub = string.IsNullOrWhiteSpace(stubPrgPath)
+            ? LoadEmbeddedSfxStub()
+            : File.ReadAllBytes(stubPrgPath);
         if (stub.Length < 2)
             throw new InvalidDataException("SFX stub is too short to be a C64 PRG.");
 
@@ -86,6 +91,15 @@ public static class LegacyArchives
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPrgPath))!);
         File.WriteAllBytes(outPrgPath, [.. stub, .. lha]);
+    }
+
+    private static byte[] LoadEmbeddedSfxStub()
+    {
+        using var stream = typeof(LegacyArchives).Assembly.GetManifestResourceStream(DefaultSfxStubResource)
+            ?? throw new InvalidOperationException($"Embedded SFX stub not found: {DefaultSfxStubResource}");
+        using var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        return memory.ToArray();
     }
 
     private static int FindLhaHeaderAtZero(byte[] data)

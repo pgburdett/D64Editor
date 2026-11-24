@@ -216,7 +216,7 @@ public static class ScriptEngine
         sb.AppendLine("  archive <zip|tar|tgz|lha|lzh|arj|sfx.prg> <dir>  Extract archive contents");
         sb.AppendLine("  lhaextract <archive|sfx.prg> <dir>  Extract LHA/LZH or C64 SFX PRG");
         sb.AppendLine("  lhacreate <srcdir> <out.lha>  Create LH0/stored LHA archive");
-        sb.AppendLine("  lhasfx <archive.lha> <stub.prg> <out.prg>  Wrap LHA with C64 SFX stub");
+        sb.AppendLine("  lhasfx <archive.lha> [stub.prg] <out.prg>  Wrap LHA with embedded or supplied SFX stub");
         sb.AppendLine("  arjextract <archive.arj> <dir>  Extract ARJ archive");
         sb.AppendLine("  arjcreate <srcdir> <out.arj>  Create ARJ archive");
         sb.AppendLine("  geosinfo <name>              Show GEOS/REL metadata for a file");
@@ -722,11 +722,11 @@ public static class ScriptEngine
 
     private static void LhaSfxCmd(Context c, string[] a, ScriptResult r)
     {
-        if (a.Length < 3)
-            throw new ScriptException("Usage: lhasfx <archive.lha> <stub.prg> <out.prg>");
+        if (a.Length < 2)
+            throw new ScriptException("Usage: lhasfx <archive.lha> [stub.prg] <out.prg>");
         var archive = Full(c, a[0]);
-        var stub = Full(c, a[1]);
-        var output = Full(c, a[2]);
+        string? stub = a.Length >= 3 ? Full(c, a[1]) : null;
+        var output = Full(c, a.Length >= 3 ? a[2] : a[1]);
         LegacyArchives.MakeLhaSfx(archive, stub, output);
         Log(c, $"Created C64 LHA SFX PRG {output}.", r);
     }
