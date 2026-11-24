@@ -68,7 +68,8 @@
 ## CLI commands (summary)
 All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for full usage.
 - `--help` / `-h` / `help` — Show help text.
-- `--convert <in> <out>` / `-c` — Convert G64/NIB to D64 (or copy native image).
+- `--convert <in> <out>` / `-c` — Convert G64/NIB/NBZ to D64 (or copy native image).
+- `--to-gcr <d64> <out.g64|out.nib>` — Encode a D64 into a G64/NIB image (native GCR write-back; byte-exact round-trip).
 - `--list <image>` / `-l` — Print an image's directory.
 - `--export <image> <dir>` / `-e` — Export files from D64/T64/D71/D81/D80/D82/DNP to a directory.
 - `--info <image>` / `-i` — Show image/format information.

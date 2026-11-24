@@ -1,38 +1,48 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Report a reproducible problem in D64Editor
 title: ''
-labels: ''
+labels: bug
 assignees: ''
-
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Describe the bug
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
+A clear and concise description of what goes wrong.
+
+## To reproduce
+
+Steps to reproduce:
+
+1. Open / run `...`
+2. Select `...`
+3. Click / enter `...`
 4. See error
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+If possible, attach or name a minimal disk image that reproduces the issue.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+## Expected behavior
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+What you expected to happen.
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+## Actual behavior
 
-**Additional context**
-Add any other context about the problem here.
+What actually happened, including any error text, exit code, or stack trace.
+
+## Environment
+
+- OS and version:
+- .NET SDK version (`dotnet --version`):
+- D64Editor version or commit:
+- Image format and size (D64/D71/D81/G64/NIB/etc.):
+- Hardware involved, if any (OpenCBM device, XUM1541, real drive model):
+
+## Screenshots or logs
+
+If applicable, add screenshots (use `spectacle -b -o ...` on this Xwayland session) or paste
+relevant CLI/VICE logs.
+
+## Additional context
+
+Anything else that might help, including whether the image is copy-protected or was produced by a
+nibbler/conversion.

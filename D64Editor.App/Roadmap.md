@@ -1,96 +1,99 @@
-# Feature Roadmap — Phased Implementation Plan
+# Feature roadmap and phase status
 
-Roadmap for adding multi-format support and features comparable to other C64/CBM
-disk editors, implemented incrementally.
+This file tracks the major feature phases completed since the VB6 port began. Checkboxes are
+historical; see `AGENTS.md` and `README.md` for current command names and behavior.
 
-## Phase 1 — Multi-disk Workspace & Save As
-- [x] Save As… (format selection, path dialog)
-- [x] Close disk + unsaved-changes prompt (dirty tracking)
-- [x] Dirty-state tracking (checksum-based; queried on Close/Exit)
-- [x] Disk filename shown in title
-- [x] Multi-disk workspace and Window menu
-- [x] True single-window tabbed MDI host (`DiskDocumentView` in `TabControl`; shell menus/toolbar act on active document)
-- [x] CLI: `--convert` (G64/NIB→D64 or copy), `--list`, `--help`, and opening an image path launches the GUI
+## Phase 1 — Multi-disk workspace and Save As
 
-## Phase 2 — Multi-Format Engine
-- [x] `IDiskImage` abstraction; `D64Image` conforms
-- [x] Format detection (`DiskFormats`) and broad Open filter; unsupported formats fail gracefully
-- [x] T64 tape archive — reader + viewer + mutable rebuild/save support (basic native read/write)
-- [x] D71 (1571) — reader + viewer; directory/BAM-aware (synthetic-verified)
-- [x] D81 (1581) — reader + viewer (synthetic-verified)
-- [x] D80 (8050, 77 tracks) / D82 (8250, 154 tracks) — reader + viewer (synthetic-verified)
-- [x] DNP (CMD native partition) — reader + viewer (synthetic-verified)
-- [x] D2M/D4M/DHD CMD containers — partition-table listing + per-partition open (synthetic-verified)
-- [x] G64 — structural parse + GCR bitstream decode → D64 conversion (byte-exact on synthetic .g64); opening auto-converts for editing, with structural-viewer fallback on decode failure
-- [x] NIB — structural parse + decode → D64 conversion (byte-exact on synthetic .nib); opening auto-converts for editing, with structural-viewer fallback on decode failure
-- [x] CP/M 2.2 images + .LBR catalogs — best-effort directory reader + viewer
-- [x] C128 CP/M (.d64/.d71/.d81) — DPB-aware extraction and template-based create/copy (all/subset) via CLI (D71 verified byte-exact and used in the verified real-media flow; `.d81` against real 1581 CP/M media still needs validation)
-- [x] Export-to-PRG for read-only CBM-layout views (D71/D81/D80/D82/T64)
-- [x] Scratch with block-freeing (CBM layouts): D71/D81/D80/D82/DNP (chain-walk → BAM update, single flush)
-- [x] Unscratch/re-allocate (CBM layouts): D71/D81/D80/D82/DNP via `ICbmWritable`/`CbmScratch`
-- [x] File import (CBM layouts): D71/D81/D80/D82/DNP — allocate/write chain, directory slot, BAM update, single flush (`CbmImport`)
-- [x] REL (D64): create, in-place record edit, and resize/grow/shrink record count (side/data-sector allocation and relinking)
-- [x] G64/NIB structural viewers/fallback (G64 info window; NIB info window on decode fallback)
-- [x] G64/NIB: native GCR-level write-back — `Gcr.EncodeTrack` + `G64Image.ToG64Bytes`/`FromD64` and `NibImage.ToNibBytes`/`FromD64`; CLI `--to-gcr` and script `togcr`. Byte-exact D64->G64/NIB->D64 round-trip verified (683/683 sectors). Half-track/copy-protected data preserved verbatim
-- [x] T64/DNP/CMD: deeper native read/write — T64 mutable save/rebuild; DNP + emulated D64/D71/D81 partitions all open directly from D2M/D4M/DHD containers with Save() writing back into the container (`TryLoadFromContainer`, `CbmCatalog.Open*FromContainer`, PartitionsWindow opens directly). Verified container slice edit/save-back
-- [x] C128 CP/M (.d64/.d71/.d81): from-scratch formatting/writing — `C128Cpm.FormatBlank`/`WriteFiles`/`FormatAndWrite` (multi-extent 8.3 files, 1-/2-byte AL) + CLI `--cpm-new` and script `cpmnew`. Extraction round-trip verified for d64/d71/d81. D64 directory aligned to the real interleaved track-1 sectors (3,4,9,10,14,15,19,20) from the reference system disk; bitmap moved to sector 2. NOTE: from-scratch images are NOT bootable (verified in x128: black screen); `--cpm-bootable` clones a known-good system-disk donor and produces a bootable image (verified to CP/M 3.0 A> prompt). From-scratch DPB/skew/bitmap remain unverified
-- [x] C128 CP/M: in-process by default — every `--cpm-*` CLI verb and `cpm*` script command runs through `C128Cpm`; no external tool is needed for CP/M disk access (`ctools`/`cpmtools` remain explicit opt-in cross-checks)
+- [x] Save As with path/format selection.
+- [x] Close with dirty prompt and unsaved-change tracking.
+- [x] Dirty detection via image checksum comparison.
+- [x] Disk name shown in the window/tab title.
+- [x] Multi-disk workspace: Window menu lists documents and tabs.
+- [x] Tabbed MDI shell: `DiskDocumentView` inside a `TabControl`.
+- [x] CLI `--convert`, `--list`, `--help`; image argument opens in GUI.
 
-## Phase 3 — Directory Editing Enhancements
-- [x] Rename file (dialog)
-- [x] Toggle case (upper/lower PETSCII)
-- [x] Font size cycling
-- [x] Refresh directory view
-- [x] Show deleted files toggle
-- [x] Drag-and-drop to/from OS files (import by dropping files onto a disk, drag selected files out to the OS); inter-tab/window disk-to-disk drag remains limited
-- [x] Undo/Redo (basic snapshot-based undo/redo for common D64 editing operations via Edit menu/shortcuts)
+## Phase 2 — Multi-format engine
+
+- [x] `IDiskImage` abstraction and `DiskFormats` detection.
+- [x] T64 reader/viewer with mutable rebuild/save.
+- [x] D71, D81, D80, D82, DNP readers; D2M/D4M/DHD CMD containers.
+- [x] G64/NIB structural parsing, bit-level GCR decode to D64, and fallback viewers on decode
+      failure.
+- [x] CP/M 2.2 directories and `.LBR` catalogs.
+- [x] C128 CP/M extraction and template-based create/copy/format, fully in-process by default.
+- [x] Export-PRG for read-only CBM-layout views.
+- [x] Scratch with block-freeing, unscratch, and import for CBM layouts.
+- [x] REL create, in-place record editing, and resize.
+- [x] G64/NIB structural viewers.
+- [x] GCR write-back: D64 → G64/NIB byte-exact (683/683 sectors); half-track and protected data
+      preserved verbatim when present in a container. Fidelity tuning remains incremental.
+- [x] T64 mutable save and native DNP container write-back; CMD partition write-back works for all
+      supported partition types.
+- [x] CP/M from-scratch data images (`--cpm-new`), byte-exact extraction, and donor-based
+      bootable images (`--cpm-bootable`). From-scratch images are **not** bootable without a donor.
+- [x] CP/M host-directory import with 8.3 name mapping and collision suffixes.
+- [x] CP/M directory layout aligned to real interleaved track-1 sectors; external ctools/cpmtools
+      are explicit opt-in cross-checks only.
+
+## Phase 3 — Directory editing enhancements
+
+- [x] Rename and renamedisk.
+- [x] Name-case toggle, font-size cycling, refresh, Show DEL.
+- [x] OS drag-and-drop: `.d64` opens; other supported files import into the active disk.
+- [x] Basic undo/redo snapshot stacks.
 
 ## Phase 4 — Viewers
-- [x] Hex viewer — `ADDR <16 bytes> <PETSCII>`, load-address base, C64/ROM glyphs, PETSCII/ASCII toggle
-- [x] BASIC viewer (C64 BASIC V2 de-tokenizer), ROM-bitmap rendered
-- [x] Disassembly viewer (6502/6510)
-- [x] SEQ viewer — ROM-bitmap PETSCII mode + ASCII text mode
-- [x] REL viewer (side-sector chain → fixed-length records; record-content edit in place)
-- [x] Picture viewer (Koala/Art Studio hi-res)
-- [x] Charset + Sprite viewers
-- [x] GEOS file info viewer (metadata + info-block/VLIR index dump, best-effort) with directory metadata editing
-- [x] ROM-bitmap PETSCII renderer (`chargen.bin`, `PetsciiScreen`/`PetsciiView`)
-- [x] Centralized PETSCII Lower/Upper Case toggle, persisted across PETSCII-displaying views
-- [x] Graphics viewer enhancements (zoom controls and BMP export/save for picture and charset/sprite viewers)
 
-## Phase 5 — BAM / Sector / Block Editors
-- [x] BAM editor (visual block allocation map): colored free/allocated cells, live FREE/ALLOCATED summary, legend, toggle/view-block/error modes
-- [x] Sector/block viewer (enhanced): in-window hex+ASCII sector dump with track/sector/block navigation, link/owner info, and dump-to-file
-- [x] File chain viewer (enhanced): per-block next T/S links and last-sector used-byte count
-- [x] Cross-links viewer (enhanced): recompute, claimed-block summary, parsed block navigation/open in block viewer
-- [x] Error blocks list viewer (enhanced): list/edit/open blocks with non-default error codes (images with error info)
+- [x] Hex, BASIC, disassembly, SEQ, and REL viewers.
+- [x] Picture viewer (Koala/Art Studio hi-res) and charset/sprite viewers with zoom and BMP export.
+- [x] GEOS file info with metadata and best-effort VLIR inspection.
+- [x] ROM-bitmap PETSCII renderer and central charset toggle.
+- [x] G64/NIB info and Extended Image/Partitions viewers.
 
-## Phase 6 — Search / Compare / Batch
-- [x] Find in Disks — filename and file-contents search across supported formats (`ImageCatalog`)
-- [x] Compare Disks — header/directory/BAM diff and differing-block list
-- [x] Batch export and Batch Validate (report-only)
-- [x] Archive extraction (zip/tar/tar.gz/tgz of disk sets) via CLI `--extract-archive` (optional `--images-only`)
+## Phase 5 — BAM, sector, and block editors
 
-## Phase 7 — GEOS & Advanced
-- [x] GEOS file info/metadata editing (directory bytes 15-1D) and best-effort VLIR index/info-block viewing
-- [ ] GEOS disk/application-data support (deeper VLIR record-chain handling, GEOS-specific workflows)
-- [x] CLI: headless `--list`, `--info`, `--validate`, `--convert` (G64/NIB→D64), `--export <image> <dir>`, CP/M extract/copy/format (template-based), archive extraction, `--print-dir`, `--help`
-- [x] Expanded CLI/scripting — headless `ScriptEngine` (Core) + CLI `--run-script` automates open/convert/save/import/export/scratch/unscratch/wipe/rename/move, REL create/resize/write, CP/M extract/copy/format, GEOS info and archive extraction; sample scripts in `scripts/`
+- [x] BAM editor with tracks as columns and sectors as rows; set/error-code modes.
+- [x] Sector/block viewer with hex + PETSCII, navigation, and dump-to-file.
+- [x] File-chain viewer with ordered track/sector/block list.
+- [x] Cross-links viewer with recompute and navigation.
+- [x] Error-blocks list.
 
-## Phase 8 — Platform Integration
-- [x] Emulator launch (template `{disk}`/`{image}`, drive-8 mount, selection/`*` or `disk:NAME`, `$0801` → `-autostartprgmode 1`, safe quoting)
-- [x] OpenCBM transfer via structured `d64copy` dialog (`OpenCbmWindow`): D64/D71 selection, device, transfer mode, command preview, arguments via `ArgumentList` (no shell)
-- [x] VICE real-device launch builder: `--cbm vice <command|start|stop>` prints/launches/stops `-devicebackend8 2 -busdevice8` x128 commands (options `--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); verified CP/M boot from a real 1571 via ZoomFloppy for both D64 and D71 (`-2`) images written with warp and no `-t`
-- [x] File associations (Linux .desktop + MIME, Windows .reg)
-- [x] "Check for Updates" reads a version-feed URL and opens the releases page in the default browser (best-effort)
-- [x] Printable directory export (text) with best-effort open-in-default-handler for OS printing
-- [ ] Native OS print dialog and built-in updater/installer (platform-dependent; not implemented cross-platform)
+## Phase 6 — Search, compare, batch, and archives
 
-## Current Focus
-- Deeper GCR fidelity: per-zone tuned interleave/gaps, copy-protected track re-encoding, half-track editing
-- CMD/DNP richer editing workflows inside containers; validation against real container images
-- C128 CP/M validation of from-scratch layouts against real bootable media / specific DPB variants (boot code, skew, bitmap location)
-- Deeper GEOS disk/application-data/VLIR workflows and richer metadata tooling
-- Broader inter-tab/window disk-to-disk drag-and-drop and more comprehensive undo/redo coverage
-- Platform-dependent native print dialog / updater installer remain out of scope for cross-platform build; keep best-effort flows working
-- Roadmap/docs kept in sync with implemented behavior; smoke-test tabbed MDI/REL/GEOS flows
+- [x] Find in Disks (name and file-contents search).
+- [x] Compare Disks (header/directory/BAM diff and differing blocks).
+- [x] Batch export and batch validate (report-only).
+- [x] Archive extraction: zip/tar/tar.gz/tgz plus LHA/LZH, ARJ, and C64 LHA SFX PRGs.
+- [x] LHA/LZH/SFX and ARJ list/create/extract verbs in CLI and scripts.
+
+## Phase 7 — GEOS and advanced
+
+- [x] GEOS directory metadata editing and VLIR index viewing.
+- [x] Headless CLI: `--list`, `--info`, `--validate`, `--convert`, `--export`, CP/M operations,
+      archive extraction, `--print-dir`, `--help`.
+- [x] Expanded `ScriptEngine` with image lifecycle, directory/file operations, REL, CP/M,
+      archives, GEOS info, and GCR export; sample scripts in `scripts/`.
+- [ ] Deeper GEOS disk/application-data and full VLIR record-chain workflows remain best-effort.
+
+## Phase 8 — Platform integration
+
+- [x] Emulator launch with templates (`{disk}`, `{image}`, `{appdir}`, `{app}`, `{cwd}`), safe
+      quoting, drive-8 mount, and autostart rules.
+- [x] Structured OpenCBM transfer dialog (`OpenCbmWindow`) using `d64copy` with `ArgumentList`.
+- [x] `--cbm vice <command|start|stop>` builder and verified real-1571 CP/M boot.
+- [x] Linux/Windows file associations.
+- [x] Check-for-updates opens the configured release feed.
+- [x] Printable directory export as text.
+- [ ] Native OS print dialog and built-in updater/installer are platform-dependent and not
+      implemented.
+
+## Current focus
+
+- Incremental GCR fidelity: per-zone gaps/interleave, copy-protected track re-encoding, and
+  half-track editing. Faithful images still require SRQ nibtools (`nibread`/`nibconv`).
+- Richer CMD in-container editing workflows; write-back already works for all partition types.
+- CP/M from-scratch validation against more DPB variants and real 1581 media.
+- Deeper GEOS/VLIR support.
+- Wider undo/redo coverage and inter-tab disk-to-disk drag-and-drop.
+- Keep documentation in sync with code and smoke-test MDI, REL, GEOS, hardware, and scripting paths.
