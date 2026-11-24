@@ -20,7 +20,8 @@ public static class OpenCbm
         public bool Success => ExitCode == 0;
     }
 
-    private static Result Run(string exe, IEnumerable<string> args, int timeoutMs = 300000)
+    /// <summary>Run an external tool with clean output (shared by the hardware wrappers).</summary>
+    internal static Result Run(string exe, IEnumerable<string> args, int timeoutMs = 300000)
     {
         try
         {

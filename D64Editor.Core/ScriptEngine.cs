@@ -176,6 +176,14 @@ public static class ScriptEngine
             case "cpmbootable": CpmBootable(c, a, r); break;
             case "cpmimportdir": CpmImportDir(c, a, r); break;
 
+            case "cbmdetect": CbmDetect(c, r); break;
+            case "cbmstatus": CbmStatus(c, a, r); break;
+            case "cbmdir": CbmDir(c, a, r); break;
+            case "cbmmode": CbmMode(c, a, r); break;
+            case "cbmsurface": CbmSurface(c, a, r); break;
+            case "cbmpreserve": CbmPreserveCmd(c, a, r); break;
+            case "cbmgaps": CbmGaps(c, a, r); break;
+
             default: throw new ScriptException($"Unknown command '{cmd}' (run 'help' for the command list).");
         }
     }
@@ -224,6 +232,14 @@ public static class ScriptEngine
         sb.AppendLine("  cpmnew <d64|d71|d81> <out> [NAME.EXT=host ...]  From-scratch CP/M image (best-effort)");
         sb.AppendLine("  cpmbootable <donor.d64> <out> [NAME.EXT=host ...]  Bootable CP/M image from a system-disk donor");
         sb.AppendLine("  cpmimportdir <donor|new:d64|new:d71|new:d81> <srcdir> <out>  Import a host directory into a CP/M image");
+        sb.AppendLine("  cbmdetect                    List devices on the IEC bus (OpenCBM)");
+        sb.AppendLine("  cbmstatus [dev]              Drive status string");
+        sb.AppendLine("  cbmdir [dev]                 Read the drive directory (read-only)");
+        sb.AppendLine("  cbmmode <dev> 1541|1571      Switch drive mode (U0>M0 / U0>M1)");
+        sb.AppendLine("  cbmsurface <dev> [--from N] [--to N]  FDC surface scan (tracks 1-42)");
+        sb.AppendLine("  cbmpreserve <dev> <out.nib> [options]  Full preservation workflow (needs nibtools)");
+        sb.AppendLine("    options: --mode 1541|1571|keep --report FILE --g64 FILE --retries N --no-halftracks --skip-surface");
+        sb.AppendLine("  cbmgaps <img.g64> [--from N] [--to N]  Offline GCR gap/sync analysis");
         sb.AppendLine("  echo <text...>               Print text");
         sb.AppendLine("  exit [code]                  Stop with exit code");
         Log(c, sb.ToString().TrimEnd(), r);
@@ -852,5 +868,107 @@ public static class ScriptEngine
                 sb.AppendLine($"REL side sector T{e.Byte15}/S{e.Byte16}, record length {e.Byte17}");
         }
         Log(c, sb.ToString().TrimEnd(), r);
+    }
+
+    // ---- real-hardware (OpenCBM / nibtools) --------------------------------
+
+    private static int CbmDev(string[] a, int index = 0) =>
+        a.Length > index && int.TryParse(a[index], out var d) ? d : 8;
+
+    private static void CbmDetect(Context c, ScriptResult r)
+    {
+        if (!OpenCbm.IsAvailable()) throw new ScriptException("OpenCBM not found on PATH (cbmctrl + d64copy).");
+        var x = OpenCbm.Detect();
+        Log(c, (x.Output + x.Error).Trim(), r);
+        if (!x.Success) throw new ScriptException("cbmdetect failed: " + x.Error.Trim());
+    }
+
+    private static void CbmStatus(Context c, string[] a, ScriptResult r)
+    {
+        if (!OpenCbm.IsAvailable()) throw new ScriptException("OpenCBM not found on PATH.");
+        var x = OpenCbm.Status(CbmDev(a));
+        Log(c, (x.Output + x.Error).Trim(), r);
+    }
+
+    private static void CbmDir(Context c, string[] a, ScriptResult r)
+    {
+        if (!OpenCbm.IsAvailable()) throw new ScriptException("OpenCBM not found on PATH.");
+        var x = OpenCbm.Directory(CbmDev(a));
+        Log(c, (x.Output + x.Error).Trim(), r);
+    }
+
+    private static void CbmMode(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 2) throw new ScriptException("Usage: cbmmode <dev> 1541|1571");
+        if (!OpenCbm.IsAvailable()) throw new ScriptException("OpenCBM not found on PATH.");
+        var dev = int.Parse(a[0]);
+        var which = a[1].ToLowerInvariant();
+        var x = which switch
+        {
+            "1541" => OpenCbm.Command(dev, "U0>M0"),
+            "1571" => OpenCbm.SetNative1571(dev),
+            _ => throw new ScriptException("Mode must be 1541 or 1571.")
+        };
+        if (!x.Success) throw new ScriptException("cbmmode failed: " + x.Error.Trim());
+        Log(c, $"Device {dev} set to {which} mode.", r);
+    }
+
+    private static void CbmSurface(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 1) throw new ScriptException("Usage: cbmsurface <dev> [--from N] [--to N] [--data-checks]");
+        if (!OpenCbm.IsAvailable()) throw new ScriptException("OpenCBM not found on PATH.");
+        var dev = int.Parse(a[0]);
+        var from = 1; var to = 42; var data = false;
+        for (var i = 1; i < a.Length; i++)
+        {
+            if (a[i] == "--from" && i + 1 < a.Length) from = int.Parse(a[++i]);
+            else if (a[i] == "--to" && i + 1 < a.Length) to = int.Parse(a[++i]);
+            else if (a[i] == "--data-checks") data = true;
+            else throw new ScriptException($"Unknown option '{a[i]}'");
+        }
+        Log(c, SurfaceScan.Scan(dev, from, to, dataChecks: data).Text, r);
+    }
+
+    private static void CbmPreserveCmd(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 2) throw new ScriptException("Usage: cbmpreserve <dev> <out.nib> [options]");
+        if (!OpenCbm.IsAvailable() || !NibTools.IsAvailable())
+            throw new ScriptException("Need OpenCBM and nibtools on PATH.");
+        var dev = int.Parse(a[0]);
+        var outPath = Full(c, a[1]);
+        var mode = "keep";
+        string? reportPath = null, g64 = null, adapter = "xum1541";
+        var retries = 3; var half = true; var skip = false; var data = false;
+        for (var i = 2; i < a.Length; i++)
+        {
+            switch (a[i])
+            {
+                case "--mode" when i + 1 < a.Length: mode = a[++i]; break;
+                case "--report" when i + 1 < a.Length: reportPath = Full(c, a[++i]); break;
+                case "--g64" when i + 1 < a.Length: g64 = Full(c, a[++i]); break;
+                case "--adapter" when i + 1 < a.Length: adapter = a[++i]; break;
+                case "--retries" when i + 1 < a.Length: int.TryParse(a[++i], out retries); break;
+                case "--no-halftracks": half = false; break;
+                case "--skip-surface": skip = true; break;
+                case "--data-checks": data = true; break;
+                default: throw new ScriptException($"Unknown option '{a[i]}'");
+            }
+        }
+        Log(c, CbmPreserve.Run(new CbmPreserve.Options(
+            dev, outPath, mode, adapter, retries, half, reportPath, g64, skip, data)).Text, r);
+    }
+
+    private static void CbmGaps(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 1) throw new ScriptException("Usage: cbmgaps <img.g64> [--from N] [--to N]");
+        var path = Full(c, Need(a));
+        var from = 1; var to = 42;
+        for (var i = 1; i < a.Length; i++)
+        {
+            if (a[i] == "--from" && i + 1 < a.Length) from = int.Parse(a[++i]);
+            else if (a[i] == "--to" && i + 1 < a.Length) to = int.Parse(a[++i]);
+            else throw new ScriptException($"Unknown option '{a[i]}'");
+        }
+        Log(c, GapScan.Analyze(path, from, to).Text, r);
     }
 }

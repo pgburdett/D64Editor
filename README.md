@@ -417,6 +417,11 @@ D64Editor --cpm-import-dir <donor|new:d64|new:d71|new:d81> <srcdir> <out>
 D64Editor --ctools <format|create|import|list|extract> ...
 D64Editor --cpm-cpmtools <format|create|import-dir|list> ...
 D64Editor --cbm <detect|status|dir|command|format|read|write|verify|vice|boot|gaps|gcrscan|sector|seek|surface|tailgap> ...
+D64Editor --cbm mode <dev> 1541|1571
+D64Editor --cbm capture <dev> <out.nib> [--retries N] [--no-halftracks] [--adapter NAME]
+D64Editor --cbm preserve <dev> <out.nib> [--mode 1541|1571|keep] [--report FILE] [--g64 FILE] [options]
+D64Editor --cbm g64 <in.nib> <out.g64>
+D64Editor --cbm-console [dev]       Interactive hardware console (readline history, quit to exit)
 D64Editor --cbm vice <command|start|stop> [--dev N] [--data IMG] [--emu PATH] [--softgl] [--dry-run]
 D64Editor --gcrread <dev> <track> <outfile> [--nosync] [--whole]
 D64Editor --test-stitch <image.g64> <track>
@@ -431,6 +436,29 @@ Aliases: `-h`, `-l`, `-e`, `-i`, `-v`, `-c`, `--lha-decompress`, `--lha-compress
 `--arj-decompress`, `--arj-compress`.
 
 Runtime `--help` lists the main verbs; `--cbm` with no arguments lists the hardware subverbs.
+
+### Hardware preservation from the console
+
+All three console entry points drive the same read-only Core workflow, so a protected disk can be
+investigated and captured without leaving D64Editor:
+
+1. **One command** — `--cbm preserve 8 disk.nib --mode 1541 --report scan.txt --g64 disk.g64`.
+   Detects the drive, sets the mode, reads status and directory, runs the FDC surface scan,
+   captures a raw NIB image with `nibread` (half-tracks on by default), parses the protection
+   findings, and writes a text report. Use `--skip-surface` to only capture, or `--capture`-style
+   subcommands (`--cbm capture`, `--cbm mode`, `--cbm g64`) for individual steps.
+2. **Interactive** — `--cbm-console [dev]` opens a prompt with readline-style up/down history.
+   Commands: `detect`, `status`, `dir`, `mode 1541|1571`, `surface`, `capture`, `preserve`,
+   `g64`, `gaps`, `sector`, `seek`, `use <dev>`, `history`, `quit`. It works with piped input too.
+3. **Scripts** — `cbmdetect`, `cbmstatus`, `cbmdir`, `cbmmode`, `cbmsurface`, `cbmpreserve`,
+   `cbmgaps` are available to `--run-script`.
+
+`preserve`/`capture` require nibtools (`nibread`/`nibconv`) on PATH in addition to OpenCBM.
+The NIB file is the preservation master; the optional G64 is a playable derivative for VICE
+(conversion can normalize oversized protected tracks). Nothing in this workflow writes to the disk.
+
+Note: 1541 mode (`U0>M0`) addresses only side 0. Reading the reverse side of a physically flipped
+disk works in 1541 mode; a true two-sided 1571 disk needs `U0>M1` and a D71-oriented workflow.
 
 ---
 
@@ -450,6 +478,7 @@ Commands:
 | REL | `relnew`, `relresize`, `relwrite` |
 | CP/M | `cpmextract`, `cpmcopy`, `cpmformat`, `cpmnew`, `cpmbootable`, `cpmimportdir` |
 | Archives | `archive`, `lhaextract`, `lhacreate`, `lhasfx`, `arjextract`, `arjcreate` |
+| Hardware | `cbmdetect`, `cbmstatus`, `cbmdir`, `cbmmode`, `cbmsurface`, `cbmpreserve`, `cbmgaps` |
 | Other | `geosinfo`, `echo`, `help`, `exit` |
 
 Example:
@@ -488,6 +517,9 @@ copy protection. The short version:
 - `--cbm gaps` provides offline sync/gap/sector anomaly analysis; `--cbm surface` scans the real
   drive through FDC jobs; `--cbm tailgap` reads five tail-gap bytes; `--cbm gcrscan` samples raw
   GCR on the current track.
+- The manual sequence above is now available as `--cbm preserve` (one-shot), `--cbm-console`
+  (interactive), and the `cbm*` script commands. `CbmPreserve` parses nibread's verbose track map
+  into a protection summary (unformatted tracks, weak GCR, non-standard sectors, long reads).
 
 Detailed references:
 

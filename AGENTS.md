@@ -11,7 +11,7 @@
 - Restore: `dotnet restore`
 - Build: `dotnet build` (or `dotnet build --no-restore` after restore)
 - Run UI: `dotnet run --project D64Editor.App`
-- Test: `dotnet test` / `dotnet test --no-build --verbosity normal` (the D64Editor solution currently has no test projects)
+- Test: `dotnet test` / `dotnet test --no-build --verbosity normal` (`D64Editor.Core.Tests/` — xUnit tests for the nibread verbose-output parser; add tests there for new Core logic)
 
 ## CI / environment notes
 - `.github/workflows/dotnet.yml` runs on `ubuntu-latest` (push/PR to `master`) with .NET SDK `10.0.x`: `dotnet restore`, `dotnet build --no-restore`, `dotnet test --no-build --verbosity normal`.
@@ -50,6 +50,9 @@
 - `D64Editor.Core/GcrScan.cs` — raw GCR sampler via uploaded 6502 code (current track only; never moves the head).
 - `D64Editor.Core/SectorRead.cs` — decoded sector read and integer-track SEEK via FDC job queue (no uploaded code; safe head movement).
 - `D64Editor.Core/SurfaceScan.cs` — full track/sector FDC surface scan with error classification (sync/header/checksum).
+- `D64Editor.Core/NibTools.cs` — nibtools wrapper (`nibread`/`nibconv` via `OpenCbm.Run`) plus a parser for nibread's verbose track map; produces `CaptureSummary` (disk ID, full/half-track counts, unformatted tracks, weak-GCR bytes, non-standard sectors, long reads, NDOS tracks, anomalous-track list). Unit-tested in `D64Editor.Core.Tests/`.
+- `D64Editor.Core/CbmPreserve.cs` — one-shot read-only preservation workflow: detect → mode → status → directory → surface scan → raw NIB capture → optional G64 derivative → text report. Backs `--cbm preserve` and `cbmpreserve`.
+- `D64Editor.App/CbmConsole.cs` — interactive hardware console (`--cbm-console`): persistent device, readline-style history, slash-style commands, "Working..." indicator for long ops; works with piped stdin.
 - `D64Editor.Core/TailGap.cs` — port of Kracker Jax TGREAD: 5 tail-gap bytes via FDC JUMP job.
 - `D64Editor.Core/Nbz.cs` — LZ77 decompressor for preservation-project `.nbz` images; `--convert` turns them into NIB→D64.
 - `D64Editor.Core/GapScan.cs` — offline raw-GCR sync/gap/sector analysis of G64 images.
@@ -86,6 +89,11 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--cbm sector <dev> <track> <sector>` / `seek <dev> <track>` — FDC job-queue sector read / integer-track head move (drive firmware does the work).
 - `--cbm surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]` — full track/sector surface scan via FDC READ jobs; reports sync/header/checksum errors.
 - `--cbm gaps <image.g64> [--from N] [--to N] [outfile]` — offline raw GCR sync/gap/sector analysis.
+- `--cbm mode <dev> 1541|1571` — switch drive mode (`U0>M0` / `U0>M1`); 1541 mode only addresses side 0.
+- `--cbm capture <dev> <out.nib> [--retries N] [--no-halftracks] [--adapter NAME]` — raw NIB capture only.
+- `--cbm preserve <dev> <out.nib> [--mode 1541|1571|keep] [--report FILE] [--g64 FILE] [--retries N] [--no-halftracks] [--skip-surface] [--data-checks]` — full one-shot diagnostic + NIB capture (needs nibtools on PATH). NIB is the preservation master; G64 is a playable derivative.
+- `--cbm g64 <in.nib> <out.g64>` — convert a NIB capture to G64.
+- `--cbm-console [dev]` (alias `--cbm-shell`) — interactive hardware console with history; `quit`/`exit` to leave.
 - `--cbm tailgap <dev> [outfile]` — read 5 tail-gap bytes via FDC JUMP job (Kracker Jax TGREAD port).
 - `--cbm gcrscan <dev> [outfile]` — sample raw GCR on the current track via uploaded 6502 code (never moves the head).
 - `--gcrread <dev> <track> <outfile> [--nosync] [--whole]` — raw GCR chunk reader; `--whole` uses overlap/prefix-match stitching (512-byte half-window probe, reverse search; synthetically validated, hardware drift untested). `--test-stitch <image.g64> <track>` validates the stitcher against a known track.
@@ -121,6 +129,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - Setup: OpenCBM is AUR `opencbm` on Arch; its PKGBUILD renames `/etc/opencbm.conf` to `.sample` (copy back + `opencbm_plugin_helper_tools rebuild`); USB cable udev rules need a replug or `udevadm trigger`; verify with `cbmctrl detect` / `cbmctrl status 8`. Harmless `keyctl` warning from libudev can be ignored.
 - CP/M real-media: `d64copy -2 image.d71 8` writes a D71 CP/M image to a real 1571; `d64copy -2 8 image.d71` reads back (non-destructive). Verified warp/no-`-t` writes: `cbmctrl command 8 'U0>M0'` then `d64copy --no-progress -w image.d64 8` (D64), and `cbmctrl command 8 'U0>M1'` then `d64copy --no-progress -w -2 image.d71 8` (D71, true two-sided mode). `-w` is implicit for `.d71`. Readback with the matching `-2`/no-`-2` and `cmp` must be byte-exact. `cbmctrl reset` (no device argument) resets all drives on the IEC bus before/after emulator use.
 - Bootable CP/M image build: a full donor system disk is too full for new files — use `--cpm-copy <donor> <base> --files CPM+.SYS,CCP.COM,DIR.COM,PIP.COM` to free blocks, then `--cpm-bootable <base> <out> NAME.EXT=hostfile ...`. Never drop `CCP.COM` (CP/M Plus will not boot). Both D64 and a 349,696-byte D71 container (single-sided payload on side 1, blank side 2) were verified byte-exact on real media.
+- Faithful-disk preservation from the console: `--cbm preserve 8 disk.nib --mode 1541 --report scan.txt --g64 disk.g64` runs the full read-only workflow (`NibTools`/`CbmPreserve`) and summarizes protection findings. Verified on a protected 1541 disk (ID `GM`, half-track weak GCR, unformatted tracks 37–41.5); the reverse side of the same floppy scanned 0/802 clean sectors (blank). Repeating the capture produces different bytes on weak/protected tracks — expected nondeterminism, not corruption. `nibread` verbose output prints all track numbers as `N.0`, so half-tracks are only those ending in `.5`.
 
 ## Emulator integration notes
 - Template placeholders: `{disk}`, `{image}`, `{appdir}`, `{app}`, `{cwd}`.
@@ -129,7 +138,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - BASIC programs ($0801) get `-autostartprgmode 1` appended.
 - Cartridge paths use `-cartcrt` (not `-cartepyx`) for `.crt` files.
 - VICE 3.10's real-device backend calls `cbm_open(..., NULL, 0)` and sends the filename as later raw writes, so LOAD from a real drive hangs in `raw_read`/`get_eoi`. Source fix: `patches/vice-3.10-opencbm-filename.patch` (buffer name bytes, pass them to `cbm_open` at UNLISTEN); EOI/reads themselves verified working via direct libopencbm tests. Custom fast loaders (drive code uploaded with `M-W` and executed with `M-E`, bit-banging VIA at `$1800`) remain unsupported by the high-level backend. See `HARDWARE_WORKFLOW.md`.
-- Real-drive passthrough (VICE 3.10+ with OpenCBM): `x128 -80col -devicebackend8 2 -busdevice8 -sounddev dummy` boots CP/M from the physical disk; add `-9 <data.d64>` for a local B: drive. D64Editor builds this via `--cbm vice command|start|stop` (options: `--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); only one process may own the IEC bus, so stop VICE before `cbmctrl`/`d64copy` and vice versa. On this Xwayland session VICE GTK3 startup is flaky: use `--softgl` (`LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe`) and retry; capture with `spectacle -b -o ...` (X11 root capture is black), send keys with `xdotool type --window ...`, wait for the `A>` prompt first.
+- Real-drive passthrough (VICE 3.10+ with OpenCBM): `x128 -80col -devicebackend8 2 -busdevice8 -sounddev dummy` boots CP/M from the physical disk; add `-9 <data.d64>` for a local B: drive. D64Editor builds this via `--cbm vice command|start|stop` (options: `--dev`, `--data`, `--emu`, `--40col`, `--sound`, `--log`, `--softgl`, `--dry-run`); only one process may own the IEC bus, so stop VICE before `cbmctrl`/`d64copy` and vice versa. On this Xwayland session VICE GTK3 startup is flaky: use `--softgl` (`LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe`) and retry; capture with `spectacle -b -o ...` (X11 root capture is black), send keys with `xdotool type --window ...`, wait for the `A>` prompt first. For C64 game disks use `x64sc -model c64c -ntsc -power60 -VICIIaspectmode 0 -windowwidth 1400 -windowheight 900 -devicebackend8 2 -busdevice8 -sounddev dummy` (also needs retries). **xdotool ASCII must be lowercase** for VICE's keymap (uppercase sends Shift codes and produces `?SYNTAX ERROR`); type to the activated/focused window, not via `--window` XSendEvent. Verified: real-drive `load"*",8,1` on the protected "russia" disk showed `Please wait...` for ~2 minutes (custom loader), then reached the Rusíia title screen — so long loaders can succeed through the high-level backend; don't give up after 30–60 s. Stop VICE before `cbmctrl`/`d64copy` and run `cbmctrl reset` afterward.
 
 ## Copy-protection / raw-media investigation (Arctic Fox, EA PRODOS)
 
@@ -156,7 +165,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - CLI entry point: `D64Editor.App/Cli.cs` `--run-script`. `Environment.ExitCode` propagates the script exit code.
 - `D64Editor.Core/ArchiveExtract.cs` — zip/tar/tar.gz/tgz/LHA/LZH/ARJ extraction used by the `archive` script command (and the CLI `--extract-archive`).
 - `D64Editor.Core/LegacyArchives.cs` — LHA/LZH/SFX and ARJ list/create/extract; LHA creation writes LH0/stored archives, C64 SFX PRGs are carved by LHA header checksum, ARJ delegates to external `arj`.
-- Script commands cover: image lifecycle (open/close/save/new/convert), directory/file ops (list/info/validate/import/export/exportdir/rename/renamedisk/scratch/unscratch/wipe/move), REL (relnew/relresize/relwrite), CP/M (cpmextract/cpmcopy/cpmformat), archive (including LHA/LZH/ARJ/C64 SFX), lhaextract/lhacreate/lhasfx/arjextract/arjcreate, geosinfo, echo/help/exit.
+- Script commands cover: image lifecycle (open/close/save/new/convert), directory/file ops (list/info/validate/import/export/exportdir/rename/renamedisk/scratch/unscratch/wipe/move), REL (relnew/relresize/relwrite), CP/M (cpmextract/cpmcopy/cpmformat), archive (including LHA/LZH/ARJ/C64 SFX), lhaextract/lhacreate/lhasfx/arjextract/arjcreate, geosinfo, echo/help/exit, and real hardware (cbmdetect/cbmstatus/cbmdir/cbmmode/cbmsurface/cbmpreserve/cbmgaps).
 - Sample scripts live in `scripts/`. When adding Core automation, expose it through ScriptEngine and document it in README's Scripting section.
 - `D64Image.RenameDisk(name,id)` was added for headless disk-header renaming.
 

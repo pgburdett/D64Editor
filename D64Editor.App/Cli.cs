@@ -209,6 +209,11 @@ internal static class Cli
             case "--cbm":
                 return CbmHardware(args);
 
+            case "--cbm-console":
+            case "--cbm-shell":
+                CbmConsole.Run(args);
+                return true;
+
             default:
                 // Not a recognized CLI verb — let the GUI open it as a file.
                 return false;
@@ -1210,6 +1215,42 @@ internal static class Cli
             x.Contains(' ') ? $"\"{x}\"" : x));
     }
 
+    internal sealed record PreserveCliOptions(
+        string Mode = "keep",
+        string? Report = null,
+        string? G64 = null,
+        string Adapter = "xum1541",
+        int Retries = 3,
+        bool HalfTracks = true,
+        bool SkipSurface = false,
+        bool DataChecks = false);
+
+    internal static PreserveCliOptions ParsePreserveOptions(string[] args, int start)
+    {
+        var mode = "keep";
+        string? report = null, g64 = null, adapter = "xum1541";
+        var retries = 3;
+        var half = true;
+        var skip = false;
+        var data = false;
+        for (var i = start; i < args.Length; i++)
+        {
+            switch (args[i])
+            {
+                case "--mode" when i + 1 < args.Length: mode = args[++i]; break;
+                case "--report" when i + 1 < args.Length: report = args[++i]; break;
+                case "--g64" when i + 1 < args.Length: g64 = args[++i]; break;
+                case "--adapter" when i + 1 < args.Length: adapter = args[++i]; break;
+                case "--retries" when i + 1 < args.Length: int.TryParse(args[++i], out retries); break;
+                case "--no-halftracks": half = false; break;
+                case "--skip-surface": skip = true; break;
+                case "--data-checks": data = true; break;
+                default: Console.Error.WriteLine($"Unknown option: {args[i]}"); break;
+            }
+        }
+        return new PreserveCliOptions(mode, report, g64, adapter, retries, half, skip, data);
+    }
+
     /// <summary>
     ///     OpenCBM real-hardware operations: --cbm &lt;detect|status|dir|command|format|read|write|verify|vice|boot|gaps|gcrscan|sector|seek|surface|tailgap&gt; ...
     ///     All image creation/verification is done in-process by C128Cpm; OpenCBM is used
@@ -1232,6 +1273,12 @@ internal static class Cli
             Console.Error.WriteLine("  sector <dev> <track> <sector> [outfile] Read a sector via the drive FDC job queue (safe seek/read)");
             Console.Error.WriteLine("  seek <dev> <track>        Move the head via the drive FDC SEEK job (drive firmware steps)");
             Console.Error.WriteLine("  surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]  FDC surface scan");
+            Console.Error.WriteLine("  mode <dev> 1541|1571         Switch drive mode (U0>M0 / U0>M1)");
+            Console.Error.WriteLine("  capture <dev> <out.nib> [opts]  Raw NIB preservation capture (read-only)");
+            Console.Error.WriteLine("  preserve <dev> <out.nib> [opts] FULL workflow: detect/mode/dir/surface/capture/report");
+            Console.Error.WriteLine("    options: --mode 1541|1571|keep  --report FILE  --g64 FILE  --retries N");
+            Console.Error.WriteLine("             --no-halftracks  --skip-surface  --data-checks  --adapter NAME");
+            Console.Error.WriteLine("  g64 <in.nib> <out.g64>       Convert a NIB capture to a playable G64 derivative");
             Console.Error.WriteLine("  tailgap <dev> [outfile] Read 5 tail-gap bytes via FDC JUMP job (Kracker Jax TGREAD port)");
             Console.Error.WriteLine("  gaps <image.g64> [--from N] [--to N] [outfile] Offline GCR sync/gap/sector analysis");
             Console.Error.WriteLine("  vice <command|start|stop> [options]  Build/launch/stop the VICE OpenCBM-passthrough command");
@@ -1493,6 +1540,78 @@ internal static class Cli
                     Console.WriteLine((r.Ok ? "SEEK OK: " : "SEEK FAILED: ") + r.Detail);
                     break;
                 }
+                case "mode":
+                {
+                    if (args.Length < 4)
+                    {
+                        Console.Error.WriteLine("Usage: --cbm mode <dev> 1541|1571");
+                        return true;
+                    }
+                    var dev = int.Parse(args[2]);
+                    var which = args[3].ToLowerInvariant();
+                    var r = which switch
+                    {
+                        "1541" => OpenCbm.Command(dev, "U0>M0"),
+                        "1571" => OpenCbm.SetNative1571(dev),
+                        _ => new OpenCbm.Result(-1, "", "mode must be 1541 or 1571")
+                    };
+                    Console.WriteLine(r.Success ? $"Device {dev} set to {which} mode" : "Mode failed: " + r.Error.Trim());
+                    break;
+                }
+                case "capture":
+                {
+                    if (args.Length < 4)
+                    {
+                        Console.Error.WriteLine("Usage: --cbm capture <dev> <out.nib> [options]");
+                        return true;
+                    }
+                    if (!NibTools.IsAvailable())
+                    {
+                        Console.Error.WriteLine("nibtools not found on PATH (need nibread + nibconv).");
+                        return true;
+                    }
+                    var dev = int.Parse(args[2]);
+                    var o = ParsePreserveOptions(args, 4);
+                    var cap = NibTools.Capture(new NibTools.CaptureOptions(
+                        dev, args[3], o.Adapter, o.Retries, o.HalfTracks));
+                    if (!cap.Success) { Console.Error.WriteLine("nibread failed: " + cap.Error.Trim()); break; }
+                    var summary = NibTools.Parse(cap.Output);
+                    Console.WriteLine($"Raw capture written to {args[3]}");
+                    Console.WriteLine(summary.Text);
+                    break;
+                }
+                case "preserve":
+                {
+                    if (args.Length < 4)
+                    {
+                        Console.Error.WriteLine("Usage: --cbm preserve <dev> <out.nib> [options]");
+                        return true;
+                    }
+                    var dev = int.Parse(args[2]);
+                    var o = ParsePreserveOptions(args, 4);
+                    var report = CbmPreserve.Run(new CbmPreserve.Options(
+                        dev, args[3], o.Mode, o.Adapter, o.Retries, o.HalfTracks,
+                        o.Report, o.G64, o.SkipSurface, o.DataChecks));
+                    Console.WriteLine();
+                    Console.WriteLine(report.Text);
+                    break;
+                }
+                case "g64":
+                {
+                    if (args.Length < 4)
+                    {
+                        Console.Error.WriteLine("Usage: --cbm g64 <in.nib> <out.g64>");
+                        return true;
+                    }
+                    if (!NibTools.IsAvailable())
+                    {
+                        Console.Error.WriteLine("nibtools not found on PATH (need nibread + nibconv).");
+                        return true;
+                    }
+                    var r = NibTools.ToG64(args[2], args[3]);
+                    Console.WriteLine(r.Success ? $"G64 written to {args[3]}" : "Conversion failed: " + r.Error.Trim());
+                    break;
+                }
                 default:
                     Console.Error.WriteLine($"Unknown --cbm command: {cmd}");
                     return true;
@@ -1538,6 +1657,7 @@ internal static class Cli
         Console.WriteLine("  --cbm <cmd>            OpenCBM hardware: detect/status/dir/command/format/read/write/verify/");
         Console.WriteLine("                         vice <command|start|stop> [options] / boot <image> <dev> / gaps /");
         Console.WriteLine("                         gcrscan / sector / seek / surface / tailgap  (run --cbm for details)");
+        Console.WriteLine("  --cbm-console          Interactive hardware console (history, slash-style commands)");
         Console.WriteLine("  --help/-h              Show this help");
         Console.WriteLine("  <image>                Open the image in the GUI");
         Console.WriteLine("  (no arguments)         Start the GUI");

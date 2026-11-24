@@ -1,0 +1,14 @@
+# Real-drive inspection + raw preservation capture.
+# Requires OpenCBM (cbmctrl/d64copy) and nibtools (nibread/nibconv) on PATH.
+# All operations are read-only with respect to the disk in the drive.
+echo === Inspecting device 8 in 1541 mode ===
+cbmdetect
+cbmstatus 8
+cbmmode 8 1541
+cbmdir 8
+echo === FDC surface scan, tracks 1-42 ===
+cbmsurface 8 --from 1 --to 42
+echo === Raw NIB capture (half-tracks included) + G64 derivative ===
+cbmpreserve 8 disk.nib --mode keep --skip-surface --g64 disk.g64 --report disk-report.txt
+echo === Done: disk.nib is the preservation master ===
+exit 0
