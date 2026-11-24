@@ -15,12 +15,21 @@ namespace D64Editor.Core;
 /// </summary>
 public static class OpenCbm
 {
+    /// <summary>Short timeout for interactive DOS commands; long captures pass their own value.</summary>
+    public const int CommandTimeoutMs = 30000;
+
     public sealed record Result(int ExitCode, string Output, string Error)
     {
         public bool Success => ExitCode == 0;
+        public bool TimedOut => ExitCode == -2;
     }
 
-    /// <summary>Run an external tool with clean output (shared by the hardware wrappers).</summary>
+    /// <summary>
+    ///     Run an external tool with a hard wall-clock timeout and clean output. Draining the
+    ///     streams asynchronously matters: calling <c>ReadToEnd()</c> before <c>WaitForExit</c>
+    ///     blocks forever when the drive wedges a command (we saw this with a U1 read on a
+    ///     deliberately damaged sector), so the timeout never fired.
+    /// </summary>
     internal static Result Run(string exe, IEnumerable<string> args, int timeoutMs = 300000)
     {
         try
@@ -32,11 +41,19 @@ public static class OpenCbm
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
-            foreach (var a in args) psi.ArgumentList.Add(a);
+            var argv = args.ToArray();
+            foreach (var a in argv) psi.ArgumentList.Add(a);
             using var p = Process.Start(psi)!;
-            var stdout = p.StandardOutput.ReadToEnd();
-            var stderr = p.StandardError.ReadToEnd();
-            if (!p.WaitForExit(timeoutMs)) p.Kill(entireProcessTree: true);
+            var stdoutTask = p.StandardOutput.ReadToEndAsync();
+            var stderrTask = p.StandardError.ReadToEndAsync();
+            if (!p.WaitForExit(timeoutMs))
+            {
+                try { p.Kill(entireProcessTree: true); } catch { /* already exited */ }
+                p.WaitForExit(2000);
+                return new Result(-2, "", $"Tool timed out after {timeoutMs} ms: {exe} {string.Join(' ', argv)}");
+            }
+            var stdout = stdoutTask.GetAwaiter().GetResult();
+            var stderr = stderrTask.GetAwaiter().GetResult();
             // libudev prints a harmless "undefined symbol: keyctl" warning on this
             // system; filter it so CLI output stays clean.
             stderr = string.Join('\n', stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries)
@@ -63,22 +80,24 @@ public static class OpenCbm
     // ---- detection / status ------------------------------------------------
 
     /// <summary>List detected devices, e.g. "8: 1571".</summary>
-    public static Result Detect(int device = 0)
+    public static Result Detect(int device = 0, int timeoutMs = CommandTimeoutMs)
     {
         var args = new List<string> { "detect" };
         if (device > 0) args.Insert(0, "-@");
-        return Run("cbmctrl", args);
+        return Run("cbmctrl", args, timeoutMs);
     }
 
     /// <summary>Read a drive's status string, e.g. "73,cbm dos v3.0 1571,00,00".</summary>
-    public static Result Status(int device = 8) => Run("cbmctrl", new[] { "status", device.ToString() });
+    public static Result Status(int device = 8, int timeoutMs = CommandTimeoutMs) =>
+        Run("cbmctrl", new[] { "status", device.ToString() }, timeoutMs);
 
     /// <summary>Send a raw DOS command to channel 15 (e.g. "U0&gt;M1" = native 1571 mode, "N0:NAME,ID" = format).</summary>
-    public static Result Command(int device, string command) =>
-        Run("cbmctrl", new[] { "command", device.ToString(), command });
+    public static Result Command(int device, string command, int timeoutMs = CommandTimeoutMs) =>
+        Run("cbmctrl", new[] { "command", device.ToString(), command }, timeoutMs);
 
-    /// <summary>Read the PETSCII directory as text (non-destructive).</summary>
-    public static Result Directory(int device = 8) => Run("cbmctrl", new[] { "-p", "dir", device.ToString() });
+    /// <summary>Read the PETSCII directory as text (non-destructive). Damaged disks can take a while.</summary>
+    public static Result Directory(int device = 8, int timeoutMs = 60000) =>
+        Run("cbmctrl", new[] { "-p", "dir", device.ToString() }, timeoutMs);
 
     // ---- high-level helpers ------------------------------------------------
 
@@ -138,25 +157,25 @@ public static class OpenCbm
     // ---- drive RAM / M-E execution ---------------------------------------
 
     /// <summary>Write a byte image into drive RAM via cbmctrl upload.</summary>
-    public static Result UploadMemory(int device, int address, byte[] data)
+    public static Result UploadMemory(int device, int address, byte[] data, int timeoutMs = CommandTimeoutMs)
     {
         var path = Path.Combine(Path.GetTempPath(), "d64e-upload-" + Guid.NewGuid().ToString("N") + ".bin");
         try
         {
             File.WriteAllBytes(path, data);
-            return Run("cbmctrl", new[] { "upload", device.ToString(), "0x" + address.ToString("X"), path });
+            return Run("cbmctrl", new[] { "upload", device.ToString(), "0x" + address.ToString("X"), path }, timeoutMs);
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }
 
     /// <summary>Read drive RAM via cbmctrl download.</summary>
-    public static Result DownloadMemory(int device, int address, int count, out byte[] data)
+    public static Result DownloadMemory(int device, int address, int count, out byte[] data, int timeoutMs = CommandTimeoutMs)
     {
         var path = Path.Combine(Path.GetTempPath(), "d64e-download-" + Guid.NewGuid().ToString("N") + ".bin");
         try
         {
             var r = Run("cbmctrl", new[] { "download", device.ToString(),
-                "0x" + address.ToString("X"), count.ToString(), path });
+                "0x" + address.ToString("X"), count.ToString(), path }, timeoutMs);
             data = File.Exists(path) ? File.ReadAllBytes(path) : Array.Empty<byte>();
             return r;
         }
@@ -164,8 +183,39 @@ public static class OpenCbm
     }
 
     /// <summary>Execute machine code in drive RAM with the DOS M-E command.</summary>
-    public static Result Execute(int device, int address) => Run("cbmctrl", new[]
+    public static Result Execute(int device, int address, int timeoutMs = CommandTimeoutMs) => Run("cbmctrl", new[]
     {
         "command", device.ToString(), "M-E", (address & 0xff).ToString(), (address >> 8).ToString()
-    });
+    }, timeoutMs);
+
+    // ---- direct-access channels -------------------------------------------
+
+    /// <summary>Open a direct-access channel; <c>fileName</c> is normally "#".</summary>
+    public static Result OpenChannel(int device, int channel, string fileName = "#", int timeoutMs = CommandTimeoutMs) =>
+        Run("cbmctrl", new[] { "open", device.ToString(), channel.ToString(), fileName }, timeoutMs);
+
+    /// <summary>Close a channel. Used in finally blocks so a failed U1 cannot leave the bus busy.</summary>
+    public static Result CloseChannel(int device, int channel, int timeoutMs = CommandTimeoutMs) =>
+        Run("cbmctrl", new[] { "close", device.ToString(), channel.ToString() }, timeoutMs);
+
+    /// <summary>
+    ///     Read a raw sector with DOS U1 on a direct-access channel and return the drive status
+    ///     (e.g. <c>23,read error,18,18</c> for the deliberately bad sector on the RUSSIA disk).
+    ///     The channel is always closed, even when the command times out.
+    /// </summary>
+    public static (bool Ok, string Status, string Detail) ReadSectorDirect(
+        int device, int track, int sector, int channel = 5, int timeoutMs = CommandTimeoutMs)
+    {
+        var open = OpenChannel(device, channel, "#", timeoutMs);
+        if (!open.Success) return (false, "", "open failed: " + (open.Error + open.Output).Trim());
+        try
+        {
+            var u1 = Command(device, $"U1:{channel},0,{track},{sector}", timeoutMs);
+            var st = Status(device, timeoutMs);
+            var status = (st.Output + st.Error).Trim();
+            if (!u1.Success) return (false, status, "U1 failed: " + (u1.Error + u1.Output).Trim());
+            return (true, status, status);
+        }
+        finally { CloseChannel(device, channel, timeoutMs); }
+    }
 }

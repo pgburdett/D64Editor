@@ -13,7 +13,7 @@ public static class SurfaceScan
 
     public sealed record Report(
         int Device, int FromTrack, int ToTrack, int SectorsScanned,
-        int OkCount, int ErrorCount, int SuspiciousCount,
+        int OkCount, int ErrorCount, int SuspiciousCount, int SeekErrors,
         IReadOnlyList<SectorResult> Anomalies, string Text);
 
     /// <summary>Physical sector count for a 1541-format track (zones 1-4).</summary>
@@ -70,9 +70,43 @@ public static class SurfaceScan
         return flags.ToArray();
     }
 
-    /// <summary>Read every sector in the inclusive track range. Read-only and non-destructive.</summary>
+    /// <summary>
+    ///     Read every sector in the inclusive track range. Read-only and non-destructive.
+    ///     With <paramref name="fastSeek"/>, the ROM's MINSTP threshold is lowered for the scan
+    ///     and restored afterwards; if it cannot be set, the scan still runs at the current value.
+    /// </summary>
     public static Report Scan(int device, int fromTrack = 1, int toTrack = 35,
-        Action<int, int>? progress = null, int sectorTimeoutMs = 6000, bool dataChecks = false)
+        Action<int, int>? progress = null, int sectorTimeoutMs = 6000, bool dataChecks = false,
+        bool fastSeek = false)
+    {
+        if (!fastSeek) return ScanCore(device, fromTrack, toTrack, progress, sectorTimeoutMs, dataChecks);
+
+        var enable = FastSeek.Enable(device);
+        if (enable.Ok)
+        {
+            try
+            {
+                var fast = ScanCore(device, fromTrack, toTrack, progress, sectorTimeoutMs, dataChecks);
+                return fast with
+                {
+                    Text = fast.Text.TrimEnd() + "\n" +
+                           $"Fast stepping: MINSTP ${FastSeek.FastMinStp:X2} during scan, " +
+                           $"restored to ${enable.Previous:X2}.\n"
+                };
+            }
+            finally { FastSeek.Restore(device, enable.Previous); }
+        }
+
+        var normal = ScanCore(device, fromTrack, toTrack, progress, sectorTimeoutMs, dataChecks);
+        return normal with
+        {
+            Text = normal.Text.TrimEnd() + "\n" +
+                   $"Fast stepping unavailable ({enable.Detail}); scanned at the current threshold.\n"
+        };
+    }
+
+    private static Report ScanCore(int device, int fromTrack, int toTrack,
+        Action<int, int>? progress, int sectorTimeoutMs, bool dataChecks)
     {
         if (fromTrack < 1 || toTrack > 42 || fromTrack > toTrack)
             throw new ArgumentOutOfRangeException(nameof(fromTrack), "track range must be 1..42 and increasing");
@@ -82,11 +116,24 @@ public static class SurfaceScan
         var ok = 0;
         var errors = 0;
         var suspicious = 0;
+        var seekErrors = 0;
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"Surface scan device {device}, tracks {fromTrack}-{toTrack} (FDC job queue).");
 
         for (var t = fromTrack; t <= toTrack; t++)
         {
+            // A READ job matches a header on the current head position; it does not move the
+            // head. Without an explicit SEEK per track, every sector is read from the wrong
+            // track unless the head happens to already be there.
+            var seek = SectorRead.Seek(device, t);
+            if (!seek.Ok)
+            {
+                seekErrors++;
+                sb.AppendLine($"T{t:00} SEEK FAILED: {seek.Detail}");
+                progress?.Invoke(t, -1);
+                continue;
+            }
+
             var count = SectorsPerTrack(t);
             for (var s = 0; s < count; s++)
             {
@@ -101,7 +148,9 @@ public static class SurfaceScan
             }
         }
 
-        sb.AppendLine($"Scanned {sectors} sector(s): {ok} clean, {errors} FDC errors, {suspicious} suspicious.");
-        return new Report(device, fromTrack, toTrack, sectors, ok, errors, suspicious, anomalies, sb.ToString());
+        sb.AppendLine($"Scanned {sectors} sector(s): {ok} clean, {errors} FDC errors, {suspicious} suspicious, " +
+                      $"{seekErrors} seek failure(s).");
+        return new Report(device, fromTrack, toTrack, sectors, ok, errors, suspicious, seekErrors,
+            anomalies, sb.ToString());
     }
 }

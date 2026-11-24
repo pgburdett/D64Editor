@@ -48,11 +48,11 @@ internal static class CbmConsole
         Console.WriteLine("  dir [dev]                   Read the drive directory");
         Console.WriteLine("  mode 1541|1571 [dev]        Switch drive mode (U0>M0 / U0>M1)");
         Console.WriteLine("  command <text...>           Raw DOS command on channel 15");
-        Console.WriteLine("  surface [dev] [--from N] [--to N] [--data-checks]  FDC surface scan");
+        Console.WriteLine("  surface [dev] [--from N] [--to N] [--data-checks] [--fast]  FDC surface scan");
         Console.WriteLine("  capture <out.nib> [opts]    Raw NIB preservation capture (half-tracks on)");
         Console.WriteLine("  preserve <out.nib> [opts]   detect + mode + dir + surface + capture + report");
         Console.WriteLine("    preserve/capture opts: --mode 1541|1571|keep --report FILE --g64 FILE");
-        Console.WriteLine("                           --retries N --no-halftracks --skip-surface --adapter NAME");
+        Console.WriteLine("                           --retries N --no-halftracks --skip-surface --adapter NAME --fast");
         Console.WriteLine("  g64 <in.nib> <out.g64>      Convert a NIB capture to a playable G64 derivative");
         Console.WriteLine("  gaps <img.g64> [--from N] [--to N]  Offline GCR gap/sync analysis");
         Console.WriteLine("  sector <track> <sector>     Read one sector via the FDC job queue");
@@ -122,6 +122,7 @@ internal static class CbmConsole
             {
                 var dev = Dev(t, 1);
                 var from = 1; var to = 42; var data = false;
+                var fast = t.Contains("--fast");
                 for (var i = 2; i < t.Count; i++)
                 {
                     if (t[i] == "--from" && i + 1 < t.Count) from = int.Parse(t[++i]);
@@ -129,7 +130,7 @@ internal static class CbmConsole
                     else if (t[i] == "--data-checks") data = true;
                 }
                 Console.WriteLine($"Working: surface scan device {dev}, tracks {from}-{to}...");
-                var report = SurfaceScan.Scan(dev, from, to, dataChecks: data);
+                var report = SurfaceScan.Scan(dev, from, to, dataChecks: data, fastSeek: fast);
                 Console.WriteLine(report.Text);
                 break;
             }
@@ -159,7 +160,7 @@ internal static class CbmConsole
                 CbmPreserve.Run(new CbmPreserve.Options(
                     dev, path, o.Mode,
                     string.IsNullOrEmpty(o.Adapter) ? _adapter : o.Adapter,
-                    o.Retries, o.HalfTracks, o.Report, o.G64, o.SkipSurface, o.DataChecks));
+                    o.Retries, o.HalfTracks, o.Report, o.G64, o.SkipSurface, o.DataChecks, FastSeek: o.FastSeek));
                 break;
             }
             case "g64":

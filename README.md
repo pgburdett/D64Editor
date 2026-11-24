@@ -423,6 +423,7 @@ D64Editor --cbm preserve <dev> <out.nib> [--mode 1541|1571|keep] [--report FILE]
 D64Editor --cbm g64 <in.nib> <out.g64>
 D64Editor --cbm-console [dev]       Interactive hardware console (readline history, quit to exit)
 D64Editor --cbm seek <dev> <track> [--fast]        --fast temporarily enables ROM accelerated stepping
+D64Editor --cbm benchseek <dev> <trackA> <trackB> [count] [--fast]  Time repeated seeks
 D64Editor --cbm fastseek <dev> on|off|status       Persistent fast-step threshold toggle (reset restores default)
 D64Editor --cbm vice <command|start|stop> [--dev N] [--data IMG] [--emu PATH] [--softgl] [--dry-run]
 D64Editor --gcrread <dev> <track> <outfile> [--nosync] [--whole]
@@ -447,8 +448,9 @@ investigated and captured without leaving D64Editor:
 1. **One command** — `--cbm preserve 8 disk.nib --mode 1541 --report scan.txt --g64 disk.g64`.
    Detects the drive, sets the mode, reads status and directory, runs the FDC surface scan,
    captures a raw NIB image with `nibread` (half-tracks on by default), parses the protection
-   findings, and writes a text report. Use `--skip-surface` to only capture, or `--capture`-style
-   subcommands (`--cbm capture`, `--cbm mode`, `--cbm g64`) for individual steps.
+   findings, and writes a text report. `--fast` lowers MINSTP for the surface scan;
+   use `--skip-surface` to only capture, or `--capture`-style subcommands (`--cbm capture`,
+   `--cbm mode`, `--cbm g64`) for individual steps.
 2. **Interactive** — `--cbm-console [dev]` opens a prompt with readline-style up/down history.
    Commands: `detect`, `status`, `dir`, `mode 1541|1571`, `surface`, `capture`, `preserve`,
    `g64`, `gaps`, `sector`, `seek [--fast]`, `fastseek`, `use <dev>`, `history`, `quit`. It works with piped input too.
@@ -480,6 +482,12 @@ That's about **35% faster** (~96 ms saved per seek). Motor spin-up and FDC job-q
 dominate short moves, so use the persistent `on` mode for bulk scanning rather than per-seek
 `--fast` (which pays extra tool round-trips). `--cbm benchseek <dev> <trackA> <trackB> [count]`
 reproduces the measurement.
+
+`--cbm surface ... --fast` and `--cbm preserve ... --fast` apply the same threshold to an entire
+scan and always restore the previous value; measured on 76 sectors, scans are ~0.3% faster because
+per-sector FDC reads dominate. All OpenCBM tool calls have a hard timeout (30 s for
+interactive DOS commands), so a wedged U1 read can no longer block the console indefinitely;
+`ReadSectorDirect()` also closes its channel in a `finally`.
 
 `preserve`/`capture` require nibtools (`nibread`/`nibconv`) on PATH in addition to OpenCBM.
 The NIB file is the preservation master; the optional G64 is a playable derivative for VICE
@@ -542,6 +550,10 @@ copy protection. The short version:
   `nibread -@xum1541 -D8 -e5 -h -v disk.nib` → `nibconv disk.nib disk.g64` →
   `x64sc -drive8truedrive -8 disk.g64` → `LOAD"*",8,1`.
 - The verified Arctic Fox capture boots to the "Enemy Review" screen.
+- The RUSSIA (`GM`) disk uses a simpler check: `M-W` sets `$006A=$85` to disable head bump,
+  then `U1:5,0,18,18` expects `23,read error,18,18` on a deliberately checksum-bad sector.
+  See `docs/drive-assembly/README.md` §13. The raw NIB master is authoritative; the `nibconv`
+  G64 derivative runs briefly and then reboots in VICE, so it is only a best-effort playable copy.
 - `--cbm gaps` provides offline sync/gap/sector anomaly analysis; `--cbm surface` scans the real
   drive through FDC jobs; `--cbm tailgap` reads five tail-gap bytes; `--cbm gcrscan` samples raw
   GCR on the current track.

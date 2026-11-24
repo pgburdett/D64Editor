@@ -237,9 +237,10 @@ public static class ScriptEngine
         sb.AppendLine("  cbmstatus [dev]              Drive status string");
         sb.AppendLine("  cbmdir [dev]                 Read the drive directory (read-only)");
         sb.AppendLine("  cbmmode <dev> 1541|1571      Switch drive mode (U0>M0 / U0>M1)");
-        sb.AppendLine("  cbmsurface <dev> [--from N] [--to N]  FDC surface scan (tracks 1-42)");
+        sb.AppendLine("  cbmsurface <dev> [--from N] [--to N] [--fast] [--data-checks]  FDC surface scan (1-42)");
         sb.AppendLine("  cbmpreserve <dev> <out.nib> [options]  Full preservation workflow (needs nibtools)");
-        sb.AppendLine("    options: --mode 1541|1571|keep --report FILE --g64 FILE --retries N --no-halftracks --skip-surface");
+        sb.AppendLine("    options: --mode 1541|1571|keep --report FILE --g64 FILE --retries N --no-halftracks");
+        sb.AppendLine("             --skip-surface --data-checks --adapter NAME --fast");
         sb.AppendLine("  cbmgaps <img.g64> [--from N] [--to N]  Offline GCR gap/sync analysis");
         sb.AppendLine("  cbmfastseek <dev> on|off|status       Toggle ROM fast-step threshold (MINSTP $0064)");
         sb.AppendLine("  echo <text...>               Print text");
@@ -917,18 +918,19 @@ public static class ScriptEngine
 
     private static void CbmSurface(Context c, string[] a, ScriptResult r)
     {
-        if (a.Length < 1) throw new ScriptException("Usage: cbmsurface <dev> [--from N] [--to N] [--data-checks]");
+        if (a.Length < 1) throw new ScriptException("Usage: cbmsurface <dev> [--from N] [--to N] [--fast] [--data-checks]");
         if (!OpenCbm.IsAvailable()) throw new ScriptException("OpenCBM not found on PATH.");
         var dev = int.Parse(a[0]);
-        var from = 1; var to = 42; var data = false;
+        var from = 1; var to = 42; var data = false; var fast = false;
         for (var i = 1; i < a.Length; i++)
         {
             if (a[i] == "--from" && i + 1 < a.Length) from = int.Parse(a[++i]);
             else if (a[i] == "--to" && i + 1 < a.Length) to = int.Parse(a[++i]);
             else if (a[i] == "--data-checks") data = true;
+            else if (a[i] == "--fast") fast = true;
             else throw new ScriptException($"Unknown option '{a[i]}'");
         }
-        Log(c, SurfaceScan.Scan(dev, from, to, dataChecks: data).Text, r);
+        Log(c, SurfaceScan.Scan(dev, from, to, dataChecks: data, fastSeek: fast).Text, r);
     }
 
     private static void CbmPreserveCmd(Context c, string[] a, ScriptResult r)
@@ -940,7 +942,7 @@ public static class ScriptEngine
         var outPath = Full(c, a[1]);
         var mode = "keep";
         string? reportPath = null, g64 = null, adapter = "xum1541";
-        var retries = 3; var half = true; var skip = false; var data = false;
+        var retries = 3; var half = true; var skip = false; var data = false; var fast = false;
         for (var i = 2; i < a.Length; i++)
         {
             switch (a[i])
@@ -953,11 +955,12 @@ public static class ScriptEngine
                 case "--no-halftracks": half = false; break;
                 case "--skip-surface": skip = true; break;
                 case "--data-checks": data = true; break;
+                case "--fast": fast = true; break;
                 default: throw new ScriptException($"Unknown option '{a[i]}'");
             }
         }
         Log(c, CbmPreserve.Run(new CbmPreserve.Options(
-            dev, outPath, mode, adapter, retries, half, reportPath, g64, skip, data)).Text, r);
+            dev, outPath, mode, adapter, retries, half, reportPath, g64, skip, data, FastSeek: fast)).Text, r);
     }
 
     private static void CbmFastSeek(Context c, string[] a, ScriptResult r)

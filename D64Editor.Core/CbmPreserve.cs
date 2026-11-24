@@ -24,7 +24,8 @@ public static class CbmPreserve
         string? G64Path = null,
         bool SkipSurface = false,
         bool DataChecks = false,
-        int SectorTimeoutMs = 6000)
+        int SectorTimeoutMs = 6000,
+        bool FastSeek = false)
     {
         public bool CaptureOnly => OutputNib is null;
     }
@@ -81,7 +82,7 @@ public static class CbmPreserve
             Step("Surface scan (FDC job queue, tracks 1-42)...");
             surface = SurfaceScan.Scan(o.Device, 1, 42,
                 (t, s) => { if (s == 0) progress?.Invoke($"surface: track {t}"); },
-                o.SectorTimeoutMs, o.DataChecks);
+                o.SectorTimeoutMs, o.DataChecks, o.FastSeek);
             Step(surface.Text.Split('\n').LastOrDefault()?.Trim() ?? "surface scan done");
         }
 
@@ -112,6 +113,7 @@ public static class CbmPreserve
 
         var sb = new StringBuilder();
         sb.AppendLine($"Preservation report — device {o.Device}, mode {mode}");
+        sb.AppendLine($"Fast seek during surface scan: {(o.FastSeek ? "on" : "off")}");
         sb.AppendLine($"Status: {(status.Output + status.Error).Trim()}");
         sb.AppendLine($"Detected: {(detect.Output + detect.Error).Trim()}");
         sb.AppendLine($"Directory: {(dirOk ? "readable" : "NOT readable")}");

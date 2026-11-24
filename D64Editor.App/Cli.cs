@@ -1223,7 +1223,8 @@ internal static class Cli
         int Retries = 3,
         bool HalfTracks = true,
         bool SkipSurface = false,
-        bool DataChecks = false);
+        bool DataChecks = false,
+        bool FastSeek = false);
 
     internal static PreserveCliOptions ParsePreserveOptions(string[] args, int start)
     {
@@ -1233,6 +1234,7 @@ internal static class Cli
         var half = true;
         var skip = false;
         var data = false;
+        var fast = false;
         for (var i = start; i < args.Length; i++)
         {
             switch (args[i])
@@ -1245,10 +1247,11 @@ internal static class Cli
                 case "--no-halftracks": half = false; break;
                 case "--skip-surface": skip = true; break;
                 case "--data-checks": data = true; break;
+                case "--fast": fast = true; break;
                 default: Console.Error.WriteLine($"Unknown option: {args[i]}"); break;
             }
         }
-        return new PreserveCliOptions(mode, report, g64, adapter, retries, half, skip, data);
+        return new PreserveCliOptions(mode, report, g64, adapter, retries, half, skip, data, fast);
     }
 
     /// <summary>
@@ -1274,12 +1277,13 @@ internal static class Cli
             Console.Error.WriteLine("  seek <dev> <track> [--fast]  FDC SEEK; --fast temporarily lowers MINSTP ($0064) for accelerated stepping");
             Console.Error.WriteLine("  fastseek <dev> on|off|status  Persistent toggle of the ROM fast-step threshold (reset restores default)");
             Console.Error.WriteLine("  benchseek <dev> <trackA> <trackB> [count] [--fast]  Time repeated seeks (diagnostic)");
-            Console.Error.WriteLine("  surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]  FDC surface scan");
+            Console.Error.WriteLine("  surface <dev> [--from N] [--to N] [--out FILE] [--data-checks] [--fast]  FDC surface scan");
             Console.Error.WriteLine("  mode <dev> 1541|1571         Switch drive mode (U0>M0 / U0>M1)");
             Console.Error.WriteLine("  capture <dev> <out.nib> [opts]  Raw NIB preservation capture (read-only)");
             Console.Error.WriteLine("  preserve <dev> <out.nib> [opts] FULL workflow: detect/mode/dir/surface/capture/report");
             Console.Error.WriteLine("    options: --mode 1541|1571|keep  --report FILE  --g64 FILE  --retries N");
-            Console.Error.WriteLine("             --no-halftracks  --skip-surface  --data-checks  --adapter NAME");
+            Console.Error.WriteLine("             --no-halftracks  --skip-surface  --data-checks  --adapter NAME  --fast");
+            Console.Error.WriteLine("             --fast also applies to surface scans (temporarily lowers MINSTP)");
             Console.Error.WriteLine("  g64 <in.nib> <out.g64>       Convert a NIB capture to a playable G64 derivative");
             Console.Error.WriteLine("  tailgap <dev> [outfile] Read 5 tail-gap bytes via FDC JUMP job (Kracker Jax TGREAD port)");
             Console.Error.WriteLine("  gaps <image.g64> [--from N] [--to N] [outfile] Offline GCR sync/gap/sector analysis");
@@ -1486,11 +1490,12 @@ internal static class Cli
                         else if (args[i] == "--out" && i + 1 < args.Length) outPath = args[++i];
                     }
                     var dataChecks = args.Any(x => x == "--data-checks");
+                    var fastSeek = args.Contains("--fast");
                     var lastTrack = -1;
                     var report = SurfaceScan.Scan(dev, from, to, (t, s) =>
                     {
                         if (t != lastTrack) { Console.WriteLine($"Scanning track {t}..."); lastTrack = t; }
-                    }, dataChecks: dataChecks);
+                    }, dataChecks: dataChecks, fastSeek: fastSeek);
                     Console.WriteLine(report.Text);
                     if (outPath is not null) { File.WriteAllText(outPath, report.Text); Console.WriteLine($"Report written to {outPath}"); }
                     break;
@@ -1667,7 +1672,7 @@ internal static class Cli
                     var o = ParsePreserveOptions(args, 4);
                     var report = CbmPreserve.Run(new CbmPreserve.Options(
                         dev, args[3], o.Mode, o.Adapter, o.Retries, o.HalfTracks,
-                        o.Report, o.G64, o.SkipSurface, o.DataChecks));
+                        o.Report, o.G64, o.SkipSurface, o.DataChecks, FastSeek: o.FastSeek));
                     Console.WriteLine();
                     Console.WriteLine(report.Text);
                     break;

@@ -211,7 +211,9 @@ and replaces the job code with status:
 | `$0B` | disk ID mismatch |
 
 `$80` or higher means job pending. This path uploads no executable code and never touches the
-stepper directly.
+stepper directly. A READ job matches a header at the **current head position**; it does not move
+the head. `SurfaceScan.Scan` therefore queues an explicit `$B0` SEEK for every track. Without it,
+a scan of tracks 19–22 read 0/76 clean sectors; after an explicit SEEK, 76/76 were clean.
 
 ---
 
@@ -465,6 +467,119 @@ authoritative full-track imager.
 
 ---
 
+## 13. RUSSIA (ID `GM`) protection chain — 1541 mode
+
+A second protected disk investigated on device 8 (a 1571 switched to 1541 mode with `U0>M0`)
+uses a much simpler trick than EA PRODOS: **one deliberately unreadable sector** that the loader
+checks through a direct-access DOS command. This matters because a normal D64 copy silently
+reconstructs the sector and the protection disappears.
+
+### Disk and files
+
+- Directory name `"RUSSIA"`, ID `GM`, 40 tracks, 20 PRGs, 202 blocks free.
+- `NIB → D64` decoding leaves **85 undecoded sectors**; a D64 is not a valid preservation master.
+- Files: `RUS`, `CA`, `S0`–`S3`, `MAPN`, `G0`–`G4`, `CD`, `SV`, `C0`, `C1`, `U1`, `U2`, `CF`, `ST`.
+- Surface scan (tracks 1–42): 802 sectors, 412 clean, 120 FDC errors, 270 suspicious.
+  `T18/S18` reports FDC `$05` (data checksum error); tracks 36–42 have no sync.
+- The physically flipped side is blank/unformatted: 0 clean, 802 FDC errors (787 `$03`, 15 `$09`).
+
+### Loader sequence
+
+`rus.prg` is a BASIC loader. Its essential commands are:
+
+```basic
+OPEN 15,8,15
+PRINT#15,"M-W"CHR$(106)CHR$(0)CHR$(1)CHR$(133)
+LOAD "ST",8,1
+SYS (12032)
+```
+
+`CHR$(106)CHR$(0)` is drive address **$006A = REVCNT** (read-retry counter, normally 5). Setting
+it to `$85` keeps the retry count at 5 but sets bit 7, which disables the drive's head-bump /
+recalibration on repeated read errors. The damaged sector must stay damaged; an automatic recovery
+would defeat the check.
+
+`st.prg` then issues **`U1:5,0,18,18`** — a raw read of track 18, sector 18 into direct channel 5.
+There is no `M-E` and no uploaded drive code. (`U1`/`U2` in `cd.prg` are *file names*, not commands.)
+The loader expects DOS status `23,read error,18,18`:
+
+```bash
+cbmctrl open 8 5 '#'
+cbmctrl command 8 'U1:5,0,18,18'
+cbmctrl status 8      # 23,read error,18,18
+cbmctrl close 8 5
+```
+
+Adjacent sectors read fine, and `--cbm sector 8 18 18` reports FDC code `$05`
+(data checksum error). `Core/OpenCbm.ReadSectorDirect()` performs this sequence with the channel
+close in a `finally`, so a wedged read cannot leave the IEC channel open.
+
+Manual `M-W` details that bit us here:
+
+- The canonical DOS form is **`M-W:100 0 1 <value>`** (colon required when the command is one
+  string); with `cbmctrl -p command -e`, address and bytes must be **separate raw-byte arguments**.
+  A single quoted `"M-W100,0,1,8"` sends ASCII digits and changes nothing.
+- Even with correct syntax, bare `M-W` is **intermittently dropped** by the real drive. Use
+  `cbmctrl upload 8 0x0064 <file>` (as `FastSeek.Set` does) when the write must be reliable.
+
+### Captures and playback
+
+```bash
+D64Editor --cbm preserve 8 /home/pat/disk8-protected.nib --mode 1541 \
+  --report /home/pat/disk8-protected-report.txt --g64 /home/pat/disk8-protected.g64
+```
+
+The integrated report found 34 full-track CBM-OK captures, 41 half-track captures,
+10 unformatted reads, 118 non-standard sector markers, 37 weak-GCR events, 7 long reads and
+35 NDOS tracks. `nibread` prints all tracks as `N.0`, so only entries ending in `.5` are real
+half-tracks. Repeating a capture gives different bytes on weak/protected tracks — expected
+nondeterminism, not corruption.
+
+Playing the **real disk** through `x64sc` with `-devicebackend8 2 -busdevice8` and typing lowercase
+`load"*",8,1` (VICE's PETSCII keymap) reaches the Rusíia title screen after about two minutes.
+Stop VICE and run `cbmctrl reset` before any `cbmctrl`/`nibread` access to the same bus.
+
+Playback check of the **G64 derivative** (2026-11-24): the program runs briefly and then the C64
+returns to `READY` instead of staying on the title screen. `nibconv` normalization is the likely
+cause — `G64 → D64` leaves 21 undecoded sectors where `NIB → D64` leaves 85, so some protected
+data was changed. Treat the NIB as the authoritative master; for this disk the G64 is only a
+best-effort playable derivative, not a faithful preservation copy. Real-drive passthrough remains
+the verified way to play it.
+
+---
+
+## 14. ROM fast stepping (MINSTP) and bulk scans
+
+The 1541/1571 ROM has a factory-calibrated accel/run/decel stepper ramp, but its threshold
+`MINSTP` at drive RAM **`$0064`** ships as `$C8` (200 half-steps) — larger than any seek on a
+35-track disk — so it never activates. Lowering it to `$0C` (12 half-steps, ~6 tracks) makes
+ordinary seeks use the calibrated ramp (AS=4, AF=4, VIA2 Timer1 high byte `$20` → `$10`).
+
+| MINSTP | avg / seek, T18↔T30 | 8 seeks |
+|---|---|---|
+| `$C8` (default) | 366 ms | 2931 ms |
+| `$0C` (fast) | **270 ms** | 2157 ms |
+
+About **35% faster** (~96 ms saved per seek) on a real 1571. Only the threshold byte changes —
+no uploaded stepper code and no direct VIA phase writes — so the ROM still handles acceleration,
+deceleration and settling. Drive reset restores `$C8`.
+
+`--cbm fastseek 8 on|off|status`, `--cbm seek 8 30 --fast` and `--cbm benchseek 8 18 30 8
+[--fast]` expose this from the CLI; the console and `cbmfastseek` script command mirror them.
+`SurfaceScan.Scan(fastSeek: true)` and `--cbm surface ... --fast` / `--cbm preserve ... --fast`
+wrap the whole scan and restore the prior value in a `finally`.
+
+Measured effect on a **surface scan** (76 clean sectors, tracks 19–22, real 1571): 62.67 s normal
+vs 62.48 s fast — only ~0.3% better. Per-sector FDC READ jobs dominate; fast stepping is useful
+only for seek-heavy loops (`benchseek`), not for full-surface scans. The option is kept for
+completeness and restores MINSTP reliably in both cases.
+
+**Implementation note:** `FastSeek.Set` writes with `cbmctrl upload` and verifies by read-back.
+Bare `M-W` was dropped often enough to make `fastseek on` fail verification, even at unrelated
+RAM addresses; upload has been reliable.
+
+---
+
 ## Safety
 
 - **Never run `--writeraw` on an original disk.** Blank/expendable media only.
@@ -474,3 +589,6 @@ authoritative full-track imager.
 - Do not resurrect uploaded homing/stepper experiments.
 - Custom motor control requires `$F97E` plus spin-up delay.
 - Faithful protected images require SRQ raw GCR capture; D64 → G64 loses protection.
+- Every OpenCBM tool invocation has a hard timeout; interactive DOS commands default to 30 s.
+  A wedged U1 read is killed rather than blocking the bus forever, and direct channels are closed
+  in `finally`. Do not remove the timeout from `Core/OpenCbm.Run`.
