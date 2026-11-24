@@ -542,11 +542,14 @@ Playing the **real disk** through `x64sc` with `-devicebackend8 2 -busdevice8` a
 Stop VICE and run `cbmctrl reset` before any `cbmctrl`/`nibread` access to the same bus.
 
 Playback check of the **G64 derivative** (2026-11-24): the program runs briefly and then the C64
-returns to `READY` instead of staying on the title screen. `nibconv` normalization is the likely
-cause — `G64 → D64` leaves 21 undecoded sectors where `NIB → D64` leaves 85, so some protected
-data was changed. Treat the NIB as the authoritative master; for this disk the G64 is only a
-best-effort playable derivative, not a faithful preservation copy. Real-drive passthrough remains
-the verified way to play it.
+returns to `READY` instead of staying on the title screen. `G64 → D64` leaves 21 undecoded sectors
+where `NIB → D64` leaves 85, so `nibconv` changes some raw tracks. However, a GCR decode of T18
+shows the deliberately bad S18 data checksum **is** preserved in every tested G64 variant, so the
+failure is not simply that nibconv "fixed" that sector. The NIB's T18 has 22 header blocks
+(duplicates of S02–S04); the G64 has 19 — one per sector. Rotation/timing-sensitive checks and
+REVCNT/head-bump behaviour are other likely differences. Treat the NIB as the authoritative
+master; for this disk the G64 is only a best-effort playable derivative, not a faithful
+preservation copy. Real-drive passthrough remains the verified way to play it.
 
 ---
 
