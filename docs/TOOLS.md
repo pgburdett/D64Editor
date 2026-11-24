@@ -13,7 +13,8 @@ implemented in `D64Editor.App/Cli.cs`; helper scripts live in `tools/diagnostics
 | `--convert <in> <out>` / `-c` | Convert G64/NIB/**NBZ** → D64, or copy native images. `.nbz` is LZ77-decompressed to MNIB NIB first (`Core/Nbz.cs`). |
 | `--to-gcr <d64> <out.g64\|out.nib>` | Encode D64 into G64/NIB with native GCR tracks. |
 | `--list` / `-l`, `--info` / `-i`, `--validate` / `-v` | Directory, image info, D64 validation. |
-| `--export` / `-e`, `--extract-archive`, `--print-dir`, `--geos-info` | File/archive/dump utilities. |
+| `--export` / `-e`, `--extract-archive`, `--print-dir`, `--geos-info` | File/archive/dump utilities. `--extract-archive` accepts zip/tar/tgz/LHA/LZH/ARJ and C64 LHA SFX PRGs. |
+| `--lha-list`, `--lha-extract`, `--lha-create`, `--lha-sfx`, `--arj-list`, `--arj-extract`, `--arj-create` | Legacy LHA/LZH/SFX and ARJ archive operations. |
 | `--run-script` | Headless ScriptEngine automation. |
 
 ### CP/M (in-process by default)

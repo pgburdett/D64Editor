@@ -3,6 +3,13 @@
 All notable changes to D64 Editor (C#/.NET port) are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Legacy archive support
+
+### Added
+- LHA/LZH and ARJ list/create/extract support in `D64Editor.Core/LegacyArchives.cs`, exposed through CLI (`--lha-*`, `--arj-*`) and scripts (`lhaextract`, `lhacreate`, `lhasfx`, `arjextract`, `arjcreate`).
+- `--extract-archive` and the `archive` script command now accept `.lha`, `.lzh`, `.arj`, and C64 SFX PRGs; SFX PRGs are detected by embedded LHA header checksum and carved automatically.
+- LHA creation writes standard LH0/stored archives directly (no external writer required); LHA listing/extraction uses external `lha` or `7z`, ARJ uses external `arj`, and SFX creation wraps an LHA with a user-supplied C64 PRG stub.
+
 ## [Unreleased] — 1 KB streaming GCR capture
 
 ### Changed

@@ -13,6 +13,8 @@ the existing Core/App split. Product behaviour stays in `D64Editor.Core`; CLI di
 | `Nbz.cs` | LZ77 decompressor for `.nbz` (marker byte, literal/marker-escape, varint length+offset, overlapping copy). Output is a standard NIB image. |
 | `GapScan.cs` | Raw GCR analysis: counts `$FF` sync runs, measures non-sync gaps, decodes sectors, flags anomalies against expected sector count. |
 | `RawG64.cs` | Wraps captured raw track byte arrays into a G64 container using a blank D64 base. |
+| `ArchiveExtract.cs` | zip/tar/tar.gz/tgz/LHA/LZH/ARJ extraction; detects C64 LHA SFX PRGs by content and routes them to `LegacyArchives`. |
+| `LegacyArchives.cs` | LHA/LZH/ARJ list/create/extract; writes LH0/stored LHA archives directly, carves C64 SFX PRGs by LHA header checksum, wraps LHA with a user-supplied SFX stub, and delegates ARJ to external `arj`. |
 
 ## Core: hardware / drive-side engines
 | File | Role |

@@ -165,6 +165,11 @@ public static class ScriptEngine
             case "cpmformat": CpmFormat(c, a, r); break;
 
             case "archive": ArchiveCmd(c, a, r); break;
+            case "lhaextract": LegacyExtractCmd(c, a, r, "LHA"); break;
+            case "lhacreate": LegacyCreateCmd(c, a, r, "LHA"); break;
+            case "lhasfx": LhaSfxCmd(c, a, r); break;
+            case "arjextract": LegacyExtractCmd(c, a, r, "ARJ"); break;
+            case "arjcreate": LegacyCreateCmd(c, a, r, "ARJ"); break;
             case "geosinfo": GeosInfo(c, a, r); break;
             case "togcr": ToGcr(c, a, r); break;
             case "cpmnew": CpmNew(c, a, r); break;
@@ -208,7 +213,12 @@ public static class ScriptEngine
         sb.AppendLine("  cpmextract <img> <dir> [--strict]  Extract CP/M files (--strict: real directory slots only)");
         sb.AppendLine("  cpmcopy <tmpl> <out> [--all|--files A,B]  Create CP/M image from template");
         sb.AppendLine("  cpmformat <tmpl> <out>       Create empty CP/M image from template");
-        sb.AppendLine("  archive <zip|tar|tgz> <dir>  Extract archive contents");
+        sb.AppendLine("  archive <zip|tar|tgz|lha|lzh|arj|sfx.prg> <dir>  Extract archive contents");
+        sb.AppendLine("  lhaextract <archive|sfx.prg> <dir>  Extract LHA/LZH or C64 SFX PRG");
+        sb.AppendLine("  lhacreate <srcdir> <out.lha>  Create LH0/stored LHA archive");
+        sb.AppendLine("  lhasfx <archive.lha> <stub.prg> <out.prg>  Wrap LHA with C64 SFX stub");
+        sb.AppendLine("  arjextract <archive.arj> <dir>  Extract ARJ archive");
+        sb.AppendLine("  arjcreate <srcdir> <out.arj>  Create ARJ archive");
         sb.AppendLine("  geosinfo <name>              Show GEOS/REL metadata for a file");
         sb.AppendLine("  togcr <d64> <out.g64|nib>    Encode a D64 into a G64/NIB container (GCR write-back)");
         sb.AppendLine("  cpmnew <d64|d71|d81> <out> [NAME.EXT=host ...]  From-scratch CP/M image (best-effort)");
@@ -682,6 +692,43 @@ public static class ScriptEngine
         var imagesOnly = a.Any(x => x == "--images-only");
         var n = ArchiveExtract.Extract(arch, dir, imagesOnly);
         Log(c, $"Extracted {n} file(s) from {arch} to {dir}{(imagesOnly ? " (images only)" : "")}.", r);
+    }
+
+    private static void LegacyExtractCmd(Context c, string[] a, ScriptResult r, string kind)
+    {
+        if (a.Length < 2)
+            throw new ScriptException(kind == "LHA"
+                ? "Usage: lhaextract <archive|sfx.prg> <outdir>"
+                : "Usage: arjextract <archive.arj> <outdir>");
+        var archive = Full(c, a[0]);
+        var dir = Full(c, a[1]);
+        if (!File.Exists(archive)) throw new ScriptException($"Archive not found: {archive}");
+        var n = kind == "LHA" ? LegacyArchives.ExtractLha(archive, dir) : LegacyArchives.ExtractArj(archive, dir);
+        Log(c, $"Extracted {n} file(s) from {archive} to {dir}.", r);
+    }
+
+    private static void LegacyCreateCmd(Context c, string[] a, ScriptResult r, string kind)
+    {
+        if (a.Length < 2)
+            throw new ScriptException(kind == "LHA"
+                ? "Usage: lhacreate <srcdir> <out.lha>"
+                : "Usage: arjcreate <srcdir> <out.arj>");
+        var srcdir = Full(c, a[0]);
+        var output = Full(c, a[1]);
+        if (kind == "LHA") LegacyArchives.CreateLha(srcdir, output);
+        else LegacyArchives.CreateArj(srcdir, output);
+        Log(c, $"Created {output} from {srcdir}.", r);
+    }
+
+    private static void LhaSfxCmd(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 3)
+            throw new ScriptException("Usage: lhasfx <archive.lha> <stub.prg> <out.prg>");
+        var archive = Full(c, a[0]);
+        var stub = Full(c, a[1]);
+        var output = Full(c, a[2]);
+        LegacyArchives.MakeLhaSfx(archive, stub, output);
+        Log(c, $"Created C64 LHA SFX PRG {output}.", r);
     }
 
     private static void CpmImportDir(Context c, string[] a, ScriptResult r)

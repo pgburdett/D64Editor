@@ -14,7 +14,8 @@ public static class ArchiveExtract
     {
         if (string.IsNullOrEmpty(path)) return false;
         var lower = path.ToLowerInvariant();
-        return lower.EndsWith(".zip") || lower.EndsWith(".tar") || lower.EndsWith(".tar.gz") || lower.EndsWith(".tgz");
+        return lower.EndsWith(".zip") || lower.EndsWith(".tar") || lower.EndsWith(".tar.gz") || lower.EndsWith(".tgz")
+            || lower.EndsWith(".lha") || lower.EndsWith(".lzh") || lower.EndsWith(".arj");
     }
 
     private static bool LooksLikeDiskImage(string name)
@@ -30,6 +31,19 @@ public static class ArchiveExtract
         Directory.CreateDirectory(outDir);
         var lower = archivePath.ToLowerInvariant();
         var count = 0;
+
+        if (LegacyArchives.IsLhaPath(archivePath) || lower.EndsWith(".lzh"))
+        {
+            return LegacyArchives.ExtractLha(archivePath, outDir);
+        }
+        if (LegacyArchives.IsArjPath(archivePath))
+        {
+            return LegacyArchives.ExtractArj(archivePath, outDir);
+        }
+        if (lower.EndsWith(".prg") && LegacyArchives.IsLhaSfx(File.ReadAllBytes(archivePath)))
+        {
+            return LegacyArchives.ExtractLha(archivePath, outDir);
+        }
 
         if (lower.EndsWith(".zip"))
         {

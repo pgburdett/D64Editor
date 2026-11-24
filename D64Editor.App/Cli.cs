@@ -46,6 +46,36 @@ internal static class Cli
             case "--extract-archive":
                 return ExtractArchive(args);
 
+            case "--lha-list":
+            case "--lhz-list":
+                return LegacyList(args, "LHA");
+
+            case "--lha-extract":
+            case "--lha-decompress":
+            case "--lhz-extract":
+            case "--lhz-decompress":
+                return LegacyExtract(args, "LHA");
+
+            case "--lha-create":
+            case "--lha-compress":
+            case "--lhz-create":
+            case "--lhz-compress":
+                return LegacyCreate(args, "LHA");
+
+            case "--lha-sfx":
+                return LhaSfx(args);
+
+            case "--arj-list":
+                return LegacyList(args, "ARJ");
+
+            case "--arj-extract":
+            case "--arj-decompress":
+                return LegacyExtract(args, "ARJ");
+
+            case "--arj-create":
+            case "--arj-compress":
+                return LegacyCreate(args, "ARJ");
+
             case "--print-dir":
                 return PrintDir(args);
 
@@ -589,7 +619,7 @@ internal static class Cli
     {
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: D64Editor --extract-archive <archive.zip|.tar|.tar.gz|.tgz> <outdir> [--images-only]");
+            Console.Error.WriteLine("Usage: D64Editor --extract-archive <archive.zip|.tar|.tar.gz|.tgz|.lha|.lzh|.arj|sfx.prg> <outdir> [--images-only]");
             return true;
         }
         var archive = args[1];
@@ -602,6 +632,80 @@ internal static class Cli
             Console.WriteLine($"Extracted {count} file(s) from {archive} to {outDir}.");
         }
         catch (Exception ex) { Console.Error.WriteLine($"Archive extraction failed: {ex.Message}"); }
+        return true;
+    }
+
+    private static bool LegacyList(string[] args, string kind)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine(kind == "LHA"
+                ? "Usage: D64Editor --lha-list <archive.lha|.lzh|sfx.prg>"
+                : "Usage: D64Editor --arj-list <archive.arj>");
+            return true;
+        }
+        try
+        {
+            var output = kind == "LHA" ? LegacyArchives.ListLha(args[1]) : LegacyArchives.ListArj(args[1]);
+            Console.Write(output);
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"{kind} listing failed: {ex.Message}"); }
+        return true;
+    }
+
+    private static bool LegacyExtract(string[] args, string kind)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine(kind == "LHA"
+                ? "Usage: D64Editor --lha-extract <archive.lha|.lzh|sfx.prg> <outdir>"
+                : "Usage: D64Editor --arj-extract <archive.arj> <outdir>");
+            return true;
+        }
+        try
+        {
+            var count = kind == "LHA"
+                ? LegacyArchives.ExtractLha(args[1], args[2])
+                : LegacyArchives.ExtractArj(args[1], args[2]);
+            Console.WriteLine($"Extracted {count} file(s) from {args[1]} to {args[2]}.");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"{kind} extraction failed: {ex.Message}"); }
+        return true;
+    }
+
+    private static bool LegacyCreate(string[] args, string kind)
+    {
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine(kind == "LHA"
+                ? "Usage: D64Editor --lha-create <srcdir> <out.lha> [file ...]"
+                : "Usage: D64Editor --arj-create <srcdir> <out.arj> [file ...]");
+            return true;
+        }
+        try
+        {
+            var files = args.Length > 3 ? args.Skip(3).ToArray() : null;
+            if (kind == "LHA") LegacyArchives.CreateLha(args[1], args[2], files);
+            else LegacyArchives.CreateArj(args[1], args[2], files);
+            Console.WriteLine($"Created {args[2]} from {args[1]}.");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"{kind} creation failed: {ex.Message}"); }
+        return true;
+    }
+
+    private static bool LhaSfx(string[] args)
+    {
+        if (args.Length < 4)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --lha-sfx <archive.lha> <stub.prg> <out.prg>");
+            return true;
+        }
+        try
+        {
+            LegacyArchives.MakeLhaSfx(args[1], args[2], args[3]);
+            Console.WriteLine($"Created C64 LHA SFX PRG {args[3]}.");
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"LHA SFX creation failed: {ex.Message}"); }
         return true;
     }
 
@@ -1405,7 +1509,14 @@ internal static class Cli
         Console.WriteLine("  --cpm-extract <img> <dir> [--strict]  Extract CP/M files (--strict: real directory slots only)");
         Console.WriteLine("  --cpm-copy <tmpl> <out> [--all|--files A,B]  Create CP/M image from template");
         Console.WriteLine("  --cpm-format <tmpl> <out>  Create empty CP/M image from template");
-        Console.WriteLine("  --extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]  Extract archive contents");
+        Console.WriteLine("  --extract-archive <zip|tar|tgz|lha|lzh|arj|sfx.prg> <dir> [--images-only]  Extract archive contents");
+        Console.WriteLine("  --lha-list <archive.lha|.lzh|sfx.prg>  List LHA/LZH archive or C64 SFX PRG");
+        Console.WriteLine("  --lha-extract <archive|sfx.prg> <dir>  Extract LHA/LZH (alias --lha-decompress)");
+        Console.WriteLine("  --lha-create <srcdir> <out.lha> [files]  Create LH0/stored LHA archive (alias --lha-compress)");
+        Console.WriteLine("  --lha-sfx <archive.lha> <stub.prg> <out.prg>  Wrap LHA with a user-supplied C64 SFX stub");
+        Console.WriteLine("  --arj-list <archive.arj>  List ARJ archive");
+        Console.WriteLine("  --arj-extract <archive.arj> <dir>  Extract ARJ (alias --arj-decompress)");
+        Console.WriteLine("  --arj-create <srcdir> <out.arj> [files]  Create ARJ (alias --arj-compress)");
         Console.WriteLine("  --print-dir <image>      Print directory listing (text, D64)");
         Console.WriteLine("  --geos-info <d64> <file>  Show GEOS/REL metadata and best-effort VLIR info (D64)");
         Console.WriteLine("  --run-script <file> [workdir]  Run a headless automation script (Core ScriptEngine)");

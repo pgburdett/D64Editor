@@ -92,7 +92,8 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--protect <base.d64> <out.g64>` — inject reproducible EA PRODOS protected tracks into a G64.
 - `--writeraw <dev> <track> <hexpattern> <count>` — DESTRUCTIVE serial raw GCR track writer (blank test disk only; track >35 uses safe 82-byte stepper).
 - `--convert` also accepts `.nbz`: LZ77-decompress to MNIB NIB, then NIB→D64 decode.
-- `--extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]` — Extract archive contents.
+- `--extract-archive <zip|tar|tar.gz|tgz|lha|lzh|arj|sfx.prg> <dir> [--images-only]` — Extract archive contents; C64 LHA SFX PRGs are detected by content.
+- `--lha-list/--lha-extract/--lha-create/--lha-sfx` and `--arj-list/--arj-extract/--arj-create` — Legacy LHA/LZH/SFX and ARJ archive operations. LHA creation is built-in LH0/stored; listing/extraction uses external `lha` or `7z`; ARJ uses external `arj`; SFX creation needs a user-supplied PRG stub.
 - `--print-dir <image>` — Print directory listing (text, D64).
 - `--geos-info <d64> <file>` — Show GEOS/REL metadata and best-effort VLIR info for a file (D64).
 - `<image>` (no verb) — Open the image in the GUI.
@@ -152,8 +153,9 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 ## Scripting (headless automation)
 - `D64Editor.Core/ScriptEngine.cs` — line-oriented script runner over the Core engine; no UI dependencies. `Run(text, wd)` / `RunFile(path, wd)` return `ScriptResult` (log, error, exit code).
 - CLI entry point: `D64Editor.App/Cli.cs` `--run-script`. `Environment.ExitCode` propagates the script exit code.
-- `D64Editor.Core/ArchiveExtract.cs` — zip/tar/tar.gz/tgz extraction used by the `archive` script command (and the CLI `--extract-archive`).
-- Script commands cover: image lifecycle (open/close/save/new/convert), directory/file ops (list/info/validate/import/export/exportdir/rename/renamedisk/scratch/unscratch/wipe/move), REL (relnew/relresize/relwrite), CP/M (cpmextract/cpmcopy/cpmformat), archive, geosinfo, echo/help/exit.
+- `D64Editor.Core/ArchiveExtract.cs` — zip/tar/tar.gz/tgz/LHA/LZH/ARJ extraction used by the `archive` script command (and the CLI `--extract-archive`).
+- `D64Editor.Core/LegacyArchives.cs` — LHA/LZH/SFX and ARJ list/create/extract; LHA creation writes LH0/stored archives, C64 SFX PRGs are carved by LHA header checksum, ARJ delegates to external `arj`.
+- Script commands cover: image lifecycle (open/close/save/new/convert), directory/file ops (list/info/validate/import/export/exportdir/rename/renamedisk/scratch/unscratch/wipe/move), REL (relnew/relresize/relwrite), CP/M (cpmextract/cpmcopy/cpmformat), archive (including LHA/LZH/ARJ/C64 SFX), lhaextract/lhacreate/lhasfx/arjextract/arjcreate, geosinfo, echo/help/exit.
 - Sample scripts live in `scripts/`. When adding Core automation, expose it through ScriptEngine and document it in README's Scripting section.
 - `D64Image.RenameDisk(name,id)` was added for headless disk-header renaming.
 

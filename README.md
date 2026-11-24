@@ -305,7 +305,7 @@ Drop a `.d64` onto the main window to open it, or drop any other file (including
 - **Find in Disks:** filename and file-contents search across supported formats (`ImageCatalog`).
 - **Compare Disks:** header/directory/BAM diff and differing-block list.
 - **Batch export and Batch Validate:** report-only batch operations.
-- **Archive extraction:** zip/tar/tar.gz/tgz via CLI `--extract-archive` (optional `--images-only`).
+- **Archive extraction:** zip/tar/tar.gz/tgz via CLI `--extract-archive` (optional `--images-only`). LHA/LZH and ARJ are also supported; C64 self-extracting LHA PRGs are detected by content and carved automatically. LHA creation writes LH0/stored archives; LHA listing/extraction uses `lha` or `7z`, ARJ uses `arj`, and SFX creation wraps an LHA with a user-supplied PRG stub.
 
 ---
 
@@ -345,7 +345,14 @@ D64Editor --convert <in> <out>
 D64Editor --cpm-extract <image> <dir>
 D64Editor --cpm-copy <tmpl> <out> [--all|--files A,B]
 D64Editor --cpm-format <tmpl> <out>
-D64Editor --extract-archive <zip|tar|tar.gz|tgz> <dir> [--images-only]
+D64Editor --extract-archive <zip|tar|tar.gz|tgz|lha|lzh|arj|sfx.prg> <dir> [--images-only]
+D64Editor --lha-list <archive.lha|.lzh|sfx.prg>
+D64Editor --lha-extract <archive|sfx.prg> <dir>
+D64Editor --lha-create <srcdir> <out.lha> [file ...]
+D64Editor --lha-sfx <archive.lha> <stub.prg> <out.prg>
+D64Editor --arj-list <archive.arj>
+D64Editor --arj-extract <archive.arj> <dir>
+D64Editor --arj-create <srcdir> <out.arj> [file ...]
 D64Editor --print-dir <image>
 D64Editor --geos-info <d64> <file>
 D64Editor --run-script <script.txt> [workdir]
@@ -374,7 +381,11 @@ D64Editor                  (no args: starts GUI)
 | `--cpm-extract <img> <dir> [--strict]` | Extract CP/M files in-process (`--strict` limits scanning to real directory slots) |
 | `--cpm-copy <tmpl> <out> [--all\|--files A,B]` | Create CP/M image from template (keep all or subset) |
 | `--cpm-format <tmpl> <out>` | Create empty CP/M image from template (clears directory; template-based) |
-| `--extract-archive <zip\|tar\|tar.gz\|tgz> <dir> [--images-only]` | Extract archive contents |
+| `--extract-archive <zip\|tar\|tgz\|lha\|lzh\|arj\|sfx.prg> <dir> [--images-only]` | Extract archive contents (LHA/LZH/ARJ/C64 SFX supported) |
+| `--lha-list <archive\|sfx.prg>` / `--arj-list <archive.arj>` | List legacy archive contents |
+| `--lha-extract <archive\|sfx.prg> <dir>` / `--arj-extract <archive.arj> <dir>` | Extract legacy archives (`--lha-decompress`/`--arj-decompress` aliases) |
+| `--lha-create <srcdir> <out.lha>` / `--arj-create <srcdir> <out.arj>` | Create LH0-stored LHA or compressed ARJ archives (`--*-compress` aliases) |
+| `--lha-sfx <archive.lha> <stub.prg> <out.prg>` | Wrap an LHA archive with a user-supplied C64 SFX stub |
 | `--print-dir <image>` | Print directory listing (text, D64) |
 | `--geos-info <d64> <file>` | Show GEOS/REL metadata and best-effort VLIR info for a file (D64) |
 | `--run-script <script.txt> [workdir]` | Run a headless automation script over the Core engine (see Scripting section) |
@@ -860,7 +871,12 @@ log every command and its result, stop on the first error, and propagate an exit
 | `cpmextract <img> <dir> [--strict]` | Extract CP/M files (`--strict` limits scanning to real directory slots) |
 | `cpmcopy <tmpl> <out> [--all\|--files A,B]` | Create CP/M image from a template |
 | `cpmformat <tmpl> <out>` | Create an empty CP/M image from a template |
-| `archive <zip\|tar\|tgz> <dir> [--images-only]` | Extract archive contents |
+| `archive <zip\|tar\|tgz\|lha\|lzh\|arj\|sfx.prg> <dir> [--images-only]` | Extract archive contents |
+| `lhaextract <archive\|sfx.prg> <dir>` | Extract LHA/LZH or C64 SFX PRG |
+| `lhacreate <srcdir> <out.lha>` | Create LH0/stored LHA archive |
+| `lhasfx <archive.lha> <stub.prg> <out.prg>` | Wrap LHA with a user-supplied C64 SFX stub |
+| `arjextract <archive.arj> <dir>` | Extract ARJ archive |
+| `arjcreate <srcdir> <out.arj>` | Create ARJ archive |
 | `geosinfo <name>` | Show GEOS/REL metadata for a file |
 | `togcr <d64> <out.g64\|nib>` | Encode a D64 into a G64/NIB container (GCR write-back) |
 | `cpmnew <d64\|d71\|d81> <out> [NAME.EXT=host ...]` | From-scratch CP/M image (best-effort, not bootable) |
@@ -888,7 +904,7 @@ exit 0
 ```
 
 A CP/M-oriented sample is in `scripts/example-cpm.d64script`. Supporting Core helpers:
-`ArchiveExtract` (zip/tar/tgz extraction), `D64Image.RenameDisk` and
+`ArchiveExtract` (zip/tar/tgz/LHA/LZH/ARJ extraction), `LegacyArchives` (LHA/LZH/SFX/ARJ helpers), `D64Image.RenameDisk` and
 `D64Image.GetRawDataCopy()/RestoreRawData()` (snapshot support used elsewhere).
 
 ## Verification & Testing
