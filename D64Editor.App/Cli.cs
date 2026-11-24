@@ -1271,7 +1271,9 @@ internal static class Cli
             Console.Error.WriteLine("  verify <image> <dev> [--d71] Write image, read back, byte-compare");
             Console.Error.WriteLine("  gcrscan <dev> [outfile] Sample raw GCR on the CURRENT track (never moves the head)");
             Console.Error.WriteLine("  sector <dev> <track> <sector> [outfile] Read a sector via the drive FDC job queue (safe seek/read)");
-            Console.Error.WriteLine("  seek <dev> <track>        Move the head via the drive FDC SEEK job (drive firmware steps)");
+            Console.Error.WriteLine("  seek <dev> <track> [--fast]  FDC SEEK; --fast temporarily lowers MINSTP ($0064) for accelerated stepping");
+            Console.Error.WriteLine("  fastseek <dev> on|off|status  Persistent toggle of the ROM fast-step threshold (reset restores default)");
+            Console.Error.WriteLine("  benchseek <dev> <trackA> <trackB> [count] [--fast]  Time repeated seeks (diagnostic)");
             Console.Error.WriteLine("  surface <dev> [--from N] [--to N] [--out FILE] [--data-checks]  FDC surface scan");
             Console.Error.WriteLine("  mode <dev> 1541|1571         Switch drive mode (U0>M0 / U0>M1)");
             Console.Error.WriteLine("  capture <dev> <out.nib> [opts]  Raw NIB preservation capture (read-only)");
@@ -1533,11 +1535,85 @@ internal static class Cli
                 {
                     if (args.Length < 4 || !int.TryParse(args[3], out var seekTrack))
                     {
-                        Console.Error.WriteLine("Usage: --cbm seek <dev> <track 1..40>");
+                        Console.Error.WriteLine("Usage: --cbm seek <dev> <track 1..40> [--fast]");
                         return true;
                     }
-                    var r = SectorRead.Seek(ArgDev(2), seekTrack);
-                    Console.WriteLine((r.Ok ? "SEEK OK: " : "SEEK FAILED: ") + r.Detail);
+                    var dev = ArgDev(2);
+                    var fast = args.Contains("--fast");
+                    var r = fast
+                        ? FastSeek.WithFastSeek(dev, () => SectorRead.Seek(dev, seekTrack))
+                        : SectorRead.Seek(dev, seekTrack);
+                    Console.WriteLine((r.Ok ? "SEEK OK: " : "SEEK FAILED: ") + r.Detail +
+                                      (fast ? " (fast stepping, MINSTP restored)" : ""));
+                    break;
+                }
+                case "benchseek":
+                {
+                    if (args.Length < 5 || !int.TryParse(args[2], out var dev) ||
+                        !int.TryParse(args[3], out var ta) || !int.TryParse(args[4], out var tb))
+                    {
+                        Console.Error.WriteLine("Usage: --cbm benchseek <dev> <trackA> <trackB> [count] [--fast]");
+                        return true;
+                    }
+                    var count = 6;
+                    for (var i = 5; i < args.Length; i++)
+                        if (int.TryParse(args[i], out var n) && n is > 0 and < 100) count = n;
+                    var fast = args.Contains("--fast");
+                    byte? previous = null;
+                    if (fast)
+                    {
+                        var en = FastSeek.Enable(dev);
+                        if (!en.Ok) { Console.Error.WriteLine("Cannot enable fast seek: " + en.Detail); return true; }
+                        previous = en.Previous;
+                    }
+                    var times = new List<long>();
+                    try
+                    {
+                        SectorRead.Seek(dev, ta); // settle before timing
+                        for (var i = 0; i < count; i++)
+                        {
+                            var target = i % 2 == 0 ? tb : ta;
+                            var sw = System.Diagnostics.Stopwatch.StartNew();
+                            var r = SectorRead.Seek(dev, target);
+                            sw.Stop();
+                            if (!r.Ok) { Console.Error.WriteLine("Seek failed: " + r.Detail); break; }
+                            times.Add(sw.ElapsedMilliseconds);
+                        }
+                    }
+                    finally { if (fast) FastSeek.Restore(dev, previous); }
+                    if (times.Count > 0)
+                        Console.WriteLine($"Seek benchmark T{ta}<->T{tb}, {times.Count} seeks{(fast ? " (fast stepping)" : "")}: " +
+                                          $"avg {times.Average():F0} ms, min {times.Min()}, max {times.Max()}, total {times.Sum()} ms");
+                    break;
+                }
+                case "fastseek":
+                {
+                    if (args.Length < 4)
+                    {
+                        Console.Error.WriteLine("Usage: --cbm fastseek <dev> on|off|status");
+                        return true;
+                    }
+                    var dev = int.Parse(args[2]);
+                    var action = args[3].ToLowerInvariant();
+                    if (action == "status")
+                    {
+                        var cur = FastSeek.Read(dev);
+                        Console.WriteLine(cur.Ok ? $"Device {dev}: {cur.Detail}" : "Read failed: " + cur.Detail);
+                    }
+                    else
+                    {
+                        var value = action switch
+                        {
+                            "on" => FastSeek.FastMinStp,
+                            "off" => FastSeek.DefaultMinStp,
+                            _ => (byte?)null
+                        };
+                        if (value is null) { Console.Error.WriteLine("Use on, off or status."); return true; }
+                        var r = FastSeek.Set(dev, value.Value);
+                        Console.WriteLine(r.Ok
+                            ? $"Device {dev}: {r.Detail} ({(action == "on" ? "fast stepping enabled" : "default restored")})"
+                            : "Failed: " + r.Detail);
+                    }
                     break;
                 }
                 case "mode":

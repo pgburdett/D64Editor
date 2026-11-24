@@ -422,6 +422,8 @@ D64Editor --cbm capture <dev> <out.nib> [--retries N] [--no-halftracks] [--adapt
 D64Editor --cbm preserve <dev> <out.nib> [--mode 1541|1571|keep] [--report FILE] [--g64 FILE] [options]
 D64Editor --cbm g64 <in.nib> <out.g64>
 D64Editor --cbm-console [dev]       Interactive hardware console (readline history, quit to exit)
+D64Editor --cbm seek <dev> <track> [--fast]        --fast temporarily enables ROM accelerated stepping
+D64Editor --cbm fastseek <dev> on|off|status       Persistent fast-step threshold toggle (reset restores default)
 D64Editor --cbm vice <command|start|stop> [--dev N] [--data IMG] [--emu PATH] [--softgl] [--dry-run]
 D64Editor --gcrread <dev> <track> <outfile> [--nosync] [--whole]
 D64Editor --test-stitch <image.g64> <track>
@@ -449,9 +451,35 @@ investigated and captured without leaving D64Editor:
    subcommands (`--cbm capture`, `--cbm mode`, `--cbm g64`) for individual steps.
 2. **Interactive** — `--cbm-console [dev]` opens a prompt with readline-style up/down history.
    Commands: `detect`, `status`, `dir`, `mode 1541|1571`, `surface`, `capture`, `preserve`,
-   `g64`, `gaps`, `sector`, `seek`, `use <dev>`, `history`, `quit`. It works with piped input too.
+   `g64`, `gaps`, `sector`, `seek [--fast]`, `fastseek`, `use <dev>`, `history`, `quit`. It works with piped input too.
 3. **Scripts** — `cbmdetect`, `cbmstatus`, `cbmdir`, `cbmmode`, `cbmsurface`, `cbmpreserve`,
-   `cbmgaps` are available to `--run-script`.
+   `cbmgaps`, `cbmfastseek` are available to `--run-script`.
+
+### Faster head seeks
+
+The 1541/1571 ROM has an accelerated stepping mode, but its threshold (`MINSTP`, drive RAM `$0064`)
+ships as 200 half-track steps — larger than any seek on a 35-track disk — so it never engages.
+`--cbm fastseek <dev> on` lowers it to 12 (about 6 tracks), enabling the factory-calibrated
+accel/run/decel ramp; `off` restores 200 (a drive reset does too). `--cbm seek ... --fast` applies
+the patch just for one seek and always restores the original value. The console exposes the same
+`fastseek on|off|status` and `seek <track> --fast` commands.
+
+Only the threshold is changed — no uploaded stepper code and no direct VIA phase writes — so the
+ROM still handles acceleration, deceleration and settling. The threshold byte is written with
+`cbmctrl upload` (bare M-W commands were intermittently dropped by the real drive) and verified
+by reading it back.
+
+Measured on a real 1571, device 8, 8 seeks between tracks 18 and 30 (12 tracks / 24 half-steps):
+
+| MINSTP | avg / seek | total (8 seeks) |
+|---|---|---|
+| `$C8` (default) | 366 ms | 2931 ms |
+| `$0C` (fast) | 270 ms | 2157 ms |
+
+That's about **35% faster** (~96 ms saved per seek). Motor spin-up and FDC job-queue polling still
+dominate short moves, so use the persistent `on` mode for bulk scanning rather than per-seek
+`--fast` (which pays extra tool round-trips). `--cbm benchseek <dev> <trackA> <trackB> [count]`
+reproduces the measurement.
 
 `preserve`/`capture` require nibtools (`nibread`/`nibconv`) on PATH in addition to OpenCBM.
 The NIB file is the preservation master; the optional G64 is a playable derivative for VICE
@@ -478,7 +506,7 @@ Commands:
 | REL | `relnew`, `relresize`, `relwrite` |
 | CP/M | `cpmextract`, `cpmcopy`, `cpmformat`, `cpmnew`, `cpmbootable`, `cpmimportdir` |
 | Archives | `archive`, `lhaextract`, `lhacreate`, `lhasfx`, `arjextract`, `arjcreate` |
-| Hardware | `cbmdetect`, `cbmstatus`, `cbmdir`, `cbmmode`, `cbmsurface`, `cbmpreserve`, `cbmgaps` |
+| Hardware | `cbmdetect`, `cbmstatus`, `cbmdir`, `cbmmode`, `cbmsurface`, `cbmpreserve`, `cbmgaps`, `cbmfastseek` |
 | Other | `geosinfo`, `echo`, `help`, `exit` |
 
 Example:

@@ -56,7 +56,8 @@ internal static class CbmConsole
         Console.WriteLine("  g64 <in.nib> <out.g64>      Convert a NIB capture to a playable G64 derivative");
         Console.WriteLine("  gaps <img.g64> [--from N] [--to N]  Offline GCR gap/sync analysis");
         Console.WriteLine("  sector <track> <sector>     Read one sector via the FDC job queue");
-        Console.WriteLine("  seek <track>                Move the head via an FDC SEEK job");
+        Console.WriteLine("  seek <track> [--fast]       FDC SEEK (--fast temporarily enables ROM accelerated stepping)");
+        Console.WriteLine("  fastseek on|off|status [dev]  Persistent fast-step threshold toggle (reset restores default)");
         Console.WriteLine("  history                     Show command history");
         Console.WriteLine("  clear                       Clear the screen");
         Console.WriteLine("  quit | exit                 Leave the console");
@@ -190,9 +191,35 @@ internal static class CbmConsole
             }
             case "seek":
             {
-                if (t.Count < 2 || !int.TryParse(t[1], out var tr)) { Console.Error.WriteLine("usage: seek <track>"); break; }
-                var r = SectorRead.Seek(_device, tr);
-                Console.WriteLine((r.Ok ? "SEEK OK: " : "SEEK FAILED: ") + r.Detail);
+                if (t.Count < 2 || !int.TryParse(t[1], out var tr)) { Console.Error.WriteLine("usage: seek <track> [--fast]"); break; }
+                var fast = t.Contains("--fast");
+                var r = fast
+                    ? FastSeek.WithFastSeek(_device, () => SectorRead.Seek(_device, tr))
+                    : SectorRead.Seek(_device, tr);
+                Console.WriteLine((r.Ok ? "SEEK OK: " : "SEEK FAILED: ") + r.Detail +
+                                  (fast ? " (fast stepping, MINSTP restored)" : ""));
+                break;
+            }
+            case "fastseek":
+            {
+                if (t.Count < 2) { Console.Error.WriteLine("usage: fastseek on|off|status [dev]"); break; }
+                var dev = t.Count > 2 && int.TryParse(t[2], out var dd) ? dd : _device;
+                var action = t[1].ToLowerInvariant();
+                if (action == "status")
+                {
+                    var cur = FastSeek.Read(dev);
+                    Console.WriteLine(cur.Ok ? $"Device {dev}: {cur.Detail}" : "Read failed: " + cur.Detail);
+                    break;
+                }
+                var value = action switch
+                {
+                    "on" => FastSeek.FastMinStp,
+                    "off" => FastSeek.DefaultMinStp,
+                    _ => (byte?)null
+                };
+                if (value is null) { Console.Error.WriteLine("Use on, off or status."); break; }
+                var r = FastSeek.Set(dev, value.Value);
+                Console.WriteLine(r.Ok ? $"Device {dev}: {r.Detail}" : "Failed: " + r.Detail);
                 break;
             }
             default:

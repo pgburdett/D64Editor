@@ -183,6 +183,7 @@ public static class ScriptEngine
             case "cbmsurface": CbmSurface(c, a, r); break;
             case "cbmpreserve": CbmPreserveCmd(c, a, r); break;
             case "cbmgaps": CbmGaps(c, a, r); break;
+            case "cbmfastseek": CbmFastSeek(c, a, r); break;
 
             default: throw new ScriptException($"Unknown command '{cmd}' (run 'help' for the command list).");
         }
@@ -240,6 +241,7 @@ public static class ScriptEngine
         sb.AppendLine("  cbmpreserve <dev> <out.nib> [options]  Full preservation workflow (needs nibtools)");
         sb.AppendLine("    options: --mode 1541|1571|keep --report FILE --g64 FILE --retries N --no-halftracks --skip-surface");
         sb.AppendLine("  cbmgaps <img.g64> [--from N] [--to N]  Offline GCR gap/sync analysis");
+        sb.AppendLine("  cbmfastseek <dev> on|off|status       Toggle ROM fast-step threshold (MINSTP $0064)");
         sb.AppendLine("  echo <text...>               Print text");
         sb.AppendLine("  exit [code]                  Stop with exit code");
         Log(c, sb.ToString().TrimEnd(), r);
@@ -956,6 +958,30 @@ public static class ScriptEngine
         }
         Log(c, CbmPreserve.Run(new CbmPreserve.Options(
             dev, outPath, mode, adapter, retries, half, reportPath, g64, skip, data)).Text, r);
+    }
+
+    private static void CbmFastSeek(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 2) throw new ScriptException("Usage: cbmfastseek <dev> on|off|status");
+        if (!OpenCbm.IsAvailable()) throw new ScriptException("OpenCBM not found on PATH.");
+        var dev = int.Parse(a[0]);
+        var action = a[1].ToLowerInvariant();
+        if (action == "status")
+        {
+            var cur = FastSeek.Read(dev);
+            if (!cur.Ok) throw new ScriptException(cur.Detail);
+            Log(c, $"Device {dev}: {cur.Detail}", r);
+            return;
+        }
+        var value = action switch
+        {
+            "on" => FastSeek.FastMinStp,
+            "off" => FastSeek.DefaultMinStp,
+            _ => throw new ScriptException("Use on, off or status.")
+        };
+        var res = FastSeek.Set(dev, value);
+        if (!res.Ok) throw new ScriptException(res.Detail);
+        Log(c, $"Device {dev}: {res.Detail} ({action})", r);
     }
 
     private static void CbmGaps(Context c, string[] a, ScriptResult r)

@@ -53,6 +53,7 @@
 - `D64Editor.Core/NibTools.cs` — nibtools wrapper (`nibread`/`nibconv` via `OpenCbm.Run`) plus a parser for nibread's verbose track map; produces `CaptureSummary` (disk ID, full/half-track counts, unformatted tracks, weak-GCR bytes, non-standard sectors, long reads, NDOS tracks, anomalous-track list). Unit-tested in `D64Editor.Core.Tests/`.
 - `D64Editor.Core/CbmPreserve.cs` — one-shot read-only preservation workflow: detect → mode → status → directory → surface scan → raw NIB capture → optional G64 derivative → text report. Backs `--cbm preserve` and `cbmpreserve`.
 - `D64Editor.App/CbmConsole.cs` — interactive hardware console (`--cbm-console`): persistent device, readline-style history, slash-style commands, "Working..." indicator for long ops; works with piped stdin.
+- `D64Editor.Core/FastSeek.cs` — toggles the ROM's accelerated-stepping threshold `MINSTP` (drive RAM `$0064`, shipped `$C8`) to `$0C` via `cbmctrl -p command -e <dev> m-w:100 0 1 <value>`; `WithFastSeek` restores the original value in a `finally`. No uploaded stepper code.
 - `D64Editor.Core/TailGap.cs` — port of Kracker Jax TGREAD: 5 tail-gap bytes via FDC JUMP job.
 - `D64Editor.Core/Nbz.cs` — LZ77 decompressor for preservation-project `.nbz` images; `--convert` turns them into NIB→D64.
 - `D64Editor.Core/GapScan.cs` — offline raw-GCR sync/gap/sector analysis of G64 images.
@@ -94,6 +95,7 @@ All CLI commands are implemented in `D64Editor.App/Cli.cs`. See README.md for fu
 - `--cbm preserve <dev> <out.nib> [--mode 1541|1571|keep] [--report FILE] [--g64 FILE] [--retries N] [--no-halftracks] [--skip-surface] [--data-checks]` — full one-shot diagnostic + NIB capture (needs nibtools on PATH). NIB is the preservation master; G64 is a playable derivative.
 - `--cbm g64 <in.nib> <out.g64>` — convert a NIB capture to G64.
 - `--cbm-console [dev]` (alias `--cbm-shell`) — interactive hardware console with history; `quit`/`exit` to leave.
+- `--cbm fastseek <dev> on|off|status` / `--cbm seek <dev> <track> [--fast]` / `--cbm benchseek <dev> <A> <B> [count] [--fast]` — toggle/benchmark ROM fast stepping (MINSTP `$0064`). The byte is written via `cbmctrl upload` (bare M-W is intermittently dropped), verified by read-back, and restored after one-shot seeks; drive reset restores `$C8`. Real 1571 measurement, 8 seeks T18<->T30: default `$C8` 366 ms/seek vs `$0C` 270 ms/seek (~35% faster). Use persistent `on` for bulk scans.
 - `--cbm tailgap <dev> [outfile]` — read 5 tail-gap bytes via FDC JUMP job (Kracker Jax TGREAD port).
 - `--cbm gcrscan <dev> [outfile]` — sample raw GCR on the current track via uploaded 6502 code (never moves the head).
 - `--gcrread <dev> <track> <outfile> [--nosync] [--whole]` — raw GCR chunk reader; `--whole` uses overlap/prefix-match stitching (512-byte half-window probe, reverse search; synthetically validated, hardware drift untested). `--test-stitch <image.g64> <track>` validates the stitcher against a known track.
