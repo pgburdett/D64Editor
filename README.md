@@ -552,9 +552,20 @@ copy protection. The short version:
   `x64sc -drive8truedrive -8 disk.g64` → `LOAD"*",8,1`.
 - The verified Arctic Fox capture boots to the "Enemy Review" screen.
 - The RUSSIA (`GM`) disk uses a simpler check: `M-W` sets `$006A=$85` to disable head bump,
-  then `U1:5,0,18,18` expects `23,read error,18,18` on a deliberately checksum-bad sector.
-  See `docs/drive-assembly/README.md` §13. The raw NIB master is authoritative; the `nibconv`
-  G64 derivative runs briefly and then reboots in VICE, so it is only a best-effort playable copy.
+  then `U1:5,0,18,18` expects `23,read error,18,18` on a deliberately checksum-bad sector at
+  T18/S18. See `docs/drive-assembly/README.md` §13 for the full trace.
+  - The raw NIB master reaches the title screen through real-drive passthrough; the `nibconv` G64
+    derivative loads briefly and then returns to BASIC/`READY` in `x64sc`.
+  - The bad S18 checksum survives in every tested G64 variant, but the NIB's 22 T18 headers are
+    reduced to 19 by `nibconv`; handler variants (`x-vmax`, `c-cinema`, `g-securi`, `p-pirate`,
+    `r-rapid`, `v-vorpal`, bad-sector simulations, etc.) did not fix playback. Rotation/timing and
+    REVCNT/head-bump emulation remain the likely differences.
+  - Wrapping raw NIB tracks with `--raw2g64` is not a substitute: wrong zones give
+    `?FILE NOT FOUND ERROR`, correct zones with full-length tracks still cannot read the directory,
+    and rotating/trimming raw bytes to `nibconv` lengths introduces invalid GCR symbols.
+  - A tokenized BASIC U1 probe can be autostarted with the G64 on device 8 to read the emulated DOS
+    status; use lowercase keyboard injection or `-autostart`, avoid `-autostartprgmode 1`, and keep
+    the target on device 8. See `HARDWARE_WORKFLOW.md`.
 - `--cbm gaps` provides offline sync/gap/sector anomaly analysis; `--cbm surface` scans the real
   drive through FDC jobs; `--cbm tailgap` reads five tail-gap bytes; `--cbm gcrscan` samples raw
   GCR on the current track.
@@ -613,6 +624,9 @@ raw-stepper writer path.
 - Deeper GEOS disk/application-data and VLIR workflows are best-effort.
 - `--gcrread --whole` stitching is not a valid single-revolution capture; use SRQ nibtools for
   faithful full-track images.
+- `nibconv` G64 derivatives do not reproduce the RUSSIA disk's rotation/timing and REVCNT/head-bump
+  behaviour: the NIB is the only faithful master for that title. `--raw2g64` raw-track wrapping
+  cannot replace `nibconv` normalization for playable images.
 - `--writeraw` is hardware-verified only for void track 2; T36–40 stepping is code-complete but
   untested.
 

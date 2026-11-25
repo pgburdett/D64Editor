@@ -3,6 +3,17 @@
 All notable changes to D64Editor are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — RUSSIA G64 fidelity investigation (documentation)
+
+### Documentation
+- Expanded `docs/drive-assembly/README.md` §13 with the G64 variant matrix, raw NIB-to-G64 wrapping
+  results, and a tokenized in-VICE U1 probe recipe for the emulated DOS status.
+- `README.md`, `HARDWARE_WORKFLOW.md`, `AGENTS.md` and the roadmap now document the VICE
+  keyboard/autostart pitfalls (lowercase PETSCII input, device 8 only, no
+  `-autostartprgmode 1`) and the BASIC v2 token bytes used for probe PRGs.
+- Conclusion recorded: the NIB is the only faithful RUSSIA master; `nibconv` G64 derivatives are
+  best-effort playable copies and `--raw2g64` cannot replace `nibconv` normalization.
+
 ## [Unreleased] — Legacy archive support
 
 ### Added

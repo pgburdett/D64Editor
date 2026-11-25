@@ -92,6 +92,9 @@ historical; see `AGENTS.md` and `README.md` for current command names and behavi
 
 - Incremental GCR fidelity: per-zone gaps/interleave, copy-protected track re-encoding, and
   half-track editing. Faithful images still require SRQ nibtools (`nibread`/`nibconv`).
+- RUSSIA (`GM`) G64 playback: `nibconv` normalization breaks the U1/REVCNT check, while raw NIB
+  wrapping and handler variants do not produce a playable image. The next diagnostic is an in-VICE
+  tokenized U1 status probe (device 8, lowercase/autostart); the NIB remains the only faithful master.
 - Richer CMD in-container editing workflows; write-back already works for all partition types.
 - CP/M from-scratch validation against more DPB variants and real 1581 media.
 - Deeper GEOS/VLIR support.

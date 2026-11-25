@@ -552,11 +552,52 @@ master; for this disk the G64 is only a best-effort playable derivative, not a f
 preservation copy. Real-drive passthrough remains the verified way to play it.
 
 Wrapping the NIB's raw 8192-byte track blocks directly with `--raw2g64` (no `nibconv`) is **not** a
-shortcut: with the blank-image speed-zone table VICE reports `FILE NOT FOUND` (wrong zones), and
-with correct zones but full-length tracks it still cannot read the directory. Aligning the raw
-bytes to `nibconv`'s track lengths preserves more raw data but introduces invalid GCR symbols
-(94 undecoded sectors vs 21 from `nibconv`). `nibconv`'s gap/sync normalisation is required for a
-playable G64, and that normalisation is also what breaks this disk's protection.
+shortcut. The experiments (all under `/tmp`, not committed) were:
+
+| Derivative | Build | Decode result | VICE result |
+|---|---|---|---|
+| `nibconv` G64 | default handler | 19 T18 headers, 21 undecoded sectors | loads, then resets to BASIC |
+| handler variants | `x-vmax`, `c-cinema`, `g-securi`, `p-pirate`, `r-rapid`, `v-vorpal`, `no-badsim`, `badsim1`–`badsim3`, `reduce-bad`, `no-syncred`, `gap-reduce` | ~21 undecoded (`x-vmax` 22), still 19 T18 headers | same reset |
+| `nibraw.g64` | raw 8192-byte NIB tracks, blank zone table | 22 T18 headers, 0 undecoded | `?FILE NOT FOUND ERROR` (wrong zones) |
+| `nibraw3.g64` | same raw tracks, `nibconv` header/zones copied in | 22 T18 headers, 0 undecoded | `?FILE NOT FOUND ERROR` even with zones `3/3/2/2/...` |
+| `nibraw4.g64` | raw bytes rotated/trimmed to `nibconv` track lengths | invalid GCR symbols, 94 undecoded | not playable |
+
+The S18 data checksum is bad in every decoded variant; what changes is the surrounding sync/gap
+layout and the duplicate T18 headers (22 in the NIB vs 19 after `nibconv`). `nibconv`'s gap/sync
+normalisation is required for a playable G64, and that normalisation is also what breaks this
+disk's protection.
+
+### In-VICE U1 status probe (next diagnostic)
+
+To decide whether VICE fails because it never sees the bad sector or because it does not emulate
+REVCNT/head-bump semantics, autostart a tokenized BASIC probe with the protected G64 on **device 8**
+only:
+
+```basic
+10 OPEN 15,8,15
+20 OPEN 5,8,5,CHR$(35)
+30 PRINT#15,"U1:5,0,18,18"
+40 INPUT#15,A,B$,C,D
+50 PRINT A,B$,C,D
+60 CLOSE 5
+70 CLOSE 15
+```
+
+Launch with `x64sc -model c64c -ntsc -sounddev dummy -8 disk8-protected.g64 -autostart u1probe.prg`.
+Gotchas that cost time during the investigation:
+
+- Do **not** load the helper from device 9 when the disk under test is on 8; autostart the PRG so
+  only device 8 is involved.
+- `-autostartprgmode 1` aborts VICE on this Xwayland session; plain `-autostart` works.
+- Uppercase ASCII through `xdotool type` is mangled by VICE's PETSCII keymap (`LOAD""`,
+  `?DEVICE NOT FOUND`, `?SYNTAX ERROR`). For keyboard injection use lowercase
+  `-keybuf 'load"*",8,1\n'`; for probes prefer `-autostart`.
+- Standard BASIC v2 token bytes are `0x9F` OPEN, `0x98` PRINT#, `0x84` INPUT#, `0x99` PRINT and
+  `0xC7` CHR$. Minimal PRGs confirmed these (`HELLO` printed; `PRINT#`/`INPUT#` produced
+  `?FILE NOT OPEN` rather than a syntax error). Do not assume `petcat -w2` emits these bytes —
+  hex-dump the PRG before using it.
+- The first full probe run still ended with `?SYNTAX ERROR` before printing a DOS status, so a
+  conclusive in-VICE U1 reading remains open. Rebuild from the verified token bytes and rerun.
 
 ---
 
