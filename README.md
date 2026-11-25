@@ -262,7 +262,11 @@ Menus: `Disk`, `File`, `Edit`, `View`, `Window`, `Help`. The toolbar includes C6
 Default behavior mounts drive 8: `x64sc -8 "{image}" -autostart "{disk}"`. No selection starts
 the disk/`*`; one selected file starts `disk:NAME`. `$0801` BASIC programs add
 `-autostartprgmode 1`. `.crt` cartridges use `-cartcrt`. Paths are shell-quoted safely, and
-substitution works both for whole quoted tokens and inside quotes.
+substitution works both for whole quoted tokens and inside quotes. A checked-in commercial
+fast-loader CRT for local cross-checks is at
+`docs/fast-load/Epyx_FastLoad_1984_v2-b11b3b.crt`; see `docs/fast-load/README.md` for its
+provenance, VICE command examples, and scope. It is a reference fixture only and is not embedded
+in the application.
 
 ### OpenCBM transfer
 

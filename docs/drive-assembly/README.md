@@ -169,6 +169,7 @@ full GCR decoding of hardware samples is not yet done.
 | `halfstep-one-phase.s/.bin` | Used once, supervised | 46-byte outward half-step (one VIA phase decrement). No zero-page writes, no homing. Used T35 → 35.5. |
 | `halfstep-in-one-phase.s/.bin` | Used once, supervised | 48-byte inverse inward step. Used 35.5 → T35, verified by successful T35/S0 read. `inc` is reserved in `xa`; label is `incr`. |
 | `game-fastloader-disassembly.asm` | Reference | 1,280-byte game fastloader uploaded to `$0300-$07FF` via 40 `M-W` commands and executed with `M-E`. Disables interrupts, installs `JMP $04CC` stub at `$07E0`, rotates its first 22 bytes to hide the stub, then bit-bangs VIA1 `$1800` and decodes nibbles through a table at `$0413`. |
+| `docs/fast-load/Epyx_FastLoad_1984_v2-b11b3b.crt` | Commercial control | Epyx FastLoad cartridge image for VICE `-cartcrt` comparisons. It is not uploaded drive code and does not emulate EA PRODOS's raw-GCR/VIA1 bit-banging; use it only to distinguish host/accelerator effects from disk faults. Provenance and commands: `docs/fast-load/README.md`. |
 
 ### Abandoned stepper experiments
 

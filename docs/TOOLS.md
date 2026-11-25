@@ -160,6 +160,22 @@ dotnet run --project D64Editor.App -- --arj-create out/ archive.arj
 dotnet run --project D64Editor.App -- --arj-extract archive.arj out-arj/
 ```
 
+### 3.6 Commercial fast-loader cross-check (Epyx FastLoad CRT)
+
+The checked-in Epyx FastLoad cartridge image is a reference fixture, not a D64Editor resource. Use
+it with VICE when you need a known-good commercial accelerator as a control condition:
+
+```bash
+x64sc -cartcrt docs/fast-load/Epyx_FastLoad_1984_v2-b11b3b.crt -8 disk.d64
+x64sc -cartcrt docs/fast-load/Epyx_FastLoad_1984_v2-b11b3b.crt \
+  -8 disk.d64 -autostart program.prg -autostartprgmode 1
+```
+
+This is useful for separating host/console or accelerator interaction from disk-image faults. It
+does not emulate the custom drive-code paths in RUSSIA/EA PRODOS, and it does not make high-level
+OpenCBM bit-banging work. Fixture hash, provenance, D64Editor emulator-template example, and
+rights notes are in `docs/fast-load/README.md`.
+
 ---
 
 ## 4. Safety

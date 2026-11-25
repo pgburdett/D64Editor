@@ -118,6 +118,11 @@ copies in `docs/drive-assembly/`.
 | `gcrreader.bin` (69 B) | `GcrReader.s` | Raw GCR chunk reader with skip/count and SYNC wait; motor via `$F97E`. |
 | `C64LhaSfxStub.prg` (3,721 B) | Recovered from a user-owned original disk | Default C64 PRG stub for `--lha-sfx`/`lhasfx`; included with the user's stated license to use it. |
 
+The Epyx FastLoad CRT is deliberately **not** in this embedded-resource table. It is a commercial
+cartridge fixture kept at `docs/fast-load/Epyx_FastLoad_1984_v2-b11b3b.crt` for local VICE
+comparisons only; see `docs/fast-load/README.md`. Moving it from the repository root did not change
+any build input or runtime lookup.
+
 ---
 
 ## App: UI and CLI

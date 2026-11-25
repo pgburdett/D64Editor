@@ -13,6 +13,7 @@ analysis is in `docs/drive-assembly/README.md`, `docs/disk-images/README.md`, an
 | `z80dis` (Python) | Linear sweeps over CP/M binaries. Often finds strings, prompt tables, and code paths that Ghidra misses because CP/M `.COM` files have no symbol or code-section metadata. Vendored offline in `tools/z80dis.py` with `z80_decoder.py`. |
 | `z80asm` (AUR) | Reassembling modified Z80 code for C128 CP/M demos (`tools/demos/vdcchar.asm`). |
 | VICE x128 / x64sc (patched build in `/tmp/opencode/vice-patched`) | Running original games and verifying behavior; binary monitor for drive-CPU tracing. |
+| Epyx FastLoad CRT (`docs/fast-load/Epyx_FastLoad_1984_v2-b11b3b.crt`) | Commercial fast-loader control condition under `-cartcrt`; useful for checking whether a failure is in the disk/data path or in host/accelerator interaction. Not used by D64Editor code. |
 | `xa` / `da65` | 6502 assembly and disassembly for drive-side routines. |
 | `lha` / `7z` / `arj` | Inspecting and extracting legacy PC/C64 archives found on reference disks. |
 
@@ -67,6 +68,10 @@ analysis is in `docs/drive-assembly/README.md`, `docs/disk-images/README.md`, an
 - `tools/z80dis.py` / `tools/z80_decoder.py` — offline Z80 disassembly and byte-pattern search.
 - `tools/demos/vdcchar.asm` / `vdcchar.com` — C128 CP/M VDC full-screen experiment.
 - `tools/diagnostics/` — VICE binary-monitor clients and drive-code trace/dump scripts.
+- `docs/fast-load/` — Epyx FastLoad CRT and its VICE/D64Editor cross-check notes; moved from the
+  repository root with identical bytes.
+- `docs/inside-commodore-dos.txt` — line-wrapped OCR reference for DOS-protection and FDC background.
+  Treat OCR'd addresses/bytes as unverified; confirm against disassembly or hardware traces.
 - `patches/vice-3.10-opencbm-filename.patch` — VICE 3.10 real-device OPEN filename fix.
 
 Cross-references: `AGENTS.md`, `HARDWARE_WORKFLOW.md`, `docs/TOOLS.md`, `docs/CODE.md`.

@@ -3,6 +3,32 @@
 All notable changes to D64Editor are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — Reference fixture organization and DOS OCR refresh
+
+### Changed
+- Moved `Epyx_FastLoad_1984_v2-b11b3b.crt` from the repository root to `docs/fast-load/`. The bytes
+  are unchanged (SHA-256 `4cff9d1beb8ae0931fed2a66bc4389ede75f93981c2be434e9aed233dc9e71d7`);
+  this is a fixture-organization change only, with no product-code or embedded-resource dependency.
+- Replaced `docs/inside-commodore-dos.txt` with a different line-wrapped OCR extraction of the same
+  1984 Immers/Neufeld reference (59,606 lines / 945,210 bytes versus the previous 27,248 lines /
+  1,090,000 bytes). Both extractions contain OCR artifacts, so the document remains background
+  reading only; the prior version is recoverable from commit `3b7125b`.
+
+### Added
+- `docs/fast-load/README.md` — fixture metadata and hash, why the commercial Epyx FastLoad CRT is
+  retained, VICE `-cartcrt` and D64Editor emulator-template examples, verification steps, and
+  scope/rights notes. It explicitly separates cartridge fast loading from the custom drive-code
+  paths used by RUSSIA and EA PRODOS.
+- Expanded documentation cross-references so every path to the moved fixture is accurate:
+  `AGENTS.md`, root `README.md` (emulator setup), `docs/README.md` (reference index and OCR
+  provenance), `docs/CODE.md` (fixture assets), `docs/TOOLS.md` (reproducible VICE workflow),
+  `docs/REVERSE-ENGINEERING.md`, and `docs/drive-assembly/README.md`.
+
+### Notes
+- No executable behavior changed in this commit. D64Editor Core/App code, CLI verbs, and build
+  configuration are untouched; the C64 emulator repository is already clean at `ed44edd` apart
+  from an untracked IDE directory that is intentionally not committed.
+
 ## [Unreleased] — D64 block allocator fix
 
 ### Fixed
