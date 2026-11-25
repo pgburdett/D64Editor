@@ -1,0 +1,50 @@
+diff --git a/opencbm/lib/plugin/xum1541/LINUX/Makefile b/opencbm/lib/plugin/xum1541/LINUX/Makefile
+index 7054732..f2bfc07 100644
+--- a/opencbm/lib/plugin/xum1541/LINUX/Makefile
++++ b/opencbm/lib/plugin/xum1541/LINUX/Makefile
+@@ -8,6 +8,7 @@ LIBNAME = libopencbm-${PLUGIN_NAME}
+ SRCS    = archlib.c xum1541.c s1_s2_pp.c parburst.c
+ LIBS    = -L$(RELATIVEPATH)/libmisc -lmisc
+ LIBS   += $(LIBUSB_LIBS)
++LIBS   += -ldl
+ 
+ CFLAGS += $(LIBUSB_CFLAGS)
+ CFLAGS += -I$(RELATIVEPATH)/include/LINUX/ -I$(RELATIVEPATH)/include/ -I../../ -I $(XUM1541DIR) -I$(RELATIVEPATH)/libmisc
+diff --git a/opencbm/lib/plugin/xum1541/xum1541.c b/opencbm/lib/plugin/xum1541/xum1541.c
+index b77528e..8bb89d9 100644
+--- a/opencbm/lib/plugin/xum1541/xum1541.c
++++ b/opencbm/lib/plugin/xum1541/xum1541.c
+@@ -28,6 +28,9 @@
+ #include <stdio.h>
+ #include <string.h>
+ #include <errno.h>
++#if defined(__linux__)
++#include <dlfcn.h>
++#endif
+ 
+ #include "opencbm.h"
+ 
+@@ -38,6 +41,23 @@
+ 
+ static int debug_level = -1; /*!< \internal \brief the debugging level for debugging output */
+ 
++#if defined(__linux__)
++/*
++ * Work around a systemd-libs/libudev runtime symbol lookup warning seen on
++ * some Linux distributions (e.g. Arch, systemd-libs 262.x): libudev may look
++ * up add_key/keyctl but libkeyutils is not linked/loaded, producing
++ * "undefined symbol: keyctl" on stderr during OpenCBM USB backend init.
++ * Preloading libkeyutils makes the symbols available; failure is non-fatal.
++ */
++__attribute__((constructor))
++static void
++xum1541_preload_keyutils(void)
++{
++    (void) dlopen("libkeyutils.so.1", RTLD_NOW | RTLD_GLOBAL);
++}
++#endif
++
++
+ unsigned char DeviceDriveMode; // Temporary disk/tape mode hack until usb device handle context is there.
+ 
+ /*! \internal \brief Output debugging information for the xum1541

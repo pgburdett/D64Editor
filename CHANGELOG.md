@@ -20,6 +20,20 @@ All notable changes to D64Editor are documented here. Format follows
 - Conclusion recorded: the NIB is the only faithful RUSSIA master; `nibconv` G64 derivatives are
   best-effort playable copies and `--raw2g64` cannot replace `nibconv` normalization.
 
+## [Unreleased] — OpenCBM/VICE patch artifacts and keyutils warning fix
+
+### Added
+- `patches/opencbm-xum1541-keyutils-preload.patch` — Linux-only OpenCBM xum1541 plugin workaround: constructor dlopens `libkeyutils.so.1` (RTLD_NOW|RTLD_GLOBAL) to suppress `/usr/lib/libudev.so.1: undefined symbol: keyctl` runtime warning caused by libudev/keyutils lookup path; adds `-ldl`.
+- `tools/build-patched-opencbm-xum1541.sh` — builds patched OpenCBM xum1541 plugin from source.
+- `tools/opencbm/libopencbm-xum1541.so.0.4.99.104` — compiled patched plugin (x86_64, OpenCBM 0.4.99.104).
+- `tools/opencbm/README.md` — problem analysis, build/install/rollback instructions.
+
+### Changed
+- `patches/README.md` — expanded into patch index with detailed VICE 3.10 realdevice filename-fix changelog (modified `src/serial/realdevice.c`: buffer OPEN filename bytes, pass at UNLISTEN) and OpenCBM xum1541 keyutils preload fix/changelog.
+
+### Notes
+- Permanent system install requires `sudo cp` of the patched plugin into `/usr/lib/opencbm/plugin/` (backup `.bak` first). Not auto-installed in this session because sudo credentials were unavailable.
+
 ## [Unreleased] — RUSSIA write-back verification and protection artifact documentation
 
 ### Added
