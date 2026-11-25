@@ -217,7 +217,7 @@ Menus: `Disk`, `File`, `Edit`, `View`, `Window`, `Help`. The toolbar includes C6
 |---|---|
 | Hex | `AAAA <16 hex bytes> <PETSCII>`, base from the 2-byte load address; PETSCII/ASCII toggle; C64 ROM glyphs. |
 | BASIC | C64 BASIC V2 de-tokenizer. |
-| Disassembly | 6502 disassembler. |
+| Disassembly | 6502/6510 disassembler (linear or control-flow tracing), PRG load-address aware, branch/JMP/JSR labels, KERNAL annotations, BIT-skip overlap handling, manual entry points, and raw disk Track/Sector/Block mode. |
 | SEQ | 40/80-column ASCII/PETSCII text viewer with "Save to Text". |
 | REL | Side-sector chain and fixed-length records, in-place editing, resize. |
 | Picture | Koala/Art Studio hi-res, zoom, BMP export. |
@@ -394,6 +394,7 @@ D64Editor --help
 D64Editor --list <image>
 D64Editor --info <image>
 D64Editor --validate <image>
+D64Editor --disasm <file.prg|image> [entry] [--trace] [--entry $XXXX]
 D64Editor --export <image> <dir>
 D64Editor --convert <in> <out>
 D64Editor --to-gcr <d64> <out.g64|out.nib>
@@ -511,7 +512,7 @@ Commands:
 | Category | Commands |
 |---|---|
 | Images | `open`, `close`, `save`, `new`, `convert`, `togcr` |
-| Directory/files | `list`, `info`, `validate`, `rename`, `renamedisk`, `import`, `export`, `exportdir`, `scratch`, `unscratch`, `wipe`, `move` |
+| Directory/files | `list`, `info`, `validate`, `disasm`, `rename`, `renamedisk`, `import`, `export`, `exportdir`, `scratch`, `unscratch`, `wipe`, `move` |
 | REL | `relnew`, `relresize`, `relwrite` |
 | CP/M | `cpmextract`, `cpmcopy`, `cpmformat`, `cpmnew`, `cpmbootable`, `cpmimportdir` |
 | Archives | `archive`, `lhaextract`, `lhacreate`, `lhasfx`, `arjextract`, `arjcreate` |
@@ -563,9 +564,12 @@ copy protection. The short version:
   - Wrapping raw NIB tracks with `--raw2g64` is not a substitute: wrong zones give
     `?FILE NOT FOUND ERROR`, correct zones with full-length tracks still cannot read the directory,
     and rotating/trimming raw bytes to `nibconv` lengths introduces invalid GCR symbols.
-  - A tokenized BASIC U1 probe can be autostarted with the G64 on device 8 to read the emulated DOS
-    status; use lowercase keyboard injection or `-autostart`, avoid `-autostartprgmode 1`, and keep
-    the target on device 8. See `HARDWARE_WORKFLOW.md`.
+  - A tokenized BASIC U1 probe on the G64 in VICE (read via binary monitor) shows
+    `23,READ ERROR,18,18` for T18/S18 when U1 is sent as the OPEN 15 filename
+    (`OPEN 15,8,15,"U1:5 0 18 18"`). `PRINT#15,"U1:..."` is wrong and returns
+    `30,SYNTAX ERROR,00,00`. VICE therefore sees the bad sector; the loader reset is likely due to
+    REVCNT/head-bump, timing/rotation, or missing duplicate T18 headers, not a "fixed" checksum. See
+    `docs/drive-assembly/README.md` §13.
 - `--cbm gaps` provides offline sync/gap/sector anomaly analysis; `--cbm surface` scans the real
   drive through FDC jobs; `--cbm tailgap` reads five tail-gap bytes; `--cbm gcrscan` samples raw
   GCR on the current track.

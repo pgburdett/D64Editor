@@ -60,6 +60,7 @@ where code lives and why.
 | `Nbz.cs` | LZ77 decompressor for preservation-project `.nbz` images; `--convert` expands NBZ to MNIB NIB, then decodes to D64. |
 | `GapScan.cs` | Offline raw-GCR analysis: counts `$FF` sync runs, measures non-sync gaps, decodes sectors, and flags anomalies against expected sector counts. |
 | `RawG64.cs` | Wraps captured raw track byte arrays into a G64 container using a blank D64 base. |
+| `Disassembler.cs` | 6502/6510 disassembler: linear and control-flow tracing modes, PRG load-address aware, branch/JMP/JSR target labels, KERNAL symbol annotations, BIT-skip overlap handling, optional extra trace entry points. |
 
 Container-backed D64/D71/D81/DNP images keep `ContainerPath`, `Offset`, and `Size`; `Save()`
 writes back into the original container. `CbmCatalog.Open{D64,D71,D81,Dnp}FromContainer` and
@@ -133,7 +134,8 @@ copies in `docs/drive-assembly/`.
 | `DirListing.cs` / `DirectoryRow.cs` | C64-screen directory rendering. |
 | `BamEditorWindow.axaml(.cs)` | BAM editor with set/error-code modes. |
 | `FileChainWindow`, `BlockViewerWindow`, `SectorDumpWindow`, `HexViewerWindow` | Block and chain inspection. |
-| `BasicViewerWindow`, `SeqViewerWindow`, `DisassemblyWindow` | File-content viewers. |
+| `BasicViewerWindow`, `SeqViewerWindow` | File-content viewers (BASIC, SEQ/PETSCII). |
+| `DisassemblyWindow` | 6502 disassembly viewer for PRG files and raw disk sectors/blocks: linear/trace mode, entry points, track/sector/block selection, C64/PETSCII display. |
 | `GfxViewerWindow`, `PictureViewerWindow` | Charset/sprite and Koala/Art Studio hi-res viewers with zoom and BMP export. |
 | `CpmViewerWindow`, `T64ViewerWindow`, `G64InfoWindow`, `NibInfoWindow`, `GeosInfoWindow`, `ExtendedImageWindow`, `PartitionsWindow` | Format-specific viewers. |
 | `FindInDisksWindow`, `CompareDisksWindow`, `BatchWindow` | Search, compare, batch export/validate. |

@@ -177,24 +177,24 @@ x64sc -8 disk.g64 -keybuf 'load"*",8,1\n' -keybuf-delay 100
 For raw DOS-status probes, avoid keyboard typing entirely: autostart a tokenized BASIC PRG with the
 disk under test on **device 8** (do not load a helper from device 9 when the command targets 8).
 `-autostartprgmode 1` aborts VICE on this session; plain `-autostart` injects the PRG into RAM and
-runs it. Probe source used for the RUSSIA T18/S18 investigation:
+runs it. **U1 must be sent as the OPEN 15 filename**, not via `PRINT#15` — `PRINT#15,"U1:..."`
+returns `30,SYNTAX ERROR,00,00` in VICE. Correct probe form (matches `st.prg` / DOS reference):
 
 ```basic
-10 OPEN 15,8,15
-20 OPEN 5,8,5,CHR$(35)
-30 PRINT#15,"U1:5,0,18,18"
+10 OPEN 5,8,5,"#"
+20 OPEN 15,8,15,"U1:5 0 18 18"
+30 CLOSE 5
 40 INPUT#15,A,B$,C,D
-50 PRINT A,B$,C,D
-60 CLOSE 5
-70 CLOSE 15
+50 PRINT A;B$;C;D
+60 CLOSE 15
 ```
 
 Standard BASIC v2 token bytes are `0x9F` OPEN, `0x98` PRINT#, `0x84` INPUT#, `0x99` PRINT and
-`0xC7` CHR$; minimal PRGs confirmed these tokens execute (a bare `PRINT#`/`INPUT#` reports
-`?FILE NOT OPEN`, not a syntax error). `petcat -w2` output on this system did not contain those
-bytes, so hex-dump any generated PRG before relying on it. The first full probe run still ended with
-`?SYNTAX ERROR` before printing a DOS status, so the conclusive in-VICE U1 reading is still open;
-see `docs/drive-assembly/README.md` §13.
+`0xC7` CHR$; minimal PRGs confirmed these tokens execute. `petcat -w2` output on this system did
+not contain those bytes, so hex-dump any generated PRG before relying on it. A VICE binary-monitor
+probe on `/home/pat/disk8-protected.g64` returned `23,READ ERROR,18,18` for T18/S18, so VICE sees
+the bad sector; the loader reset is not caused by a "fixed" checksum. See
+`docs/drive-assembly/README.md` §13.
 
 ### NBZ and protection references
 

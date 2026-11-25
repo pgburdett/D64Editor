@@ -3,10 +3,31 @@
         xmlns:local="using:D64Editor.App"
         x:Class="D64Editor.App.DisassemblyWindow"
         Title="Disassembly Viewer"
-        Width="640" Height="480">
+        Width="760" Height="560">
 
     <DockPanel Margin="10">
-        <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,8" />
+        <TextBlock Name="TitleLabel" DockPanel.Dock="Top" FontWeight="Bold" Margin="0,0,0,6" />
+
+        <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8" VerticalAlignment="Center">
+            <CheckBox Name="TraceBox" Content="Trace" Margin="0,0,12,0" VerticalAlignment="Center" />
+            <TextBlock Text="Entry:" VerticalAlignment="Center" Margin="0,0,4,0" />
+            <TextBox Name="EntryBox" Width="90" Watermark="$0801" Margin="0,0,12,0" />
+            <TextBlock Text="Mode:" VerticalAlignment="Center" Margin="0,0,4,0" />
+            <ComboBox Name="ModeBox" Width="120" Margin="0,0,12,0" SelectedIndex="0">
+                <ComboBoxItem Content="File" />
+                <ComboBoxItem Content="Track/Sector" />
+                <ComboBoxItem Content="Block" />
+            </ComboBox>
+            <TextBlock Name="TLabel" Text="T:" VerticalAlignment="Center" Margin="0,0,4,0" IsVisible="False" />
+            <TextBox Name="TrackBox" Width="50" Watermark="18" Margin="0,0,8,0" IsVisible="False" />
+            <TextBlock Name="SLabel" Text="S:" VerticalAlignment="Center" Margin="0,0,4,0" IsVisible="False" />
+            <TextBox Name="SectorBox" Width="50" Watermark="0" Margin="0,0,8,0" IsVisible="False" />
+            <TextBlock Name="BLabel" Text="Block:" VerticalAlignment="Center" Margin="0,0,4,0" IsVisible="False" />
+            <TextBox Name="BlockBox" Width="70" Watermark="0" Margin="0,0,8,0" IsVisible="False" />
+            <TextBlock Name="CLabel" Text="Count:" VerticalAlignment="Center" Margin="0,0,4,0" IsVisible="False" />
+            <TextBox Name="CountBox" Width="55" Watermark="1" Margin="0,0,12,0" IsVisible="False" />
+            <Button Name="RefreshBtn" Content="Refresh" />
+        </WrapPanel>
 
         <Border Background="#0000AA" Padding="6">
             <ScrollViewer VerticalScrollBarVisibility="Visible">

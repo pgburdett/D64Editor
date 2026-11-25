@@ -7,12 +7,41 @@ All notable changes to D64Editor are documented here. Format follows
 
 ### Documentation
 - Expanded `docs/drive-assembly/README.md` §13 with the G64 variant matrix, raw NIB-to-G64 wrapping
-  results, and a tokenized in-VICE U1 probe recipe for the emulated DOS status.
-- `README.md`, `HARDWARE_WORKFLOW.md`, `AGENTS.md` and the roadmap now document the VICE
-  keyboard/autostart pitfalls (lowercase PETSCII input, device 8 only, no
-  `-autostartprgmode 1`) and the BASIC v2 token bytes used for probe PRGs.
+  results, and a tokenized in-VICE U1 probe recipe.
+- Resolved the U1 probe syntax: `PRINT#15,"U1:..."` returns `30,SYNTAX ERROR,00,00` in VICE; the
+  correct form is the U1 command as the OPEN 15 filename (`OPEN 15,8,15,"U1:5 0 18 18"`), matching
+  `st.prg` and the 1541 DOS reference.
+- Conclusive VICE probe (binary monitor, screen RAM read): protected G64 returns
+  `23,READ ERROR,18,18` for T18/S18, so VICE sees the bad sector. The loader reset is not caused by
+  a "fixed" checksum; remaining suspects are REVCNT/head-bump semantics, timing/rotation, or missing
+  duplicate T18 headers (22 in NIB vs 19 in G64).
+- `README.md`, `HARDWARE_WORKFLOW.md`, `AGENTS.md` and the roadmap document the corrected probe
+  form and the binary-monitor result.
 - Conclusion recorded: the NIB is the only faithful RUSSIA master; `nibconv` G64 derivatives are
   best-effort playable copies and `--raw2g64` cannot replace `nibconv` normalization.
+
+## [Unreleased] — 6502 disassembler (linear/tracing) and UI sector disassembly
+
+### Added
+- `D64Editor.Core/Disassembler.cs`: 6502/6510 disassembler with two modes.
+  - **Linear** (default): PRG load-address aware, documented opcode table, `.byte` fallback for unknown opcodes.
+  - **Tracing** (`--trace` / `trace: true`): control-flow tracing from PRG load address and optional extra entry points. Follows conditional branches (both paths), `JSR` (target + fallthrough), and `JMP abs`; stops at `RTS`/`RTI`/`BRK`/`JMP (ind)`. Emits unvisited gaps as `.byte` data with ASCII side comments.
+  - Branch/JMP/JSR target labels (`LXXXX`), KERNAL symbol annotations for common `$FFxx` vectors and `$FCE2` RESET.
+  - BIT skip-trick handling: 2- or 3-byte BIT instructions overlapping 1-byte instruction targets keep the BIT as code and emit the overlapped target as a labeled skip-trick note.
+  - Optional extra trace roots via API (`extraEntryPoints`) and CLI/script `--entry $XXXX`.
+- CLI: `--disasm <file.prg|image> [entry] [--trace] [--entry $XXXX]` disassembles a PRG file or a named file inside D64/T64 images.
+- ScriptEngine: `disasm <name|host.prg> [--trace] [--entry $XXXX]`.
+- `DisassemblyWindow` UI: Trace checkbox, Entry field, Mode selector (`File` / `Track/Sector` / `Block`), T/S/Block/Count inputs, Refresh. Raw sector/block modes read D64 blocks and disassemble with a `$0000` base header.
+- `DiskDocumentView.ViewDisasm()` passes disk context for file disassembly and opens sector mode (`T18/S0`) when no file is selected but a disk is open.
+
+### Changed
+- Disassembly output now includes target labels and KERNAL comments in both linear and tracing modes.
+
+### Known limitations
+- Linear mode decodes data embedded in code; tracing mode only follows statically reachable flow.
+- `JMP (ind)` targets require `--entry`.
+- Self-modifying code is not modeled.
+- Only 1-byte overlapped BIT-skip targets are specially handled; other overlaps degrade conservatively.
 
 ## [Unreleased] — Legacy archive support
 

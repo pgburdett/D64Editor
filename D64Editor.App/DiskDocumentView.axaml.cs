@@ -717,8 +717,13 @@ public partial class DiskDocumentView : UserControl
     public void ViewDisasm()
     {
         var one = OneSelected();
-        if (one is null) return;
-        ShowDialog(new DisassemblyWindow(one.FileName, _image!.ExportFile(one)));
+        if (one is null)
+        {
+            if (_image is null) return;
+            ShowDialog(new DisassemblyWindow(_image, 18, 0));
+            return;
+        }
+        ShowDialog(new DisassemblyWindow(one.FileName, _image!.ExportFile(one), _image));
     }
 
     public void ViewPicture()

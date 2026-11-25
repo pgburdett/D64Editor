@@ -91,49 +91,209 @@ public static class Disassembler
         return t;
     }
 
-    private static readonly int[] Lengths = { 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 2, 2, 2 };
+    private static readonly int[] Lengths = { 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 2, 2 };
 
-    /// <summary>Returns one "ADDR: bytes mnemonic operand" string per instruction.</summary>
-    public static List<string> Disassemble(byte[] bytes)
+    private static readonly Dictionary<ushort, string> Kernal = new()
     {
+        [0xFF90] = "SETMSG", [0xFFBA] = "SETLFS", [0xFFBD] = "SETNAM", [0xFFC0] = "OPEN",
+        [0xFFC3] = "CLOSE", [0xFFC6] = "CHKIN", [0xFFC9] = "CHKOUT", [0xFFCC] = "CLRCHN",
+        [0xFFCF] = "CHRIN", [0xFFD2] = "CHROUT", [0xFFD5] = "LOAD", [0xFFD8] = "SAVE",
+        [0xFFE4] = "GETIN", [0xFFB7] = "READST", [0xFF93] = "SECOND", [0xFFAE] = "UNLSN",
+        [0xFFB1] = "LISTEN", [0xFFB4] = "TALK", [0xFF8D] = "VECTOR", [0xFFE1] = "STOP",
+        [0xFFE7] = "CLALL", [0xFFF3] = "IOBASE", [0xFCE2] = "RESET",
+    };
+
+    /// <summary>Disassemble a PRG linearly (default) or by control-flow tracing.</summary>
+    public static List<string> Disassemble(byte[] bytes, bool trace = false, IEnumerable<ushort>? extraEntryPoints = null)
+    {
+        if (bytes is null || bytes.Length < 2) return [];
+        var pcBase = (ushort)(bytes[0] | (bytes[1] << 8));
+        return trace
+            ? DisassembleTrace(bytes, pcBase, extraEntryPoints)
+            : DisassembleLinear(bytes, pcBase);
+    }
+
+    private static List<string> DisassembleLinear(byte[] bytes, ushort pcBase)
+    {
+        var targets = CollectTargets(bytes, pcBase);
         var lines = new List<string>();
-        if (bytes is null || bytes.Length < 2) return lines;
-
-        // Use the file's own load address as the starting PC.
-        var pc = (ushort)(bytes[0] | (bytes[1] << 8));
         var pos = 2;
-
         while (pos < bytes.Length)
         {
-            var opPc = (ushort)(pc + (pos - 2));
-            var op = bytes[pos];
-            if (!Table.TryGetValue(op, out var info))
-            {
-                lines.Add($"${opPc:X4}: {op:X2}      .byte ${op:X2}");
-                pos += 1;
-                continue;
-            }
-
-            var len = Lengths[(int)info.Mode];
-            var operandBytes = new byte[3];
-            var n = 0;
-            for (var i = 1; i < len && pos + i < bytes.Length; i++)
-                operandBytes[n++] = bytes[pos + i];
-
-            var text = Format(info, operandBytes, opPc, len);
-            var byteCol = new StringBuilder();
-            for (var i = 0; i < len && pos + i < bytes.Length; i++)
-                byteCol.Append(bytes[pos + i].ToString("X2")).Append(' ');
-            lines.Add($"${opPc:X4}: {byteCol.ToString().PadRight(11)}{text}");
-
-            pos += len;
+            var opPc = (ushort)(pcBase + (pos - 2));
+            if (targets.Contains(opPc)) lines.Add($"L{opPc:X4}:");
+            EmitInstruction(bytes, pcBase, pos, opPc, targets, lines);
+            if (Table.TryGetValue(bytes[pos], out var info)) pos += Lengths[(int)info.Mode];
+            else pos += 1;
         }
-
         return lines;
     }
 
-    private static string Format(Op info, byte[] operand, ushort pc, int len)
+    private static List<string> DisassembleTrace(byte[] bytes, ushort pcBase, IEnumerable<ushort>? extraEntryPoints)
     {
+        var size = bytes.Length - 2;
+        var codeStart = new bool[size];
+        var codeByte = new bool[size];
+        var instrLen = new byte[size];
+        var targets = new HashSet<ushort>();
+        var work = new Queue<ushort>();
+
+        void Enqueue(ushort a, bool isTarget = true)
+        {
+            var off = a - pcBase;
+            if (off < 0 || off >= size) return;
+            if (isTarget) targets.Add(a);
+            if (!codeStart[off] && !codeByte[off]) work.Enqueue(a);
+        }
+
+        Enqueue(pcBase, true);
+        if (extraEntryPoints != null)
+            foreach (var ep in extraEntryPoints) Enqueue(ep, true);
+
+        while (work.Count > 0)
+        {
+            var pc = work.Dequeue();
+            var off = pc - pcBase;
+            if (off < 0 || off >= size || codeStart[off] || codeByte[off]) continue;
+            if (!Table.TryGetValue(bytes[2 + off], out var info))
+            {
+                codeStart[off] = true; codeByte[off] = true; instrLen[off] = 1;
+                continue;
+            }
+            var len = Lengths[(int)info.Mode];
+            if (off + len > size) len = size - off;
+            // Don't overwrite an existing instruction start; allow overlap only into data.
+            var conflict = false;
+            var skipBytes = new List<int>();
+            for (var i = 0; i < len; i++)
+            {
+                if (!codeStart[off + i]) continue;
+                // BIT skip trick: BIT zp/abs (2 or 3 bytes) may overlap 1-byte instruction targets.
+                if (i >= 1 && info.Mnemonic == "BIT" && (len == 2 || len == 3) && instrLen[off + i] == 1)
+                { skipBytes.Add(i); continue; }
+                conflict = true; break;
+            }
+            if (conflict) continue;
+            foreach (var i in skipBytes)
+            {
+                codeStart[off + i] = false;
+                instrLen[off + i] = 0;
+            }
+            codeStart[off] = true;
+            instrLen[off] = (byte)len;
+            for (var i = 0; i < len; i++) codeByte[off + i] = true;
+
+            var b1 = len > 1 ? bytes[2 + off + 1] : (byte)0;
+            var b2 = len > 2 ? bytes[2 + off + 2] : (byte)0;
+            var next = (ushort)(pc + len);
+            switch (info.Mode)
+            {
+                case Mode.Rel:
+                    var relTarget = (ushort)(pc + 2 + (sbyte)b1);
+                    Enqueue(relTarget, true);
+                    Enqueue(next, false); // conditional branch falls through
+                    break;
+                case Mode.Abs when info.Mnemonic == "JSR":
+                    var jsrTarget = (ushort)(b1 | (b2 << 8));
+                    Enqueue(jsrTarget, true);
+                    Enqueue(next, false); // assume return
+                    break;
+                case Mode.Abs when info.Mnemonic == "JMP":
+                    var jmpTarget = (ushort)(b1 | (b2 << 8));
+                    Enqueue(jmpTarget, true);
+                    break;
+                case Mode.Ind when info.Mnemonic == "JMP":
+                    // indirect jump - cannot follow statically
+                    break;
+                default:
+                    if (info.Mnemonic is "RTS" or "RTI" or "BRK") { }
+                    else Enqueue(next, false);
+                    break;
+            }
+        }
+
+        var lines = new List<string>();
+        var p = 0;
+        while (p < size)
+        {
+            var addr = (ushort)(pcBase + p);
+            if (codeStart[p])
+            {
+                if (targets.Contains(addr)) lines.Add($"L{addr:X4}:");
+                EmitInstruction(bytes, pcBase, 2 + p, addr, targets, lines);
+                var len = Math.Max((byte)1, instrLen[p]);
+                for (var i = 1; i < len; i++)
+                {
+                    var inner = (ushort)(pcBase + p + i);
+                    if (targets.Contains(inner)) lines.Add($"L{inner:X4}:  ; skip-trick target (overlapped by BIT)");
+                }
+                p += len;
+            }
+            else
+            {
+                // Emit data bytes in small groups
+                var start = p;
+                while (p < size && !codeStart[p] && p - start < 8) p++;
+                var chunk = new byte[p - start];
+                Array.Copy(bytes, 2 + start, chunk, 0, chunk.Length);
+                var hex = string.Join(' ', chunk.Select(b => b.ToString("X2")));
+                var asc = new string(chunk.Select(b => b >= 32 && b < 127 ? (char)b : '.').ToArray());
+                lines.Add($"${(ushort)(pcBase + start):X4}: {hex.PadRight(23)}  .byte {string.Join(", ", chunk.Select(b => $"${b:X2}"))}  ; {asc}");
+            }
+        }
+        return lines;
+    }
+
+    private static void EmitInstruction(byte[] bytes, ushort pcBase, int pos, ushort opPc, HashSet<ushort> targets, List<string> lines)
+    {
+        var op = bytes[pos];
+        if (!Table.TryGetValue(op, out var info))
+        {
+            lines.Add($"${opPc:X4}: {op:X2}        .byte ${op:X2}");
+            return;
+        }
+        var len = Lengths[(int)info.Mode];
+        var operandBytes = new byte[3];
+        for (var i = 1; i < len && pos + i < bytes.Length; i++)
+            operandBytes[i - 1] = bytes[pos + i];
+        var text = Format(info, operandBytes, opPc, len, targets);
+        var byteCol = new StringBuilder();
+        for (var i = 0; i < len && pos + i < bytes.Length; i++)
+            byteCol.Append(bytes[pos + i].ToString("X2")).Append(' ');
+        lines.Add($"${opPc:X4}: {byteCol.ToString().PadRight(11)}{text}");
+    }
+
+    private static HashSet<ushort> CollectTargets(byte[] bytes, ushort pcBase)
+    {
+        var targets = new HashSet<ushort>();
+        var pos = 2;
+        while (pos < bytes.Length)
+        {
+            var opPc = (ushort)(pcBase + (pos - 2));
+            var op = bytes[pos];
+            if (!Table.TryGetValue(op, out var info)) { pos++; continue; }
+            var len = Lengths[(int)info.Mode];
+            if (pos + len > bytes.Length) { pos += len; continue; }
+            if (info.Mode == Mode.Rel)
+            {
+                var target = (ushort)(opPc + 2 + (sbyte)bytes[pos + 1]);
+                targets.Add(target);
+            }
+            else if (info.Mode == Mode.Abs && (info.Mnemonic is "JMP" or "JSR"))
+            {
+                var target = (ushort)(bytes[pos + 1] | (bytes[pos + 2] << 8));
+                if (target >= pcBase && target < pcBase + (bytes.Length - 2))
+                    targets.Add(target);
+            }
+            pos += len;
+        }
+        return targets;
+    }
+
+    private static string Format(Op info, byte[] operand, ushort pc, int len, HashSet<ushort> targets)
+    {
+        string S(ushort a) => targets.Contains(a) ? $"L{a:X4}" : $"${a:X4}";
+        string KernalComment(ushort a) => Kernal.TryGetValue(a, out var n) ? $"  ; {n}" : string.Empty;
         switch (info.Mode)
         {
             case Mode.Imp:
@@ -149,23 +309,20 @@ public static class Disassembler
                 return $"{info.Mnemonic} ${operand[0]:X2},Y";
             case Mode.Abs:
                 var abs = (ushort)(operand[0] | (operand[1] << 8));
-                return $"{info.Mnemonic} ${abs:X4}";
+                return $"{info.Mnemonic} {S(abs)}{KernalComment(abs)}";
             case Mode.Abx:
-                var abx = (ushort)(operand[0] | (operand[1] << 8));
-                return $"{info.Mnemonic} ${abx:X4},X";
+                return $"{info.Mnemonic} ${((ushort)(operand[0] | (operand[1] << 8))):X4},X";
             case Mode.Aby:
-                var aby = (ushort)(operand[0] | (operand[1] << 8));
-                return $"{info.Mnemonic} ${aby:X4},Y";
+                return $"{info.Mnemonic} ${((ushort)(operand[0] | (operand[1] << 8))):X4},Y";
             case Mode.Ind:
-                var ind = (ushort)(operand[0] | (operand[1] << 8));
-                return $"{info.Mnemonic} (${ind:X4})";
+                return $"{info.Mnemonic} (${((ushort)(operand[0] | (operand[1] << 8))):X4})";
             case Mode.Izx:
                 return $"{info.Mnemonic} (${operand[0]:X2},X)";
             case Mode.Izy:
                 return $"{info.Mnemonic} (${operand[0]:X2}),Y";
             case Mode.Rel:
                 var target = (ushort)(pc + 2 + (sbyte)operand[0]);
-                return $"{info.Mnemonic} ${target:X4}";
+                return $"{info.Mnemonic} {S(target)}";
             default:
                 return info.Mnemonic;
         }

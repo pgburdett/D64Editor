@@ -567,37 +567,46 @@ layout and the duplicate T18 headers (22 in the NIB vs 19 after `nibconv`). `nib
 normalisation is required for a playable G64, and that normalisation is also what breaks this
 disk's protection.
 
-### In-VICE U1 status probe (next diagnostic)
+### In-VICE U1 status probe (resolved)
 
-To decide whether VICE fails because it never sees the bad sector or because it does not emulate
-REVCNT/head-bump semantics, autostart a tokenized BASIC probe with the protected G64 on **device 8**
-only:
+A tokenized BASIC probe was autostarted in VICE 3.10 x64sc with the protected G64 on **device 8**
+to test whether VICE sees the bad sector or trips the wrong DOS semantics.
+
+**Result (2026-11-24, VICE 3.10, `-drive8truedrive` implied by G64 attach):** with the corrected
+OPEN-filename form, VICE reports `23,READ ERROR,18,18` for T18/S18 on `/home/pat/disk8-protected.g64`.
+That confirms VICE's 1541 emulation **does see the bad data checksum** in this G64. The loader's
+reset-to-`READY` is therefore not caused by nibconv "fixing" T18/S18; remaining suspects are
+REVCNT/head-bump behavior, rotation/timing, the missing duplicate T18 headers (22 in NIB vs 19 in
+G64), or other gap/sync-sensitive checks.
+
+**Probe syntax pitfall:** `PRINT#15,"U1:..."` is the wrong delivery path and returns
+`30,SYNTAX ERROR,00,00` in VICE (and on a plain D64). Send U1 as the **OPEN 15 filename**,
+matching `st.prg` and the 1541 DOS reference (`U1 <channel> <drive> <track> <sector>`):
 
 ```basic
-10 OPEN 15,8,15
-20 OPEN 5,8,5,CHR$(35)
-30 PRINT#15,"U1:5,0,18,18"
+10 OPEN 5,8,5,"#"
+20 OPEN 15,8,15,"U1:5 0 18 18"
+30 CLOSE 5
 40 INPUT#15,A,B$,C,D
-50 PRINT A,B$,C,D
-60 CLOSE 5
-70 CLOSE 15
+50 PRINT A;B$;C;D
+60 CLOSE 15
 ```
 
-Launch with `x64sc -model c64c -ntsc -sounddev dummy -8 disk8-protected.g64 -autostart u1probe.prg`.
-Gotchas that cost time during the investigation:
+The comma/space variants (`U1:5,0,18,18`, `U1:5 0 18 18`, `U1 5,0,18,18`) were accepted as OPEN 15
+filenames; the space form above matches the common reference form.
+
+The screen was read via VICE binary monitor (`-binarymonitor -binarymonitoraddress ip4://127.0.0.1:6509`,
+MEMGET $0400-$07E7) to avoid GL screenshot/OCR issues.
+
+Probe setup gotchas:
 
 - Do **not** load the helper from device 9 when the disk under test is on 8; autostart the PRG so
   only device 8 is involved.
 - `-autostartprgmode 1` aborts VICE on this Xwayland session; plain `-autostart` works.
-- Uppercase ASCII through `xdotool type` is mangled by VICE's PETSCII keymap (`LOAD""`,
-  `?DEVICE NOT FOUND`, `?SYNTAX ERROR`). For keyboard injection use lowercase
-  `-keybuf 'load"*",8,1\n'`; for probes prefer `-autostart`.
+- Uppercase ASCII through `xdotool type` is mangled by VICE's PETSCII keymap. For keyboard injection
+  use lowercase `-keybuf 'load"*",8,1\n'`; for probes prefer `-autostart`.
 - Standard BASIC v2 token bytes are `0x9F` OPEN, `0x98` PRINT#, `0x84` INPUT#, `0x99` PRINT and
-  `0xC7` CHR$. Minimal PRGs confirmed these (`HELLO` printed; `PRINT#`/`INPUT#` produced
-  `?FILE NOT OPEN` rather than a syntax error). Do not assume `petcat -w2` emits these bytes —
-  hex-dump the PRG before using it.
-- The first full probe run still ended with `?SYNTAX ERROR` before printing a DOS status, so a
-  conclusive in-VICE U1 reading remains open. Rebuild from the verified token bytes and rerun.
+  `0xC7` CHR$. Do not assume `petcat -w2` emits these bytes — hex-dump the PRG before using it.
 
 ---
 

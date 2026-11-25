@@ -34,6 +34,9 @@ internal static class Cli
             case "-v" or "--validate":
                 return Validate(args);
 
+            case "--disasm" or "--disassemble":
+                return Disasm(args);
+
             case "--cpm-extract":
                 return CpmExtract(args);
 
@@ -525,6 +528,76 @@ internal static class Cli
         }
 
         Console.WriteLine(issues == 0 ? "Result: OK" : $"Result: {issues} issue(s) reported.");
+        return true;
+    }
+
+    private static ushort ParseHexU16(string s)
+    {
+        s = s.Trim();
+        if (s.StartsWith("$")) s = s[1..];
+        else if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) s = s[2..];
+        return ushort.Parse(s, System.Globalization.NumberStyles.HexNumber);
+    }
+
+    private static bool Disasm(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: D64Editor --disasm <file.prg|image> [entry] [--trace]");
+            Console.Error.WriteLine("  Disassembles a 6502 PRG. --trace follows control flow; --entry adds trace entry points.");
+            return true;
+        }
+        var entries = new List<ushort>();
+        var trace = args.Any(a => a == "--trace");
+        var positional = new List<string>();
+        for (var i = 1; i < args.Length; i++)
+        {
+            if (args[i] == "--trace") continue;
+            if (args[i] == "--entry" && i + 1 < args.Length) { entries.Add(ParseHexU16(args[++i])); continue; }
+            if (args[i].StartsWith("--entry=")) { entries.Add(ParseHexU16(args[i][8..])); continue; }
+            positional.Add(args[i]);
+        }
+        if (positional.Count == 0) { Console.Error.WriteLine("Missing file argument."); return true; }
+        if (entries.Count > 0) trace = true;
+        var path = positional[0];
+        if (!File.Exists(path)) { Console.Error.WriteLine($"Not found: {path}"); return true; }
+        try
+        {
+            byte[]? bytes = null;
+            string name = Path.GetFileName(path);
+            if (positional.Count >= 2)
+            {
+                var wanted = positional[1];
+                var ext = Path.GetExtension(path).ToLowerInvariant();
+                if (ext == ".d64" || DiskFormats.IsD64Size(new FileInfo(path).Length))
+                {
+                    var img = D64Image.Load(path);
+                    var e = img.Entries.FirstOrDefault(x => !x.IsScratched && string.Equals(x.FileName.TrimEnd(' ', '\0'), wanted.Trim(), StringComparison.OrdinalIgnoreCase));
+                    if (e is null) { Console.Error.WriteLine($"File not found in image: {wanted}"); return true; }
+                    bytes = img.ExportFile(e); name = e.FileName;
+                }
+                else
+                {
+                    var t64 = T64Image.TryLoad(path);
+                    if (t64 is not null)
+                    {
+                        var e = t64.Entries.FirstOrDefault(x => string.Equals(x.FileName.TrimEnd(' ', '\0'), wanted.Trim(), StringComparison.OrdinalIgnoreCase));
+                        if (e is null) { Console.Error.WriteLine($"File not found in T64: {wanted}"); return true; }
+                        bytes = t64.Extract(e); name = e.FileName;
+                    }
+                }
+                if (bytes is null) { Console.Error.WriteLine("Disasm from this image type with entry name is not supported; export the file first."); return true; }
+            }
+            else
+            {
+                bytes = File.ReadAllBytes(path);
+            }
+            var lines = Disassembler.Disassemble(bytes, trace, entries.Count > 0 ? entries : null);
+            var ep = entries.Count > 0 ? $", entries={string.Join(",", entries.Select(e => $"${e:X4}"))}" : "";
+            Console.WriteLine($"; {name} — {lines.Count} line(s), load ${(bytes.Length > 1 ? (bytes[0] | (bytes[1] << 8)).ToString("X4") : "----")}{(trace ? ", trace" : "")}{ep}");
+            foreach (var l in lines) Console.WriteLine(l);
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"Disasm failed: {ex.Message}"); }
         return true;
     }
 
@@ -1727,6 +1800,7 @@ internal static class Cli
         Console.WriteLine("  --export/-e <image> <dir>  Export files from D64/T64/D71/D81/D80/D82/DNP");
         Console.WriteLine("  --info/-i <image>        Show image/format information");
         Console.WriteLine("  --validate/-v <image>    Validate/report cross-links and basic issues (D64)");
+        Console.WriteLine("  --disasm <file.prg|image> [entry] [--trace] [--entry $XXXX]  Disassemble 6502 PRG");
         Console.WriteLine("  --cpm-extract <img> <dir> [--strict]  Extract CP/M files (--strict: real directory slots only)");
         Console.WriteLine("  --cpm-copy <tmpl> <out> [--all|--files A,B]  Create CP/M image from template");
         Console.WriteLine("  --cpm-format <tmpl> <out>  Create empty CP/M image from template");

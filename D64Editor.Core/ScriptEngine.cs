@@ -146,6 +146,7 @@ public static class ScriptEngine
             case "list": List(c, r); break;
             case "info": Info(c, r); break;
             case "validate": Validate(c, r); break;
+            case "disasm": Disasm(c, a, r); break;
             case "rename": Rename(c, a, r); break;
             case "renamedisk": RenameDisk(c, a, r); break;
             case "import": Import(c, a, r); break;
@@ -210,6 +211,7 @@ public static class ScriptEngine
         sb.AppendLine("  list                         Print the directory");
         sb.AppendLine("  info                         Print disk info + blocks free");
         sb.AppendLine("  validate                     Report cross-links / block issues (D64)");
+        sb.AppendLine("  disasm <name|host.prg> [--trace] [--entry $XXXX]  Disassemble 6502 PRG");
         sb.AppendLine("  rename <old> <new>           Rename a directory entry (D64/CBM)");
         sb.AppendLine("  renamedisk <name> <id>       Rename disk header (D64)");
         sb.AppendLine("  import <host> [name] [type]  Import a PRG/SEQ/USR/REL/DEL or T64/P00 container");
@@ -378,6 +380,51 @@ public static class ScriptEngine
         d64.ComputeBlockOwners();
         Log(c, $"Validation: {d64.CrossLinkWarnings.Count} cross-link warning(s).", r);
         foreach (var w in d64.CrossLinkWarnings) Log(c, "  " + w, r);
+    }
+
+    private static ushort ParseHexU16(string s)
+    {
+        s = s.Trim();
+        if (s.StartsWith("$")) s = s[1..];
+        else if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) s = s[2..];
+        return ushort.Parse(s, System.Globalization.NumberStyles.HexNumber);
+    }
+
+    private static void Disasm(Context c, string[] a, ScriptResult r)
+    {
+        if (a.Length < 1) throw new ScriptException("disasm requires a file name (in open image) or a host .prg path. Optional: --trace --entry $XXXX");
+        var entries = new List<ushort>();
+        var trace = a.Any(x => x == "--trace");
+        var positional = new List<string>();
+        for (var i = 0; i < a.Length; i++)
+        {
+            if (a[i] == "--trace") continue;
+            if (a[i] == "--entry" && i + 1 < a.Length) { entries.Add(ParseHexU16(a[++i])); continue; }
+            if (a[i].StartsWith("--entry=")) { entries.Add(ParseHexU16(a[i][8..])); continue; }
+            positional.Add(a[i]);
+        }
+        if (positional.Count == 0) throw new ScriptException("disasm requires a file name or host .prg path.");
+        if (entries.Count > 0) trace = true;
+        var arg = positional[0];
+        byte[] bytes;
+        string name;
+        var host = Full(c, arg);
+        if (File.Exists(host))
+        {
+            bytes = File.ReadAllBytes(host);
+            name = Path.GetFileName(host);
+        }
+        else
+        {
+            var d64 = RequireD64(c);
+            var e = FindD64(d64, arg);
+            bytes = d64.ExportFile(e);
+            name = e.FileName;
+        }
+        var lines = Disassembler.Disassemble(bytes, trace, entries.Count > 0 ? entries : null);
+        var ep = entries.Count > 0 ? $", entries={string.Join(",", entries.Select(e => $"${e:X4}"))}" : "";
+        Log(c, $"; {name} — {lines.Count} line(s), load ${(bytes.Length > 1 ? (bytes[0] | (bytes[1] << 8)).ToString("X4") : "----")}{(trace ? ", trace" : "")}{ep}", r);
+        foreach (var l in lines) Log(c, l, r);
     }
 
     private static D64FileEntry FindD64(D64Image img, string name)
