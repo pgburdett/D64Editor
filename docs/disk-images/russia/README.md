@@ -13,6 +13,7 @@ for protected behavior.
 | `disk8-protected-report.txt` | `--cbm preserve` report: surface scan, directory, NIB track summary, protection findings. |
 | `disk8-protected.log` | Capture/preserve log. |
 | `write-verify-nibread.log` | Post-write verification nibread (after writing NIB back to a fresh disk in 1571/1541 mode with `nibwrite`). Confirms protection markers are present. |
+| `russia-35-err23-nocheck.d64` | 35-track D64 with T18/S18 error 23 and ST protection check bypassed (BNE $02 at $2FB7 -> NOP NOP). For testing/emulator use; not a preservation image. |
 
 ## Disk identity
 
