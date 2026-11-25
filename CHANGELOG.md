@@ -3,6 +3,11 @@
 All notable changes to D64Editor are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — D64 block allocator fix
+
+### Fixed
+- `D64BlockAllocator.FindFirst()`: fixed out-of-range track crash and missed free blocks when importing after scratch. Tries/distance now increment only on track jumps (matching original VB6 `findFirstBlocktoUse`), `StepOutward()` guards 1-35 track range and reports track jumps, preventing `TrackSectorToBlock` `ArgumentOutOfRangeException (track=-2)` and scan stalls on exhausted distance sides.
+
 ## [Unreleased] — RUSSIA G64 fidelity investigation (documentation)
 
 ### Documentation

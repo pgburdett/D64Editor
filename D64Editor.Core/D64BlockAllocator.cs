@@ -48,10 +48,12 @@ public class D64BlockAllocator
         var tries = 0;
         for (var attempts = 0; attempts < 1500; attempts++)
         {
-            StepOutward();
+            var jumped = StepOutward();
+            if (Track < 1 || Track > 35)
+                continue;
             Block = D64Image.TrackSectorToBlock(Track, Sector);
 
-            if (++tries == 2)
+            if (jumped && ++tries == 2)
             {
                 _distance++;
                 tries = 0;
@@ -67,21 +69,40 @@ public class D64BlockAllocator
         return false;
     }
 
-    private void StepOutward()
+    private bool StepOutward()
     {
+        if (Track < 1 || Track > 35)
+        {
+            Track = 17;
+            Sector = 0;
+            return true;
+        }
+
         var maxSector = D64Image.SectorsPerTrack(Track) - 1;
 
         if (Sector < maxSector)
         {
             Sector++;
+            return false;
         }
-        else
+
+        // Track < 18 walks outward below the directory track; tracks >= 18
+        // (and the very first step) walk outward above it.
+        var next = Track < 18 ? 18 + _distance : 18 - _distance;
+        if (next < 1 || next > 35)
         {
-            // Track < 18 walks outward below the directory track; tracks >= 18
-            // (and the very first step) walk outward above it.
-            Track = Track < 18 ? 18 + _distance : 18 - _distance;
-            Sector = 0;
+            // That side is exhausted; try the other side at the same distance.
+            next = Track < 18 ? 18 - _distance : 18 + _distance;
+            if (next < 1 || next > 35)
+            {
+                // Both sides exhausted at this distance; stay on a safe track
+                // and let FindFirst advance distance via tries/jump accounting.
+                next = 17;
+            }
         }
+        Track = next;
+        Sector = 0;
+        return true;
     }
 
     /// <summary>
