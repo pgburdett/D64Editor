@@ -20,6 +20,20 @@ All notable changes to D64Editor are documented here. Format follows
 - Conclusion recorded: the NIB is the only faithful RUSSIA master; `nibconv` G64 derivatives are
   best-effort playable copies and `--raw2g64` cannot replace `nibconv` normalization.
 
+## [Unreleased] — RUSSIA write-back verification and protection artifact documentation
+
+### Added
+- `docs/disk-images/russia/` — RUSSIA (GM) preservation artifacts: `disk8-protected.nib` (NIB master), `disk8-protected.g64` (nibconv derivative), preserve/report/logs, and post-write nibread verification log.
+- `docs/disk-images/russia/README.md` — detailed RUSSIA protection analysis: BASIC loader `RUS` M-W to REVCNT `$006A=$85` (head-bump disable), `ST` signature bypass at `$CF00`, U1 direct-channel check on T18/S18 expecting `23,READ ERROR,18,18`, success path loading `0:CD` to `$6B00`, why D64/G64 derivatives fail, and VICE U1 probe pitfalls.
+- `docs/disk-images/arcticfox/README.md` — detailed Arctic Fox / EA PRODOS protection analysis: non-standard tracks/gaps, custom drive code uploading to `$0300-$07FF`, raw GCR reads via VIA2 `$1C01`/BYTE-READY, rotation/timing/gap checks, killer/unformatted regions, faithful SRQ capture workflow, and reproduction/safety notes.
+- `docs/disk-images/README.md` — restructured as disk-image index pointing to `russia/` and `arcticfox/` subdirectories.
+
+### Changed
+- Moved Arctic Fox artifacts into `docs/disk-images/arcticfox/` and generated captures into `docs/disk-images/arcticfox/generated/`; updated path references in README, AGENTS, drive-assembly, and generated artifact docs.
+
+### Verified
+- Wrote `disk8-protected.nib` to a fresh disk in real 1571 (device 8, 1541 mode, `U0>M0`) with `nibwrite -@xum1541 -D8 ...`. Tracks 1.0–35.0 wrote normally; T36.0 wrote with weak bits; T37.0–41.0 unformatted. Post-write `nibread -@xum1541 -D8 -e5 -h -v` confirmed protection markers (T36 long reads/weak GCR, T37–41.5 unformatted/NOSYNC).
+
 ## [Unreleased] — 6502 disassembler (linear/tracing) and UI sector disassembly
 
 ### Added

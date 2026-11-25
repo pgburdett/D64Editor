@@ -375,7 +375,7 @@ sync/sector-count anomalies.
 and inject them via `G64Image.RawTrackOverrides`:
 
 ```bash
-dotnet run --project D64Editor.App -- --protect docs/disk-images/af-g64.d64 /tmp/repro.g64
+dotnet run --project D64Editor.App -- --protect docs/disk-images/arcticfox/af-g64.d64 /tmp/repro.g64
 dotnet run --project D64Editor.App -- --cbm gaps /tmp/repro.g64
 ```
 

@@ -1,0 +1,186 @@
+Preservation report — device 8, mode 1541
+Status: 00, ok,00,00
+Detected: 8: 1571
+Directory: readable
+  0 ."russia          " gm 2a
+  1    "rus"              prg  
+  6    "ca"               prg  
+  35   "s0"               prg   
+  35   "s1"               prg   
+  35   "s2"               prg   
+  35   "s3"               prg   
+  1    "mapn"             prg  
+  6    "g0"               prg  
+  13   "g1"               prg   
+  33   "g2"               prg   
+  33   "g3"               prg   
+  17   "g4"               prg   
+  22   "cd"               prg   
+  10   "sv"               prg   
+  62   "c0"               prg   
+  61   "c1"               prg   
+  10   "u1"               prg   
+  12   "u2"               prg   
+  33   "cf"               prg   
+  2    "st"               prg  
+  202 blocks free.             
+  00, ok,00,00
+
+Surface scan device 8, tracks 1-42 (FDC job queue).
+T18/S18 ERR 05: FDC data checksum error
+T36/S00 ERR 03: FDC no sync character
+T36/S01 ERR 03: FDC no sync character
+T36/S02 ERR 03: FDC no sync character
+T36/S03 ERR 03: FDC no sync character
+T36/S04 ERR 03: FDC no sync character
+T36/S05 ERR 03: FDC no sync character
+T36/S06 ERR 03: FDC no sync character
+T36/S07 ERR 03: FDC no sync character
+T36/S08 ERR 03: FDC no sync character
+T36/S09 ERR 03: FDC no sync character
+T36/S10 ERR 03: FDC no sync character
+T36/S11 ERR 03: FDC no sync character
+T36/S12 ERR 03: FDC no sync character
+T36/S13 ERR 03: FDC no sync character
+T36/S14 ERR 03: FDC no sync character
+T36/S15 ERR 03: FDC no sync character
+T36/S16 ERR 03: FDC no sync character
+T37/S00 ERR 03: FDC no sync character
+T37/S01 ERR 03: FDC no sync character
+T37/S02 ERR 03: FDC no sync character
+T37/S03 ERR 03: FDC no sync character
+T37/S04 ERR 03: FDC no sync character
+T37/S05 ERR 03: FDC no sync character
+T37/S06 ERR 03: FDC no sync character
+T37/S07 ERR 03: FDC no sync character
+T37/S08 ERR 03: FDC no sync character
+T37/S09 ERR 03: FDC no sync character
+T37/S10 ERR 03: FDC no sync character
+T37/S11 ERR 03: FDC no sync character
+T37/S12 ERR 03: FDC no sync character
+T37/S13 ERR 03: FDC no sync character
+T37/S14 ERR 03: FDC no sync character
+T37/S15 ERR 03: FDC no sync character
+T37/S16 ERR 03: FDC no sync character
+T38/S00 ERR 03: FDC no sync character
+T38/S01 ERR 03: FDC no sync character
+T38/S02 ERR 03: FDC no sync character
+T38/S03 ERR 03: FDC no sync character
+T38/S04 ERR 03: FDC no sync character
+T38/S05 ERR 03: FDC no sync character
+T38/S06 ERR 03: FDC no sync character
+T38/S07 ERR 03: FDC no sync character
+T38/S08 ERR 03: FDC no sync character
+T38/S09 ERR 03: FDC no sync character
+T38/S10 ERR 03: FDC no sync character
+T38/S11 ERR 03: FDC no sync character
+T38/S12 ERR 03: FDC no sync character
+T38/S13 ERR 03: FDC no sync character
+T38/S14 ERR 03: FDC no sync character
+T38/S15 ERR 03: FDC no sync character
+T38/S16 ERR 03: FDC no sync character
+T39/S00 ERR 03: FDC no sync character
+T39/S01 ERR 03: FDC no sync character
+T39/S02 ERR 03: FDC no sync character
+T39/S03 ERR 03: FDC no sync character
+T39/S04 ERR 03: FDC no sync character
+T39/S05 ERR 03: FDC no sync character
+T39/S06 ERR 03: FDC no sync character
+T39/S07 ERR 03: FDC no sync character
+T39/S08 ERR 03: FDC no sync character
+T39/S09 ERR 03: FDC no sync character
+T39/S10 ERR 03: FDC no sync character
+T39/S11 ERR 03: FDC no sync character
+T39/S12 ERR 03: FDC no sync character
+T39/S13 ERR 03: FDC no sync character
+T39/S14 ERR 03: FDC no sync character
+T39/S15 ERR 03: FDC no sync character
+T39/S16 ERR 03: FDC no sync character
+T40/S00 ERR 03: FDC no sync character
+T40/S01 ERR 03: FDC no sync character
+T40/S02 ERR 03: FDC no sync character
+T40/S03 ERR 03: FDC no sync character
+T40/S04 ERR 03: FDC no sync character
+T40/S05 ERR 03: FDC no sync character
+T40/S06 ERR 03: FDC no sync character
+T40/S07 ERR 03: FDC no sync character
+T40/S08 ERR 03: FDC no sync character
+T40/S09 ERR 03: FDC no sync character
+T40/S10 ERR 03: FDC no sync character
+T40/S11 ERR 03: FDC no sync character
+T40/S12 ERR 03: FDC no sync character
+T40/S13 ERR 03: FDC no sync character
+T40/S14 ERR 03: FDC no sync character
+T40/S15 ERR 03: FDC no sync character
+T40/S16 ERR 03: FDC no sync character
+T41/S00 ERR 03: FDC no sync character
+T41/S01 ERR 03: FDC no sync character
+T41/S02 ERR 03: FDC no sync character
+T41/S03 ERR 03: FDC no sync character
+T41/S04 ERR 03: FDC no sync character
+T41/S05 ERR 03: FDC no sync character
+T41/S06 ERR 03: FDC no sync character
+T41/S07 ERR 03: FDC no sync character
+T41/S08 ERR 03: FDC no sync character
+T41/S09 ERR 03: FDC no sync character
+T41/S10 ERR 03: FDC no sync character
+T41/S11 ERR 03: FDC no sync character
+T41/S12 ERR 03: FDC no sync character
+T41/S13 ERR 03: FDC no sync character
+T41/S14 ERR 03: FDC no sync character
+T41/S15 ERR 03: FDC no sync character
+T41/S16 ERR 03: FDC no sync character
+T42/S00 ERR 03: FDC no sync character
+T42/S01 ERR 03: FDC no sync character
+T42/S02 ERR 03: FDC no sync character
+T42/S03 ERR 03: FDC no sync character
+T42/S04 ERR 03: FDC no sync character
+T42/S05 ERR 03: FDC no sync character
+T42/S06 ERR 03: FDC no sync character
+T42/S07 ERR 03: FDC no sync character
+T42/S08 ERR 03: FDC no sync character
+T42/S09 ERR 03: FDC no sync character
+T42/S10 ERR 03: FDC no sync character
+T42/S11 ERR 03: FDC no sync character
+T42/S12 ERR 03: FDC no sync character
+T42/S13 ERR 03: FDC no sync character
+T42/S14 ERR 03: FDC no sync character
+T42/S15 ERR 03: FDC no sync character
+T42/S16 ERR 03: FDC no sync character
+Scanned 802 sector(s): 682 clean, 120 FDC errors, 0 suspicious.
+
+
+Disk ID: GM
+Tracks: 34 full-track CBM OK, 41 half-track captures
+Protection hints: 10 unformatted track reads, 118 non-standard sector markers, 37 weak-GCR events (32362 bytes), 7 long reads, 35 NDOS reads
+Anomalous tracks (first 25):
+  T1.5: 42 non-standard sector markers, weak GCR
+  T2.5: weak GCR, NDOS
+  T3.5: weak GCR, NDOS
+  T4.5: weak GCR, NDOS
+  T5.5: 72 non-standard sector markers, weak GCR
+  T6.5: weak GCR, NDOS
+  T7.5: weak GCR, NDOS
+  T8.5: weak GCR, long read, NDOS
+  T9.5: weak GCR, long read, NDOS
+  T10.5: weak GCR, NDOS
+  T11.5: weak GCR, NDOS
+  T12.5: weak GCR, NDOS
+  T13.5: weak GCR, NDOS
+  T14.5: weak GCR, NDOS
+  T15.5: weak GCR, NDOS
+  T16.5: weak GCR, NDOS
+  T17.5: weak GCR, NDOS
+  T18.0: 4 non-standard sector markers
+  T18.5: weak GCR, NDOS
+  T19.5: weak GCR, NDOS
+  T20.5: weak GCR, NDOS
+  T21.5: weak GCR, NDOS
+  T22.5: weak GCR, long read, NDOS
+  T23.5: weak GCR, long read, NDOS, non-GCR bytes
+  T24.5: weak GCR, long read, NDOS, non-GCR bytes
+  ... and 23 more
+
+G64 written to /home/pat/disk8-protected.g64
+
+Master image: /home/pat/disk8-protected.nib

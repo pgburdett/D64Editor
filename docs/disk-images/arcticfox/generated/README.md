@@ -5,7 +5,7 @@ fixtures, not source of truth for format behavior.
 
 | File | How it was made |
 |---|---|
-| `protected-repro.g64` | `--protect docs/disk-images/af-g64.d64 protected-repro.g64` — G64 with synthesized EA PRODOS tracks: void track 2 and generated tracks 36–40. `--cbm gaps` reports the same anomaly signature as the preservation image. |
+| `protected-repro.g64` | `--protect docs/disk-images/arcticfox/af-g64.d64 protected-repro.g64` — G64 with synthesized EA PRODOS tracks: void track 2 and generated tracks 36–40. `--cbm gaps` reports the same anomaly signature as the preservation image. |
 | `ea-disk-in-drive.g64` | Fresh SRQ raw-GCR capture from the EA disk in drive 8, converted with `nibconv`. A different mastering/revision from the archived Arctic Fox image; details below. |
 | `physical-read.d64` | `d64copy --no-progress 8 physical-read.d64` from a blank test disk with a reproduced no-sync track 2. `d64copy` reports `read error: 02/00: 3` and gives up on track 2. |
 | `physical-read.g64` | Created from `physical-read.d64` by D64→GCR regeneration; standard GCR is regenerated, so track 2 is **not** preserved (21/21 sectors). |
