@@ -7,6 +7,14 @@ All notable changes to D64Editor are documented here. Format follows
 
 ### Fixed
 - `D64BlockAllocator.FindFirst()`: fixed out-of-range track crash and missed free blocks when importing after scratch. Tries/distance now increment only on track jumps (matching original VB6 `findFirstBlocktoUse`), `StepOutward()` guards 1-35 track range and reports track jumps, preventing `TrackSectorToBlock` `ArgumentOutOfRangeException (track=-2)` and scan stalls on exhausted distance sides.
+- `D64Image.ScratchFile()`/`UnscratchFile()` now call `WriteDirectory()` so the changed type byte reaches the raw image immediately (previously only a later `Save()` wrote it).
+
+### Added
+- `D64Editor.Core.Tests/D64AllocatorRegressionTests.cs`: three regressions covering scratch -> import block reuse, preferred track 17 import after scratch, and directory type-byte persistence after scratch.
+
+### Verified
+- `russia-35-err23-nocheck.d64` boots under VICE, confirming the error-23 + `ST` bypass path in emulation; the NIB remains the preservation master.
+- Raw G64 T18/S18 decodes to a bad data checksum (`$FF` stored vs `$00` computed) with a valid header, and a local C64 emulator feeding that GCR to the 1541 DOS ROM reaches the same "PLEASE WAIT..." stage as the error-injected D64.
 
 ## [Unreleased] — RUSSIA G64 fidelity investigation (documentation)
 

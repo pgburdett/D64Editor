@@ -13,7 +13,7 @@ for protected behavior.
 | `disk8-protected-report.txt` | `--cbm preserve` report: surface scan, directory, NIB track summary, protection findings. |
 | `disk8-protected.log` | Capture/preserve log. |
 | `write-verify-nibread.log` | Post-write verification nibread (after writing NIB back to a fresh disk in 1571/1541 mode with `nibwrite`). Confirms protection markers are present. |
-| `russia-35-err23-nocheck.d64` | 35-track D64 with T18/S18 error 23 and ST protection check bypassed (BNE $02 at $2FB7 -> NOP NOP). For testing/emulator use; not a preservation image. |
+| `russia-35-err23-nocheck.d64` | 35-track D64 with T18/S18 error 23 and ST protection check bypassed (BNE $02 at $2FB7 -> NOP NOP). For testing/emulator use; not a preservation image. Verified to boot under VICE (see below). |
 
 ## Disk identity
 
@@ -40,6 +40,14 @@ nibwrite reported tracks 1.0–35.0 written, track 36.0 written with weak bits
 - Normal CBM tracks through 35.0, with half-track/weak-GCR activity on many half tracks.
 - Track 36.0/36.5: long reads / NDOS / heavy weak GCR.
 - Tracks 37.0–41.5: unformatted / NOSYNC.
+
+## Verification (VICE with nocheck image)
+
+`russia-35-err23-nocheck.d64` was verified under VICE: the game boots to a playable state.
+This confirms the D64 error-info path (T18/S18 error 23) and the `ST` check bypass work in
+emulation, and isolates the remaining VICE fidelity problem to the raw G64/NIB path rather
+than to the protection logic itself. The nocheck image is a test aid only; the NIB remains
+the preservation master.
 
 ## Protection summary (deep logic)
 
@@ -194,7 +202,12 @@ readable, so the U1 check returns `00,OK,...` instead of `23,READ ERROR,...` and
 The NIB master reaches the title screen through real-drive passthrough. The nibconv G64 loads
 briefly and returns to `READY` in VICE. Important findings:
 
-- **The bad T18/S18 checksum is preserved** in the G64 (GCR decode confirms bad data checksum).
+- **The bad T18/S18 checksum is preserved** in the G64. Decoding the raw GCR of T18/S18 gives
+  a stored data checksum of `$FF` against an XOR of `$00` over the 256 data bytes, and the
+  header is otherwise valid (sector 18, track 18, ID `GM`). Local C64 emulator runs that feed
+  the raw G64 GCR stream to the real 1541 DOS ROM reach the same "PLEASE WAIT..." stage as an
+  error-injected D64, so the raw GCR path itself can deliver the bad sector. The remaining
+  VICE-specific failure is therefore likely in later loader/timing behavior, not in sector data.
 - A VICE binary-monitor probe using the correct U1 form (OPEN 15 filename, not `PRINT#15`)
   returned `23,READ ERROR,18,18` for T18/S18 on the protected G64. Therefore VICE sees the
   bad sector; the loader reset is **not** caused by nibconv fixing that sector.

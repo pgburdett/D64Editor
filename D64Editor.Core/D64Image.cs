@@ -1053,6 +1053,7 @@ public class D64Image : IDiskImage
             AllocatedBlocks[block] = false;
 
         entry.RawFileType = 0;
+        WriteDirectory();
         WriteBam();
     }
 
@@ -1070,6 +1071,7 @@ public class D64Image : IDiskImage
         var raw = (byte)((byte)type | 0x80);
         if (locked) raw |= 0x40;
         entry.RawFileType = raw;
+        WriteDirectory();
         WriteBam();
     }
 
