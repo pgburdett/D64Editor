@@ -32,7 +32,7 @@ All notable changes to D64Editor are documented here. Format follows
 - `patches/README.md` — expanded into patch index with detailed VICE 3.10 realdevice filename-fix changelog (modified `src/serial/realdevice.c`: buffer OPEN filename bytes, pass at UNLISTEN) and OpenCBM xum1541 keyutils preload fix/changelog.
 
 ### Notes
-- Permanent system install requires `sudo cp` of the patched plugin into `/usr/lib/opencbm/plugin/` (backup `.bak` first). Not auto-installed in this session because sudo credentials were unavailable.
+- Permanent system install applied on this machine: backed up original plugin to `libopencbm-xum1541.so.0.4.99.104.bak` and installed patched `.so`; `cbmctrl detect` verified clean (no keyctl warning). Rollback by restoring `.bak`.
 
 ## [Unreleased] — RUSSIA write-back verification and protection artifact documentation
 
